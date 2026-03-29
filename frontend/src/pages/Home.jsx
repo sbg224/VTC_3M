@@ -95,7 +95,7 @@ export default function Home() {
     <>
       {/* ── HERO ──────────────────────────────────────────────────────────────── */}
       <section className="hero">
-        <div className="container">
+        <div className="container hero-container">
           <div className="hero-content">
             <div className="hero-badge">
               <span>⭐</span>
@@ -118,6 +118,13 @@ export default function Home() {
                 📞 Appeler directement
               </a>
             </div>
+          </div>
+          <div className="hero-visual">
+            <img
+              src="/images/car-hero.jpeg"
+              alt="Mercedes berline premium – 3M Services 31"
+              className="hero-car-img"
+            />
           </div>
         </div>
         <div className="hero-scroll">
@@ -153,7 +160,9 @@ export default function Home() {
           <div className="driver-vehicle-grid">
             {/* Présentation chauffeur */}
             <div className="driver-card">
-              <div className="driver-avatar">3M</div>
+              <div className="driver-avatar">
+                <img src="/images/logo-3m.jpeg" alt="Logo 3M Services 31" className="driver-logo-img" />
+              </div>
               <div className="driver-info">
                 <div className="driver-badge">Chauffeur VTC Agréé · Toulouse (31)</div>
                 <h3>3M Services 31</h3>
@@ -176,7 +185,9 @@ export default function Home() {
 
             {/* Présentation véhicule */}
             <div className="vehicle-card">
-              <div className="vehicle-icon-block">🚘</div>
+              <div className="vehicle-icon-block">
+                <img src="/images/car-door.jpeg" alt="Portière berline 3M Services 31" className="vehicle-photo" />
+              </div>
               <h3>Berline premium</h3>
               <p style={{ color: 'rgba(255,255,255,0.6)', marginBottom: '24px', fontSize: '0.92rem' }}>
                 Jusqu'à 4 passagers · Confort &amp; luxe à bord
@@ -239,6 +250,28 @@ export default function Home() {
             <Link to="/reservation" className="btn btn-primary btn-lg">
               🧮 Simuler le prix de ma course
             </Link>
+          </div>
+        </div>
+      </section>
+
+      {/* ── GALERIE EXPÉRIENCE ────────────────────────────────────────────────── */}
+      <section className="section gallery-section">
+        <div className="container">
+          <h2 className="section-title" style={{ textAlign: 'center' }}>
+            Une expérience <span className="gold-accent">premium</span>
+          </h2>
+          <p className="section-subtitle" style={{ textAlign: 'center' }}>
+            Du confort à bord à l'accueil personnalisé
+          </p>
+          <div className="gallery-grid">
+            <div className="gallery-item gallery-item--large">
+              <img src="/images/passenger.jpeg" alt="Confort à bord – 3M Services 31" />
+              <div className="gallery-caption">Confort &amp; discrétion à bord</div>
+            </div>
+            <div className="gallery-item">
+              <img src="/images/airport.jpeg" alt="Accueil aéroport Toulouse – 3M Services 31" />
+              <div className="gallery-caption">Accueil personnalisé – Toulouse Airport</div>
+            </div>
           </div>
         </div>
       </section>
