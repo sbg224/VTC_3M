@@ -18,7 +18,7 @@ export default function Navbar() {
       <div className="container navbar-inner">
         <Link to="/" className="navbar-logo" onClick={() => setMenuOpen(false)}>
           <div className="navbar-logo-icon">3M</div>
-          3M Services 31
+          3M Drive
         </Link>
 
         <ul className={`navbar-nav ${menuOpen ? 'open' : ''}`}>

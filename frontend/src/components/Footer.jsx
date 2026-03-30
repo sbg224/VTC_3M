@@ -9,7 +9,7 @@ export default function Footer() {
       <div className="container" style={{ paddingTop: '48px' }}>
         <div className="footer-grid">
           <div className="footer-brand">
-            <h3>🚗 3M Services 31</h3>
+            <h3>🚗 3M Drive</h3>
             <p>
               Votre chauffeur VTC privé à Toulouse. Service premium,
               discret et ponctuel pour tous vos déplacements en Haute-Garonne.
@@ -68,11 +68,10 @@ export default function Footer() {
         <hr className="footer-divider" />
 
         <div className="footer-bottom">
-          <span>© {year} 3M Services 31 – Toulouse. Tous droits réservés.</span>
+          <span>© {year} 3M Drive – Toulouse. Tous droits réservés.</span>
           <span style={{ display: 'flex', gap: '20px' }}>
-            <a href="#" style={{ color: 'rgba(255,255,255,0.4)', fontSize: '0.82rem' }}>Mentions légales</a>
-            <a href="#" style={{ color: 'rgba(255,255,255,0.4)', fontSize: '0.82rem' }}>Politique de confidentialité</a>
-            <a href="#" style={{ color: 'rgba(255,255,255,0.4)', fontSize: '0.82rem' }}>CGU</a>
+            <Link to="/mentions-legales" style={{ color: 'rgba(255,255,255,0.4)', fontSize: '0.82rem' }}>Mentions légales</Link>
+            <Link to="/politique-rgpd" style={{ color: 'rgba(255,255,255,0.4)', fontSize: '0.82rem' }}>Politique de confidentialité</Link>
           </span>
         </div>
       </div>

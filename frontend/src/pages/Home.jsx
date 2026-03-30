@@ -122,7 +122,7 @@ export default function Home() {
           <div className="hero-visual">
             <img
               src="/images/car-hero.jpeg"
-              alt="Mercedes berline premium – 3M Services 31"
+              alt="Mercedes berline premium – 3M Drive"
               className="hero-car-img"
             />
           </div>
@@ -161,11 +161,11 @@ export default function Home() {
             {/* Présentation chauffeur */}
             <div className="driver-card">
               <div className="driver-avatar">
-                <img src="/images/logo-3m.jpeg" alt="Logo 3M Services 31" className="driver-logo-img" />
+                <img src="/images/logo-3m.jpeg" alt="Logo 3M Drive" className="driver-logo-img" />
               </div>
               <div className="driver-info">
                 <div className="driver-badge">Chauffeur VTC Agréé · Toulouse (31)</div>
-                <h3>3M Services 31</h3>
+                <h3>3M Drive</h3>
                 <p>
                   Chauffeur privé indépendant basé à Toulouse, je mets tout en œuvre
                   pour vous offrir un déplacement confortable, ponctuel et discret.
@@ -186,7 +186,7 @@ export default function Home() {
             {/* Présentation véhicule */}
             <div className="vehicle-card">
               <div className="vehicle-icon-block">
-                <img src="/images/car-door.jpeg" alt="Portière berline 3M Services 31" className="vehicle-photo" />
+                <img src="/images/car-door.jpeg" alt="Portière berline 3M Drive" className="vehicle-photo" />
               </div>
               <h3>Berline premium</h3>
               <p style={{ color: 'rgba(255,255,255,0.6)', marginBottom: '24px', fontSize: '0.92rem' }}>
@@ -209,7 +209,7 @@ export default function Home() {
       <section className="section features">
         <div className="container">
           <h2 className="section-title" style={{ textAlign: 'center' }}>
-            Pourquoi choisir <span className="gold-accent">3M Services 31</span> ?
+            Pourquoi choisir <span className="gold-accent">3M Drive</span> ?
           </h2>
           <p className="section-subtitle" style={{ textAlign: 'center' }}>
             Un chauffeur privé qui fait vraiment la différence
@@ -265,11 +265,11 @@ export default function Home() {
           </p>
           <div className="gallery-grid">
             <div className="gallery-item gallery-item--large">
-              <img src="/images/passenger.jpeg" alt="Confort à bord – 3M Services 31" />
+              <img src="/images/passenger.jpeg" alt="Confort à bord – 3M Drive" />
               <div className="gallery-caption">Confort &amp; discrétion à bord</div>
             </div>
             <div className="gallery-item">
-              <img src="/images/airport.jpeg" alt="Accueil aéroport Toulouse – 3M Services 31" />
+              <img src="/images/airport.jpeg" alt="Accueil aéroport Toulouse – 3M Drive" />
               <div className="gallery-caption">Accueil personnalisé – Toulouse Airport</div>
             </div>
           </div>

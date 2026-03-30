@@ -12,6 +12,8 @@ import Home from './pages/Home';
 import Reservation from './pages/Reservation';
 import Login from './pages/Login';
 import Dashboard from './pages/Dashboard';
+import MentionsLegales from './pages/MentionsLegales';
+import PolitiqueRGPD from './pages/PolitiqueRGPD';
 import { AuthProvider, useAuth } from './services/auth';
 
 function ProtectedRoute({ children }) {
@@ -38,6 +40,8 @@ export default function App() {
           <Route path="/" element={<AppLayout><Home /></AppLayout>} />
           <Route path="/reservation" element={<AppLayout><Reservation /></AppLayout>} />
           <Route path="/login" element={<AppLayout><Login /></AppLayout>} />
+          <Route path="/mentions-legales" element={<AppLayout><MentionsLegales /></AppLayout>} />
+          <Route path="/politique-rgpd" element={<AppLayout><PolitiqueRGPD /></AppLayout>} />
           <Route
             path="/dashboard"
             element={
