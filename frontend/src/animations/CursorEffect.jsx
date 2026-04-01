@@ -1,13 +1,12 @@
 /**
- * Curseur personnalisé – 3M Drive
+ * Curseur personnalisé fluide – 3M Drive
  *
- * Règles strictes appliquées :
- * - GSAP quickTo() gère x/y (jamais style.left/top ni CSS transform)
- * - xPercent/yPercent centrent les éléments (remplace CSS translate(-50%,-50%))
- * - Position initiale = centre de l'écran pour éviter le glissement depuis (0,0)
- * - Un seul addEventListener mousemove, retiré dans le cleanup
- * - Hover : gsap.to() sur width/height, pas de classe CSS avec transition:transform
- * - Désactivé sur écrans tactiles (hover:none) et prefers-reduced-motion
+ * Architecture :
+ * - quickTo() pour x/y uniquement — jamais touché par les handlers hover
+ * - Hover géré par classes CSS uniquement — zéro conflit GSAP
+ * - Ripple géré indépendamment
+ * - Pas d'opacity:0 initial → pas de race condition au mount
+ * - window pour mousemove (coverage maximale, hors iframes)
  */
 import { useEffect, useRef } from 'react';
 import { gsap } from './gsap';
@@ -17,7 +16,6 @@ export default function CursorEffect() {
   const followerRef = useRef(null);
 
   useEffect(() => {
-    // Désactivé sur tactile ou si l'utilisateur préfère moins de mouvements
     if (window.matchMedia('(hover: none)').matches) return;
     if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
 
@@ -25,63 +23,47 @@ export default function CursorEffect() {
     const follower = followerRef.current;
     if (!dot || !follower) return;
 
-    // ── Initialisation de la position AVANT tout mousemove ──────────────────
-    // Sans ça, le follower "glisse" depuis (0,0) lors du premier déplacement
-    const startX = window.innerWidth  / 2;
-    const startY = window.innerHeight / 2;
-
-    // xPercent/yPercent centrent les éléments sans CSS transform
+    // ── Position initiale hors-écran (évite le saut depuis 0,0) ─────────────
+    // On utilise x/y via GSAP uniquement — jamais left/top CSS
     gsap.set([dot, follower], {
       xPercent: -50,
       yPercent: -50,
-      x: startX,
-      y: startY,
-      opacity: 0,           // cachés jusqu'au premier mouvement souris
+      x: -200,
+      y: -200,
     });
 
-    // ── quickTo : une instance par axe/élément, réutilisée à chaque move ────
-    // Évite la création d'un nouveau tween à chaque événement mousemove
-    const xDot      = gsap.quickTo(dot,      'x', { duration: 0.08, ease: 'none' });
-    const yDot      = gsap.quickTo(dot,      'y', { duration: 0.08, ease: 'none' });
-    const xFollower = gsap.quickTo(follower, 'x', { duration: 0.45, ease: 'power3.out' });
-    const yFollower = gsap.quickTo(follower, 'y', { duration: 0.45, ease: 'power3.out' });
+    // ── quickTo : une instance par axe, réutilisée en boucle ────────────────
+    // JAMAIS de overwrite sur ces tweens — ils doivent survivre indéfiniment
+    const xDot      = gsap.quickTo(dot,      'x', { duration: 0.06, ease: 'none' });
+    const yDot      = gsap.quickTo(dot,      'y', { duration: 0.06, ease: 'none' });
+    const xFollower = gsap.quickTo(follower, 'x', { duration: 0.35, ease: 'power2.out' });
+    const yFollower = gsap.quickTo(follower, 'y', { duration: 0.35, ease: 'power2.out' });
 
-    let visible = false;
-
-    // ── Listener unique mousemove ────────────────────────────────────────────
+    // ── Tracking souris ──────────────────────────────────────────────────────
     const onMove = (e) => {
       xDot(e.clientX);
       yDot(e.clientY);
       xFollower(e.clientX);
       yFollower(e.clientY);
+    };
 
-      // Affiche les curseurs au premier mouvement détecté
-      if (!visible) {
-        gsap.to([dot, follower], { opacity: 1, duration: 0.3, overwrite: true });
-        visible = true;
+    // ── Hover : classes CSS uniquement (aucun tween GSAP sur dot/follower) ───
+    const HOVER_SEL = 'a, button, .btn, .feature-card, .gallery-item, .destination-card';
+
+    const onOver = (e) => {
+      if (e.target.closest(HOVER_SEL)) {
+        dot.classList.add('cursor-hover');
+        follower.classList.add('cursor-hover');
+      }
+    };
+    const onOut = (e) => {
+      if (e.target.closest(HOVER_SEL)) {
+        dot.classList.remove('cursor-hover');
+        follower.classList.remove('cursor-hover');
       }
     };
 
-    // ── Hover sur éléments interactifs ───────────────────────────────────────
-    // gsap.to() sur width/height uniquement – pas de conflit avec x/y
-    const onEnter = () => {
-      gsap.to(dot,      { scale: 0,  duration: 0.2, overwrite: true });
-      gsap.to(follower, { width: 52, height: 52, opacity: 0.2, duration: 0.3, overwrite: true });
-    };
-    const onLeave = () => {
-      gsap.to(dot,      { scale: 1,  duration: 0.2, overwrite: true });
-      gsap.to(follower, { width: 36, height: 36, opacity: 0.5, duration: 0.3, overwrite: true });
-    };
-
-    // Délègue les hover via le document (gère les éléments ajoutés dynamiquement)
-    const onDocEnter = (e) => {
-      if (e.target.closest('a, button, .btn, .feature-card, .gallery-item')) onEnter();
-    };
-    const onDocLeave = (e) => {
-      if (e.target.closest('a, button, .btn, .feature-card, .gallery-item')) onLeave();
-    };
-
-    // ── Effet ripple au clic ─────────────────────────────────────────────────
+    // ── Ripple au clic ───────────────────────────────────────────────────────
     const onClick = (e) => {
       const btn = e.target.closest('.btn');
       if (!btn) return;
@@ -92,33 +74,35 @@ export default function CursorEffect() {
       Object.assign(ripple.style, {
         width:  `${size}px`,
         height: `${size}px`,
-        left:   `${e.clientX - rect.left  - size / 2}px`,
-        top:    `${e.clientY - rect.top   - size / 2}px`,
+        left:   `${e.clientX - rect.left - size / 2}px`,
+        top:    `${e.clientY - rect.top  - size / 2}px`,
       });
       btn.appendChild(ripple);
       ripple.addEventListener('animationend', () => ripple.remove(), { once: true });
     };
 
-    // Abonnement des listeners
-    document.addEventListener('mousemove',   onMove,     { passive: true });
-    document.addEventListener('mouseover',   onDocEnter, { passive: true });
-    document.addEventListener('mouseout',    onDocLeave, { passive: true });
-    document.addEventListener('click',       onClick);
+    // ── Abonnement ───────────────────────────────────────────────────────────
+    window.addEventListener('mousemove', onMove,   { passive: true });
+    window.addEventListener('mouseover', onOver,   { passive: true });
+    window.addEventListener('mouseout',  onOut,    { passive: true });
+    window.addEventListener('click',     onClick);
 
-    // ── Cleanup complet au démontage ─────────────────────────────────────────
+    // ── Cleanup propre ───────────────────────────────────────────────────────
     return () => {
-      document.removeEventListener('mousemove',   onMove);
-      document.removeEventListener('mouseover',   onDocEnter);
-      document.removeEventListener('mouseout',    onDocLeave);
-      document.removeEventListener('click',       onClick);
-      gsap.killTweensOf([dot, follower]);
+      window.removeEventListener('mousemove', onMove);
+      window.removeEventListener('mouseover', onOver);
+      window.removeEventListener('mouseout',  onOut);
+      window.removeEventListener('click',     onClick);
+      // Tuer les tweens quickTo pour libérer la mémoire
+      gsap.killTweensOf(dot);
+      gsap.killTweensOf(follower);
     };
   }, []);
 
   return (
     <>
-      <div className="custom-cursor"            ref={dotRef}      aria-hidden="true" />
-      <div className="custom-cursor--follower"  ref={followerRef} aria-hidden="true" />
+      <div ref={dotRef}      className="custom-cursor"           aria-hidden="true" />
+      <div ref={followerRef} className="custom-cursor--follower" aria-hidden="true" />
     </>
   );
 }

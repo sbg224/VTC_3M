@@ -1864,34 +1864,50 @@ textarea.form-control { resize: vertical; min-height: 88px; }
 }
 
 /* ── Curseur personnalisé ─────────────────────────────────────────────── */
-/* IMPORTANT : pas de transform ni transition:transform ici — GSAP gère x/y */
+/*
+  RÈGLE STRICTE : transform/translate/left/top jamais modifiés par CSS ici.
+  GSAP contrôle x/y via xPercent/yPercent + quickTo().
+  Seules les propriétés visuelles (taille, couleur, opacité) sont en CSS.
+*/
 .custom-cursor {
   position: fixed;
   top: 0;
   left: 0;
-  width: 12px;
-  height: 12px;
+  width: 10px;
+  height: 10px;
   background: var(--color-accent);
   border-radius: 50%;
   pointer-events: none;
   z-index: 99999;
-  mix-blend-mode: difference;
-  /* width/height seuls sont transitionnés par CSS ; x/y sont gérés par GSAP */
-  transition: width 0.2s ease, height 0.2s ease;
+  /* Transitions CSS uniquement sur les props visuelles — pas transform */
+  transition: width 0.18s ease, height 0.18s ease, opacity 0.18s ease;
+  will-change: transform;
 }
 .custom-cursor--follower {
   position: fixed;
   top: 0;
   left: 0;
-  width: 36px;
-  height: 36px;
+  width: 34px;
+  height: 34px;
   background: transparent;
   border: 1.5px solid var(--color-accent);
   border-radius: 50%;
   pointer-events: none;
   z-index: 99998;
   opacity: 0.5;
-  transition: width 0.25s ease, height 0.25s ease, opacity 0.25s ease;
+  transition: width 0.22s ease, height 0.22s ease, opacity 0.22s ease;
+  will-change: transform;
+}
+/* État hover : piloté par classe JS, aucun GSAP impliqué */
+.custom-cursor.cursor-hover {
+  width: 6px;
+  height: 6px;
+  opacity: 0.6;
+}
+.custom-cursor--follower.cursor-hover {
+  width: 50px;
+  height: 50px;
+  opacity: 0.2;
 }
 @media (hover: none) {
   .custom-cursor,
