@@ -445,7 +445,7 @@ export default function Home() {
               </div>
             ))}
           </div>
-          <div style={{ textAlign: 'center', marginTop: '40px' }}>
+          <div className="section-cta">
             <Link to="/reservation" className="btn btn-primary btn-lg">
               🧮 Simuler le prix de ma course
             </Link>
@@ -512,7 +512,7 @@ export default function Home() {
               </div>
             ))}
           </div>
-          <div style={{ textAlign: 'center', marginTop: '48px' }}>
+          <div className="section-cta">
             <Link to="/reservation" className="btn btn-primary btn-lg">
               🚗 Réserver ma course maintenant
             </Link>
@@ -586,7 +586,7 @@ export default function Home() {
                 Simulez le prix de votre trajet et réservez en quelques secondes.
                 Service premium, tarifs transparents.
               </p>
-              <Link to="/reservation" className="btn btn-primary" style={{ display: 'inline-block' }}>
+              <Link to="/reservation" className="btn btn-primary">
                 Simuler &amp; Réserver
               </Link>
             </div>

@@ -1260,6 +1260,13 @@ textarea.form-control { resize: vertical; min-height: 88px; }
 
 /* ── Destinations ────────────────────────────────────────────────────────────── */
 .destinations-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 16px; margin-top: 36px; }
+/* Centrage flex robuste pour les boutons CTA de fin de section */
+.section-cta {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin-top: 40px;
+}
 .destination-card {
   background: var(--color-white);
   border-radius: var(--radius-lg);
