@@ -1,4 +1,7 @@
 import { Link } from 'react-router-dom';
+import { useRef } from 'react';
+import { gsap } from '../animations/gsap';
+import { useGsapInit } from '../animations/useGsapInit';
 
 const features = [
   {
@@ -160,6 +163,126 @@ const JSON_LD_LOCAL_BUSINESS = JSON.stringify({
 });
 
 export default function Home() {
+  const heroRef = useRef(null);
+
+  /* ── Animations hero au chargement ───────────────────────────────────── */
+  useGsapInit(() => {
+    const hero = heroRef.current;
+    if (!hero) return;
+
+    const tl = gsap.timeline({ defaults: { ease: 'power3.out' } });
+
+    // Badge → titre → description → boutons → image (cascade)
+    tl.from(hero.querySelector('.hero-badge'),   { y: 30, opacity: 0, duration: 0.6 })
+      .from(hero.querySelector('.hero-title'),   { y: 50, opacity: 0, duration: 0.8 }, '-=0.2')
+      .from(hero.querySelector('.hero-desc'),    { y: 30, opacity: 0, duration: 0.6 }, '-=0.4')
+      .from(hero.querySelectorAll('.hero-actions .btn'), {
+        y: 20, opacity: 0, stagger: 0.15, duration: 0.5,
+      }, '-=0.3')
+      .from(hero.querySelector('.hero-car-img'), {
+        clipPath: 'inset(0 100% 0 0)',
+        opacity: 0,
+        duration: 1.1,
+        ease: 'power4.inOut',
+      }, '-=0.6')
+      .from(hero.querySelector('.hero-scroll'), {
+        opacity: 0, y: 10, duration: 0.5,
+      }, '-=0.2');
+  }, []);
+
+  /* ── Animations au scroll : sections ─────────────────────────────────── */
+  useGsapInit(() => {
+    // Chaque section entre en fondu + slide depuis le bas
+    document.querySelectorAll('.section').forEach((section) => {
+      const cards = section.querySelectorAll(
+        '.feature-card, .destination-card, .testimonial-card, .howto-step, .driver-card, .vehicle-card'
+      );
+
+      // Titre de section
+      const title = section.querySelector('.section-title');
+      if (title) {
+        gsap.from(title, {
+          y: 40, opacity: 0, duration: 0.7,
+          scrollTrigger: { trigger: title, start: 'top 85%', once: true },
+        });
+      }
+
+      // Sous-titre
+      const sub = section.querySelector('.section-subtitle');
+      if (sub) {
+        gsap.from(sub, {
+          y: 25, opacity: 0, duration: 0.6, delay: 0.1,
+          scrollTrigger: { trigger: sub, start: 'top 85%', once: true },
+        });
+      }
+
+      // Cartes en stagger
+      if (cards.length) {
+        gsap.from(cards, {
+          y: 50, opacity: 0, stagger: 0.1, duration: 0.7,
+          ease: 'power3.out',
+          scrollTrigger: { trigger: section, start: 'top 75%', once: true },
+        });
+      }
+    });
+
+    // Galerie : reveal clip-path
+    document.querySelectorAll('.gallery-item img').forEach((img, i) => {
+      gsap.from(img, {
+        clipPath: 'inset(0 100% 0 0)',
+        duration: 1.0,
+        delay: i * 0.2,
+        ease: 'power4.inOut',
+        scrollTrigger: { trigger: img, start: 'top 80%', once: true },
+      });
+    });
+
+    // Parallaxe léger sur l'image hero au scroll
+    gsap.to('.hero-car-img', {
+      y: -60,
+      ease: 'none',
+      scrollTrigger: {
+        trigger: '.hero',
+        start: 'top top',
+        end: 'bottom top',
+        scrub: 1.5,
+      },
+    });
+  }, []);
+
+  /* ── Compteurs animés dans la section stats ───────────────────────────── */
+  useGsapInit(() => {
+    const statEls = document.querySelectorAll('.stat-number');
+    const rawData = [
+      { end: 500, suffix: '+' },
+      { end: 4.9, suffix: '★', decimals: 1 },
+      { end: 5,   suffix: ' ans' },
+      { end: 24,  suffix: '/7' },
+    ];
+
+    statEls.forEach((el, i) => {
+      const { end, suffix, decimals } = rawData[i] || {};
+      if (end === undefined) return;
+      const obj = { val: 0 };
+      const original = el.textContent;
+
+      gsap.to(obj, {
+        val: end,
+        duration: 2,
+        ease: 'power2.out',
+        scrollTrigger: { trigger: el, start: 'top 80%', once: true },
+        onUpdate() {
+          el.textContent = decimals
+            ? obj.val.toFixed(decimals) + suffix
+            : Math.round(obj.val) + suffix;
+        },
+        onComplete() {
+          el.textContent = original; // restaure le texte exact d'origine
+        },
+      });
+    });
+  }, []);
+
   return (
     <>
       <script
@@ -167,7 +290,7 @@ export default function Home() {
         dangerouslySetInnerHTML={{ __html: JSON_LD_LOCAL_BUSINESS }}
       />
       {/* ── HERO ──────────────────────────────────────────────────────────────── */}
-      <section className="hero">
+      <section className="hero" ref={heroRef}>
         <div className="container hero-container">
           <div className="hero-content">
             <div className="hero-badge">

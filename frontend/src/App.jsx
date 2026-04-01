@@ -15,6 +15,7 @@ import Dashboard from './pages/Dashboard';
 import MentionsLegales from './pages/MentionsLegales';
 import PolitiqueRGPD from './pages/PolitiqueRGPD';
 import { AuthProvider, useAuth } from './services/auth';
+import CursorEffect from './animations/CursorEffect';
 
 function ProtectedRoute({ children }) {
   const { token } = useAuth();
@@ -35,6 +36,7 @@ export default function App() {
   return (
     <AuthProvider>
       <BrowserRouter>
+        <CursorEffect />
         <ScrollToTop />
         <Routes>
           <Route path="/" element={<AppLayout><Home /></AppLayout>} />
