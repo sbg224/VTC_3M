@@ -1,22 +1,33 @@
 /**
- * Hook React pour encapsuler les animations GSAP
- * Crée un contexte GSAP et le nettoie au démontage du composant
+ * Hook GSAP robuste pour composants React.
+ *
+ * - Crée un contexte GSAP scopé (scope optionnel = ref vers le container DOM)
+ * - ctx.revert() nettoie tweens + ScrollTriggers + listeners GSAP
+ * - Stable sous React StrictMode (double invocation neutralisée)
  */
 import { useEffect, useRef } from 'react';
-import { gsap } from 'gsap';
+import { gsap } from './gsap';
 
-export function useGsapInit(animateFn, deps = []) {
-  const ctx = useRef(null);
+/**
+ * @param {Function} animateFn  – Fonction d'animation à exécuter dans le contexte GSAP
+ * @param {React.RefObject} [scopeRef] – Ref optionnelle pour scoper les querySelectorAll
+ * @param {Array} [deps]        – Dépendances React (comme useEffect)
+ */
+export function useGsapInit(animateFn, scopeRef, deps = []) {
+  const ctxRef = useRef(null);
 
   useEffect(() => {
-    // Crée un contexte scoped pour un nettoyage propre
-    ctx.current = gsap.context(() => {
+    // Scope : élément DOM si fourni, sinon contexte global
+    const scope = scopeRef?.current ?? undefined;
+
+    ctxRef.current = gsap.context(() => {
       animateFn();
-    });
+    }, scope);
 
     return () => {
-      // Nettoyage : annule toutes les animations et ScrollTriggers du contexte
-      ctx.current?.revert();
+      // Revert annule tous tweens + ScrollTriggers créés dans ce contexte
+      ctxRef.current?.revert();
+      ctxRef.current = null;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, deps);
