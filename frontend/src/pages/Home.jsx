@@ -90,9 +90,82 @@ const testimonials = [
   },
 ];
 
+const JSON_LD_LOCAL_BUSINESS = JSON.stringify({
+  '@context': 'https://schema.org',
+  '@graph': [
+    {
+      '@type': 'LocalBusiness',
+      '@id': 'https://3mdrive.fr/#business',
+      'name': '3M Drive',
+      'legalName': '3M SERVICES 31',
+      'description': 'Chauffeur VTC privé à Toulouse. Service premium, ponctuel et discret pour tous vos déplacements en Haute-Garonne (31).',
+      'url': 'https://3mdrive.fr',
+      'telephone': '+33751044407',
+      'email': '3m.services31@gmail.com',
+      'image': 'https://3mdrive.fr/images/logo-3m.jpeg',
+      'logo': 'https://3mdrive.fr/images/logo-3m.jpeg',
+      'priceRange': '€€',
+      'currenciesAccepted': 'EUR',
+      'openingHours': 'Mo-Su 00:00-24:00',
+      'address': {
+        '@type': 'PostalAddress',
+        'streetAddress': '1 rue Virginia Woolf',
+        'addressLocality': 'Toulouse',
+        'postalCode': '31000',
+        'addressRegion': 'Haute-Garonne',
+        'addressCountry': 'FR',
+      },
+      'geo': {
+        '@type': 'GeoCoordinates',
+        'latitude': 43.6047,
+        'longitude': 1.4442,
+      },
+      'areaServed': {
+        '@type': 'GeoCircle',
+        'geoMidpoint': { '@type': 'GeoCoordinates', 'latitude': 43.6047, 'longitude': 1.4442 },
+        'geoRadius': '100000',
+      },
+      'hasOfferCatalog': {
+        '@type': 'OfferCatalog',
+        'name': 'Services VTC 3M Drive',
+        'itemListElement': [
+          { '@type': 'Offer', 'itemOffered': { '@type': 'Service', 'name': 'Transfert aéroport Toulouse-Blagnac' } },
+          { '@type': 'Offer', 'itemOffered': { '@type': 'Service', 'name': 'Transfert gare Matabiau' } },
+          { '@type': 'Offer', 'itemOffered': { '@type': 'Service', 'name': 'Déplacements professionnels Toulouse' } },
+          { '@type': 'Offer', 'itemOffered': { '@type': 'Service', 'name': 'Mise à disposition chauffeur privé' } },
+        ],
+      },
+      'aggregateRating': {
+        '@type': 'AggregateRating',
+        'ratingValue': '4.9',
+        'bestRating': '5',
+        'ratingCount': '47',
+      },
+    },
+    {
+      '@type': 'WebSite',
+      '@id': 'https://3mdrive.fr/#website',
+      'url': 'https://3mdrive.fr',
+      'name': '3M Drive',
+      'description': 'Chauffeur VTC Premium à Toulouse – Haute-Garonne (31)',
+      'inLanguage': 'fr-FR',
+      'publisher': { '@id': 'https://3mdrive.fr/#business' },
+      'potentialAction': {
+        '@type': 'ReserveAction',
+        'target': 'https://3mdrive.fr/reservation',
+        'name': 'Réserver un VTC à Toulouse',
+      },
+    },
+  ],
+});
+
 export default function Home() {
   return (
     <>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON_LD_LOCAL_BUSINESS }}
+      />
       {/* ── HERO ──────────────────────────────────────────────────────────────── */}
       <section className="hero">
         <div className="container hero-container">
@@ -122,8 +195,11 @@ export default function Home() {
           <div className="hero-visual">
             <img
               src="/images/car-hero.jpeg"
-              alt="Mercedes berline premium – 3M Drive"
+              alt="Mercedes berline premium – chauffeur VTC 3M Drive Toulouse"
               className="hero-car-img"
+              width="560"
+              height="373"
+              fetchpriority="high"
             />
           </div>
         </div>
@@ -161,7 +237,7 @@ export default function Home() {
             {/* Présentation chauffeur */}
             <div className="driver-card">
               <div className="driver-avatar">
-                <img src="/images/logo-3m.jpeg" alt="Logo 3M Drive" className="driver-logo-img" />
+                <img src="/images/logo-3m.jpeg" alt="Logo 3M Drive – chauffeur VTC Toulouse" className="driver-logo-img" width="64" height="64" loading="lazy" />
               </div>
               <div className="driver-info">
                 <div className="driver-badge">Chauffeur VTC Agréé · Toulouse (31)</div>
@@ -186,7 +262,7 @@ export default function Home() {
             {/* Présentation véhicule */}
             <div className="vehicle-card">
               <div className="vehicle-icon-block">
-                <img src="/images/car-door.jpeg" alt="Portière berline 3M Drive" className="vehicle-photo" />
+                <img src="/images/car-door.jpeg" alt="Portière berline premium – véhicule VTC 3M Drive Toulouse" className="vehicle-photo" width="600" height="180" loading="lazy" />
               </div>
               <h3>Berline premium</h3>
               <p style={{ color: 'rgba(255,255,255,0.6)', marginBottom: '24px', fontSize: '0.92rem' }}>
@@ -265,11 +341,11 @@ export default function Home() {
           </p>
           <div className="gallery-grid">
             <div className="gallery-item gallery-item--large">
-              <img src="/images/passenger.jpeg" alt="Confort à bord – 3M Drive" />
+              <img src="/images/passenger.jpeg" alt="Passager en berline premium – confort et discrétion à bord, VTC Toulouse" width="800" height="340" loading="lazy" />
               <div className="gallery-caption">Confort &amp; discrétion à bord</div>
             </div>
             <div className="gallery-item">
-              <img src="/images/airport.jpeg" alt="Accueil aéroport Toulouse – 3M Drive" />
+              <img src="/images/airport.jpeg" alt="Chauffeur VTC accueil personnalisé à l'aéroport Toulouse-Blagnac – 3M Drive" width="533" height="340" loading="lazy" />
               <div className="gallery-caption">Accueil personnalisé – Toulouse Airport</div>
             </div>
           </div>

@@ -1,5 +1,16 @@
+const BREADCRUMB_LD = JSON.stringify({
+  '@context': 'https://schema.org',
+  '@type': 'BreadcrumbList',
+  'itemListElement': [
+    { '@type': 'ListItem', 'position': 1, 'name': 'Accueil', 'item': 'https://3mdrive.fr/' },
+    { '@type': 'ListItem', 'position': 2, 'name': 'Politique de confidentialité', 'item': 'https://3mdrive.fr/politique-rgpd' },
+  ],
+});
+
 export default function PolitiqueRGPD() {
   return (
+    <>
+    <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: BREADCRUMB_LD }} />
     <section className="section legal-page">
       <div className="container legal-container">
 
@@ -219,5 +230,6 @@ export default function PolitiqueRGPD() {
         </div>
       </div>
     </section>
+    </>
   );
 }
