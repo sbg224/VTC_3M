@@ -2033,3 +2033,11 @@ textarea.form-control { resize: vertical; min-height: 88px; }
     -webkit-text-fill-color: var(--color-accent);
   }
 }
+
+/* Sécurité anti-flash : la navbar est toujours visible indépendamment de GSAP */
+.navbar,
+.navbar-logo,
+.navbar-nav li {
+  opacity: 1 !important;
+  visibility: visible !important;
+}

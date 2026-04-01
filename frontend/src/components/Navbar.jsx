@@ -8,13 +8,17 @@ export default function Navbar() {
   const [menuOpen, setMenuOpen] = useState(false);
   const navRef = useRef(null);
 
-  // Animation d'entrée : logo + liens en cascade depuis le haut
+  // Animation d'entrée : uniquement les items internes (jamais le nav entier)
+  // On anime en "to" depuis un état CSS pour éviter le flash opacity:0
   useGsapInit(() => {
     const nav = navRef.current;
     if (!nav) return;
-    gsap.from(nav, { y: -60, opacity: 0, duration: 0.6, ease: 'power3.out' });
-    gsap.from(nav.querySelectorAll('.navbar-nav li, .navbar-logo'), {
-      y: -20, opacity: 0, stagger: 0.07, duration: 0.5, delay: 0.3, ease: 'power2.out',
+    const items = nav.querySelectorAll('.navbar-nav li, .navbar-logo');
+    // Positionne les items avant l'animation sans toucher à opacity
+    gsap.set(items, { y: -16 });
+    gsap.to(items, {
+      y: 0, duration: 0.45, stagger: 0.06, ease: 'power2.out', delay: 0.1,
+      clearProps: 'transform', // nettoie will-change après l'animation
     });
   }, []);
   const { token, logout } = useAuth();
