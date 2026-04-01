@@ -216,12 +216,13 @@ export default function Home() {
         });
       }
 
-      // Cartes en stagger
+      // Cartes en stagger — y réduit pour éviter le débordement dans les blocs suivants
       if (cards.length) {
         gsap.from(cards, {
-          y: 50, opacity: 0, stagger: 0.1, duration: 0.7,
+          y: 24, opacity: 0, stagger: 0.08, duration: 0.6,
           ease: 'power3.out',
-          scrollTrigger: { trigger: section, start: 'top 75%', once: true },
+          clearProps: 'transform,opacity',
+          scrollTrigger: { trigger: section, start: 'top 78%', once: true },
         });
       }
     });
@@ -434,16 +435,18 @@ export default function Home() {
           <p className="section-subtitle" style={{ textAlign: 'center' }}>
             Toulouse et toute la Haute-Garonne (31)
           </p>
-          <div className="destinations-grid">
-            {destinations.map((d, i) => (
-              <div key={i} className="destination-card">
-                <div className="destination-icon">{d.icon}</div>
-                <div>
-                  <h3>{d.title}</h3>
-                  <p>{d.desc}</p>
+          <div className="destinations-grid-wrap">
+            <div className="destinations-grid">
+              {destinations.map((d, i) => (
+                <div key={i} className="destination-card">
+                  <div className="destination-icon">{d.icon}</div>
+                  <div>
+                    <h3>{d.title}</h3>
+                    <p>{d.desc}</p>
+                  </div>
                 </div>
-              </div>
-            ))}
+              ))}
+            </div>
           </div>
           <div className="section-cta">
             <Link to="/reservation" className="btn btn-primary btn-lg">

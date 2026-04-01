@@ -1259,7 +1259,13 @@ textarea.form-control { resize: vertical; min-height: 88px; }
 .vehicle-highlight-icon { font-size: 1rem; }
 
 /* ── Destinations ────────────────────────────────────────────────────────────── */
-.destinations-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 16px; margin-top: 36px; }
+/* Wrapper isole visuellement le grid : overflow:hidden bloque tout débordement GSAP */
+.destinations-grid-wrap {
+  overflow: hidden;
+  padding: 4px;          /* préserve les box-shadows des cartes au bord */
+  margin: 32px -4px 0;   /* compense le padding sans décaler le layout */
+}
+.destinations-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 16px; }
 /* Centrage flex robuste pour les boutons CTA de fin de section */
 .section-cta {
   display: flex;
