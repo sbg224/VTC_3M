@@ -22,7 +22,7 @@ if [ ! -f .env ]; then
   echo "⚠️  Fichier .env créé depuis .env.example. Configurez vos paramètres avant la production."
 fi
 
-echo "🚀 Démarrage du backend (port 5000)..."
+echo "🚀 Démarrage du backend (port 5001)..."
 npm run dev &
 BACKEND_PID=$!
 echo "   Backend PID: $BACKEND_PID"
@@ -47,12 +47,12 @@ echo "🚗 VTC 3M démarré avec succès !"
 echo "═══════════════════════════════════════════"
 echo ""
 echo "  Frontend  →  http://localhost:3000"
-echo "  Backend   →  http://localhost:5000"
-echo "  API Santé →  http://localhost:5000/api/health"
+echo "  Backend   →  http://localhost:5001"
+echo "  API Santé →  http://localhost:5001/api/health"
 echo ""
-echo "  Connexion chauffeur :"
-echo "  Email    : admin@vtc3m.fr"
-echo "  Mot de passe : Admin2024!"
+echo "  Connexion admin :"
+echo "  Email    : 3m.services31@gmail.com"
+echo "  Mot de passe : voir backend/.env -> ADMIN_PASSWORD"
 echo ""
 echo "  Appuyez sur Ctrl+C pour arrêter."
 echo "═══════════════════════════════════════════"

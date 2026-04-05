@@ -1,16 +1,19 @@
-import { useState, useRef } from 'react';
-import { Link } from 'react-router-dom';
-import { Calculator, Loader2, AlertTriangle, MapPin, Clock, Euro, Car, CheckCircle, FileText, ClipboardList, User, Lock } from 'lucide-react';
-import { reservationAPI, simulateAPI } from '../services/api';
+import { useState, useRef, useEffect } from 'react';
+import { Link, useParams } from 'react-router-dom';
+import {
+  Calculator, Loader2, AlertTriangle, MapPin, Clock, Euro, Car,
+  CheckCircle, FileText, ClipboardList, User, Lock, Star, Shield,
+} from 'lucide-react';
+import { reservationAPI, simulateAPI, driverPublicAPI } from '../services/api';
 
-// ── Widget de simulation ──────────────────────────────────────────────────────
+// ── Widget simulation (identique à Reservation.jsx) ──────────────────────────
 
 function SimulationWidget({ onReserve }) {
   const [departure, setDeparture] = useState('');
-  const [arrival, setArrival] = useState('');
-  const [loading, setLoading] = useState(false);
-  const [result, setResult] = useState(null);
-  const [error, setError] = useState('');
+  const [arrival,   setArrival]   = useState('');
+  const [loading,   setLoading]   = useState(false);
+  const [result,    setResult]    = useState(null);
+  const [error,     setError]     = useState('');
 
   const canSimulate = departure.trim().length >= 3 && arrival.trim().length >= 3;
 
@@ -48,33 +51,40 @@ function SimulationWidget({ onReserve }) {
       <form onSubmit={handleSimulate} className="simulation-form">
         <div className="simulation-fields">
           <div className="form-group">
-            <label className="form-label flex items-center gap-1"><span style={{ width: 8, height: 8, borderRadius: '50%', background: 'var(--color-success)', display: 'inline-block' }}></span> Adresse de départ</label>
+            <label className="form-label flex items-center gap-1">
+              <span style={{ width: 8, height: 8, borderRadius: '50%', background: 'var(--color-success)', display: 'inline-block' }}></span>
+              Adresse de départ
+            </label>
             <input
-              type="text"
-              className="form-control"
-              value={departure}
+              type="text" className="form-control" value={departure}
               onChange={handleAddressChange(setDeparture)}
               placeholder="Ex : 12 Allée Jean Jaurès, Toulouse"
             />
           </div>
           <div className="simulation-arrow">→</div>
           <div className="form-group">
-            <label className="form-label flex items-center gap-1"><span style={{ width: 8, height: 8, borderRadius: '50%', background: 'var(--color-error)', display: 'inline-block' }}></span> Adresse d'arrivée</label>
+            <label className="form-label flex items-center gap-1">
+              <span style={{ width: 8, height: 8, borderRadius: '50%', background: 'var(--color-error)', display: 'inline-block' }}></span>
+              Adresse d'arrivée
+            </label>
             <input
-              type="text"
-              className="form-control"
-              value={arrival}
+              type="text" className="form-control" value={arrival}
               onChange={handleAddressChange(setArrival)}
               placeholder="Ex : Aéroport Toulouse-Blagnac"
             />
           </div>
         </div>
 
+        {error && (
+          <div className="alert alert-error flex items-center gap-2">
+            <AlertTriangle size={14} strokeWidth={1.5} /> {error}
+          </div>
+        )}
+
         <button
-          type="submit"
-          className="btn btn-primary"
+          type="submit" className="btn btn-primary btn-lg"
+          style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}
           disabled={!canSimulate || loading}
-          style={{ minWidth: '180px' }}
         >
           {loading
             ? <><Loader2 size={15} className="animate-spin" /> Calcul en cours...</>
@@ -82,20 +92,14 @@ function SimulationWidget({ onReserve }) {
         </button>
       </form>
 
-      {error && (
-        <div className="alert alert-error flex items-center gap-2" style={{ marginTop: '16px' }}>
-          <AlertTriangle size={14} strokeWidth={1.5} /> {error}
-        </div>
-      )}
-
       {result && (
         <div className="simulation-result">
-          <div className="simulation-result-grid">
+          <div className="sim-stats">
             <div className="sim-stat">
               <span className="sim-stat-icon"><MapPin size={18} strokeWidth={1.5} /></span>
               <div>
                 <div className="sim-stat-value">{result.distance_km} km</div>
-                <div className="sim-stat-label">Distance</div>
+                <div className="sim-stat-label">Distance estimée</div>
               </div>
             </div>
             <div className="sim-stat">
@@ -138,7 +142,7 @@ function SimulationWidget({ onReserve }) {
   );
 }
 
-// ── Formulaire de réservation ─────────────────────────────────────────────────
+// ── Validation ────────────────────────────────────────────────────────────────
 
 const emptyForm = {
   firstName: '', lastName: '', email: '', phone: '',
@@ -150,13 +154,13 @@ const emptyForm = {
 function validate(form) {
   const errors = {};
   if (!form.firstName.trim()) errors.firstName = 'Le prénom est requis.';
-  if (!form.lastName.trim()) errors.lastName = 'Le nom est requis.';
+  if (!form.lastName.trim())  errors.lastName  = 'Le nom est requis.';
   if (!form.email.trim() || !/\S+@\S+\.\S+/.test(form.email)) errors.email = 'Email invalide.';
   if (!form.phone.trim() || !/^(\+33|0)[1-9](\d{8})$/.test(form.phone.replace(/\s/g, ''))) {
     errors.phone = 'Numéro de téléphone invalide (format français).';
   }
   if (!form.departureAddress.trim()) errors.departureAddress = 'L\'adresse de départ est requise.';
-  if (!form.arrivalAddress.trim()) errors.arrivalAddress = 'L\'adresse d\'arrivée est requise.';
+  if (!form.arrivalAddress.trim())   errors.arrivalAddress   = 'L\'adresse d\'arrivée est requise.';
   if (!form.date) {
     errors.date = 'La date est requise.';
   } else {
@@ -182,17 +186,38 @@ function FormField({ label, required, error, children }) {
   );
 }
 
-export default function Reservation() {
-  const [form, setForm] = useState(emptyForm);
-  const [errors, setErrors] = useState({});
-  const [loading, setLoading] = useState(false);
-  const [success, setSuccess] = useState(null);
+// ── BookingPage ───────────────────────────────────────────────────────────────
+
+export default function BookingPage() {
+  const { slug } = useParams();
+
+  // État chauffeur
+  const [driver,       setDriver]       = useState(null);
+  const [driverLoading, setDriverLoading] = useState(true);
+  const [driverError,  setDriverError]  = useState('');
+
+  // État formulaire
+  const [form,        setForm]        = useState(emptyForm);
+  const [errors,      setErrors]      = useState({});
+  const [loading,     setLoading]     = useState(false);
+  const [success,     setSuccess]     = useState(null);
   const [serverError, setServerError] = useState('');
-  const [simData, setSimData] = useState(null); // { distance_km, estimatedPrice }
+  const [simData,     setSimData]     = useState(null);
 
   const formRef = useRef(null);
   const today = new Date().toISOString().split('T')[0];
 
+  // ── Chargement du profil chauffeur ─────────────────────────────────────────
+  useEffect(() => {
+    if (!slug) return;
+    setDriverLoading(true);
+    driverPublicAPI.getBySlug(slug)
+      .then(({ data }) => setDriver(data.driver))
+      .catch(() => setDriverError('Ce lien de réservation est invalide ou le chauffeur est inactif.'))
+      .finally(() => setDriverLoading(false));
+  }, [slug]);
+
+  // ── Handlers ───────────────────────────────────────────────────────────────
   const handleSimReserve = ({ departure, arrival, result }) => {
     setForm(prev => ({ ...prev, departureAddress: departure, arrivalAddress: arrival }));
     setSimData({ distance_km: result.distance_km, estimatedPrice: result.estimatedPrice });
@@ -224,6 +249,7 @@ export default function Reservation() {
     try {
       const payload = {
         ...form,
+        driverSlug: slug,                // rattache la réservation à CE chauffeur
         ...(simData && {
           distance:       simData.distance_km,
           estimatedPrice: simData.estimatedPrice,
@@ -239,7 +265,39 @@ export default function Reservation() {
     }
   };
 
-  // ── Succès ───────────────────────────────────────────────────────────────────
+  // ── États de chargement / erreur du profil ─────────────────────────────────
+  if (driverLoading) {
+    return (
+      <section className="reservation-page">
+        <div className="container" style={{ minHeight: '60vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <div className="loader"></div>
+        </div>
+      </section>
+    );
+  }
+
+  if (driverError || !driver) {
+    return (
+      <section className="reservation-page">
+        <div className="container">
+          <div className="success-card" style={{ textAlign: 'center', maxWidth: '480px', margin: '80px auto' }}>
+            <div style={{ fontSize: '3rem', marginBottom: '16px' }}>
+              <AlertTriangle size={48} strokeWidth={1.5} style={{ color: 'var(--color-error)', margin: '0 auto' }} />
+            </div>
+            <h2 style={{ fontFamily: 'var(--font-heading)', fontSize: '1.6rem', marginBottom: '12px' }}>
+              Lien invalide
+            </h2>
+            <p style={{ color: 'var(--color-gray)', marginBottom: '24px' }}>
+              {driverError || 'Ce lien de réservation n\'est pas valide ou a expiré.'}
+            </p>
+            <Link to="/" className="btn btn-primary">Retour à l'accueil</Link>
+          </div>
+        </div>
+      </section>
+    );
+  }
+
+  // ── Succès ─────────────────────────────────────────────────────────────────
   if (success) {
     return (
       <section className="reservation-page">
@@ -257,17 +315,20 @@ export default function Reservation() {
                 margin: '16px auto', display: 'inline-block',
               }}>
                 <span style={{ fontSize: '1.15rem', fontWeight: '700', color: '#065f46', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                  <Euro size={16} strokeWidth={1.5} /> {Number(success.simData.estimatedPrice).toFixed(2)} € – {success.simData.distance_km} km
+                  <Euro size={16} strokeWidth={1.5} />
+                  {Number(success.simData.estimatedPrice).toFixed(2)} € – {success.simData.distance_km} km
                 </span>
               </div>
             )}
             <p className="success-desc">
-              Votre réservation a bien été enregistrée. Vous recevrez une confirmation
-              par email avec votre bon de réservation. Notre chauffeur vous contactera
-              pour confirmer votre prise en charge.
+              Votre réservation auprès de <strong>{driver.businessName || driver.name}</strong> a bien été enregistrée.
+              Vous recevrez une confirmation par email avec votre bon de réservation.
+              Votre chauffeur vous contactera pour confirmer votre prise en charge.
             </p>
             {success.reservation?.pdfUrl && (
-              <a href={success.reservation.pdfUrl} download className="btn btn-primary flex items-center gap-2" style={{ marginBottom: '16px', display: 'inline-flex' }}>
+              <a href={success.reservation.pdfUrl} download
+                className="btn btn-primary flex items-center gap-2"
+                style={{ marginBottom: '16px', display: 'inline-flex' }}>
                 <FileText size={15} strokeWidth={1.5} /> Télécharger mon bon de réservation
               </a>
             )}
@@ -287,10 +348,43 @@ export default function Reservation() {
     );
   }
 
-  // ── Page principale ──────────────────────────────────────────────────────────
+  // ── Page principale ────────────────────────────────────────────────────────
   return (
     <section className="reservation-page">
       <div className="container">
+
+        {/* Bandeau identité chauffeur */}
+        <div style={{
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          gap: '14px', marginBottom: '40px',
+          padding: '18px 28px',
+          background: 'rgba(212,175,55,0.07)',
+          border: '1px solid rgba(212,175,55,0.25)',
+          borderRadius: '16px',
+          backdropFilter: 'blur(12px)',
+        }}>
+          <div style={{
+            width: '44px', height: '44px', borderRadius: '50%',
+            background: 'rgba(212,175,55,0.15)', border: '1px solid rgba(212,175,55,0.3)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
+          }}>
+            <Car size={20} strokeWidth={1.5} style={{ color: 'var(--color-accent)' }} />
+          </div>
+          <div>
+            <div style={{ fontSize: '0.75rem', color: 'var(--color-accent)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '2px' }}>
+              Vous réservez avec
+            </div>
+            <div style={{ fontFamily: 'var(--font-heading)', fontWeight: '700', fontSize: '1.1rem', color: 'var(--color-white)' }}>
+              {driver.businessName || driver.name}
+            </div>
+          </div>
+          <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.8rem', color: 'rgba(255,255,255,0.5)' }}>
+            <Star size={12} strokeWidth={1.5} style={{ color: 'var(--color-accent)' }} />
+            Chauffeur VTC certifié
+          </div>
+        </div>
+
+        {/* En-tête page */}
         <div className="reservation-page-header">
           <p className="section-label" style={{ justifyContent: 'center' }}>Réservation en ligne</p>
           <h1 className="section-title">
@@ -301,7 +395,7 @@ export default function Reservation() {
           </p>
         </div>
 
-        {/* Widget de simulation */}
+        {/* Widget simulation */}
         <SimulationWidget onReserve={handleSimReserve} />
 
         {/* Formulaire */}
@@ -312,9 +406,15 @@ export default function Reservation() {
           </div>
 
           <form onSubmit={handleSubmit} className="reservation-form-body" noValidate>
-            {serverError && <div className="alert alert-error flex items-center gap-2"><AlertTriangle size={14} strokeWidth={1.5} /> {serverError}</div>}
+            {serverError && (
+              <div className="alert alert-error flex items-center gap-2">
+                <AlertTriangle size={14} strokeWidth={1.5} /> {serverError}
+              </div>
+            )}
 
-            <div className="form-section-title flex items-center gap-2"><User size={14} strokeWidth={1.5} /> Informations personnelles</div>
+            <div className="form-section-title flex items-center gap-2">
+              <User size={14} strokeWidth={1.5} /> Informations personnelles
+            </div>
             <div className="form-row">
               <FormField label="Prénom" required error={errors.firstName}>
                 <input
@@ -352,7 +452,9 @@ export default function Reservation() {
               </FormField>
             </div>
 
-            <div className="form-section-title flex items-center gap-2" style={{ marginTop: '24px' }}><MapPin size={14} strokeWidth={1.5} /> Détails de la course</div>
+            <div className="form-section-title flex items-center gap-2" style={{ marginTop: '24px' }}>
+              <MapPin size={14} strokeWidth={1.5} /> Détails de la course
+            </div>
             <FormField label="Adresse de départ" required error={errors.departureAddress}>
               <input
                 type="text" name="departureAddress"
@@ -374,10 +476,12 @@ export default function Reservation() {
             {simData && (
               <div className="price-locked-banner">
                 <div className="price-locked-info">
-                  <span className="price-locked-badge flex items-center gap-1"><Lock size={12} strokeWidth={1.5} /> Prix calculé</span>
+                  <span className="price-locked-badge flex items-center gap-1">
+                    <Lock size={12} strokeWidth={1.5} /> Prix calculé
+                  </span>
                   <div className="price-locked-details">
                     <span className="price-locked-amount">
-                      {Number(simData.estimatedPrice).toFixed(2)} ���
+                      {Number(simData.estimatedPrice).toFixed(2)} €
                     </span>
                     <span className="price-locked-meta">
                       pour {simData.distance_km} km
@@ -385,10 +489,8 @@ export default function Reservation() {
                   </div>
                 </div>
                 <button
-                  type="button"
-                  className="price-locked-reset"
-                  onClick={() => setSimData(null)}
-                  title="Effacer le prix estimé"
+                  type="button" className="price-locked-reset"
+                  onClick={() => setSimData(null)} title="Effacer le prix estimé"
                 >
                   × Recalculer
                 </button>
@@ -447,20 +549,22 @@ export default function Reservation() {
               <label htmlFor="gdprConsent">
                 J'accepte que mes données personnelles soient utilisées pour le traitement de ma réservation,
                 conformément à la{' '}
-                <a href="#" style={{ color: 'var(--color-accent)' }}>politique de confidentialité</a>.
+                <Link to="/politique-rgpd" style={{ color: 'var(--color-accent)' }}>
+                  politique de confidentialité
+                </Link>.
                 Ces données ne seront pas partagées avec des tiers. <strong>*</strong>
               </label>
             </div>
             {errors.gdprConsent && (
-              <div className="form-error flex items-center gap-1" style={{ marginLeft: '28px' }}><AlertTriangle size={12} strokeWidth={1.5} /> {errors.gdprConsent}</div>
+              <div className="form-error flex items-center gap-1" style={{ marginLeft: '28px' }}>
+                <AlertTriangle size={12} strokeWidth={1.5} /> {errors.gdprConsent}
+              </div>
             )}
 
             <div style={{ marginTop: '32px' }}>
               <button
-                type="submit"
-                className="btn btn-primary btn-lg"
-                style={{ width: '100%' }}
-                disabled={loading}
+                type="submit" className="btn btn-primary btn-lg"
+                style={{ width: '100%' }} disabled={loading}
               >
                 {loading
                   ? <><Loader2 size={15} className="animate-spin" /> Envoi en cours...</>
@@ -473,7 +577,7 @@ export default function Reservation() {
               background: 'var(--color-light)', borderRadius: 'var(--radius)',
               display: 'flex', gap: '12px', alignItems: 'flex-start',
             }}>
-              <Lock size={18} strokeWidth={1.5} />
+              <Shield size={18} strokeWidth={1.5} style={{ flexShrink: 0, color: 'var(--color-accent)' }} />
               <p style={{ fontSize: '0.82rem', color: 'var(--color-gray)' }}>
                 Vos données sont sécurisées et chiffrées. Un bon de réservation vous sera envoyé
                 par email immédiatement après validation.

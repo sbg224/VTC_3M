@@ -108,11 +108,36 @@ const loginRules = [
   body('email')
     .trim().notEmpty().withMessage('Email requis.')
     .isEmail().withMessage('Email invalide.')
-    .normalizeEmail(),
+    .toLowerCase(),
 
   body('password')
     .notEmpty().withMessage('Mot de passe requis.')
     .isLength({ min: 6, max: 128 }).withMessage('Mot de passe invalide.'),
+];
+
+// ── Règles inscription chauffeur ──────────────────────────────────────────────
+const registerRules = [
+  body('name')
+    .trim().notEmpty().withMessage('Le nom est requis.')
+    .isLength({ min: 2, max: 100 }).withMessage('Nom invalide (2-100 caractères).')
+    .matches(/^[a-zA-ZÀ-ÿ\s\-']+$/).withMessage('Nom : caractères invalides.'),
+
+  body('email')
+    .trim().notEmpty().withMessage('Email requis.')
+    .isEmail().withMessage('Adresse email invalide.')
+    .normalizeEmail()
+    .isLength({ max: 254 }).withMessage('Email trop long.'),
+
+  body('password')
+    .notEmpty().withMessage('Mot de passe requis.')
+    .isLength({ min: 8, max: 128 }).withMessage('Le mot de passe doit faire au moins 8 caractères.')
+    .matches(/[A-Z]/).withMessage('Le mot de passe doit contenir au moins une majuscule.')
+    .matches(/[0-9]/).withMessage('Le mot de passe doit contenir au moins un chiffre.'),
+
+  body('phone')
+    .optional({ checkFalsy: true })
+    .trim()
+    .matches(/^(\+33|0033|0)[1-9](\d{8})$/).withMessage('Numéro de téléphone invalide (format français requis).'),
 ];
 
 // ── Validation UUID ───────────────────────────────────────────────────────────
@@ -121,4 +146,7 @@ const uuidRule = [
     .isUUID().withMessage('Identifiant de réservation invalide.'),
 ];
 
-module.exports = { validate, reservationRules, completeRules, loginRules, uuidRule };
+// Alias pour la compatibilité avec les routes qui importent handleValidation
+const handleValidation = validate;
+
+module.exports = { validate, handleValidation, reservationRules, completeRules, loginRules, registerRules, uuidRule };

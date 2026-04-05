@@ -1,5 +1,6 @@
 const bcrypt = require('bcryptjs');
-const jwt = require('jsonwebtoken');
+const jwt    = require('jsonwebtoken');
+const { Op } = require('sequelize');
 const { Driver } = require('../models');
 const logger = require('../middleware/logger');
 
@@ -34,10 +35,16 @@ exports.login = async (req, res) => {
     res.json({
       token,
       driver: {
-        id: driver.id,
-        name: driver.name,
-        email: driver.email,
-        phone: driver.phone,
+        id:           driver.id,
+        name:         driver.name,
+        email:        driver.email,
+        phone:        driver.phone,
+        role:         driver.role,
+        status:       driver.status,
+        plan:         driver.plan,
+        slug:         driver.slug,
+        trialEndDate: driver.trialEndDate,
+        businessName: driver.businessName,
       },
     });
   } catch (err) {
@@ -47,7 +54,72 @@ exports.login = async (req, res) => {
 };
 
 exports.me = async (req, res) => {
-  res.json({ driver: req.driver });
+  // Recharger le driver depuis la DB pour avoir les champs à jour (statut, trial…)
+  try {
+    const driver = await Driver.findByPk(req.driver.id, {
+      attributes: { exclude: ['password'] },
+    });
+    if (!driver) return res.status(404).json({ error: 'Compte introuvable.' });
+    res.json({ driver });
+  } catch (err) {
+    logger.error(`[ME] Erreur : ${err.message}`);
+    res.status(500).json({ error: 'Erreur serveur.' });
+  }
+};
+
+// ── Inscription chauffeur (auto-onboarding) ───────────────────────────────────
+exports.register = async (req, res) => {
+  try {
+    const { name, email, password, phone } = req.body;
+
+    // Vérifier l'unicité de l'email
+    const existing = await Driver.findOne({ where: { email } });
+    if (existing) {
+      return res.status(409).json({ error: 'Un compte existe déjà avec cet email.' });
+    }
+
+    const hashedPassword = await bcrypt.hash(password, 12);
+
+    // Créer le compte avec essai gratuit de 14 jours
+    const driver = await Driver.create({
+      name,
+      email,
+      password: hashedPassword,
+      phone:    phone || null,
+      role:     'driver',
+      status:   'trial',
+      plan:     'free',
+      subscriptionStatus: 'trialing',
+      // trialEndDate et slug sont générés automatiquement par les hooks beforeCreate
+    });
+
+    const token = jwt.sign(
+      { id: driver.id, email: driver.email },
+      process.env.JWT_SECRET,
+      { expiresIn: process.env.JWT_EXPIRES_IN || '8h' }
+    );
+
+    logger.info(`[REGISTER] Nouveau chauffeur inscrit : ${driver.email} – essai jusqu'au ${driver.trialEndDate}`);
+
+    res.status(201).json({
+      message: 'Compte créé avec succès. Votre essai gratuit de 14 jours est activé.',
+      token,
+      driver: {
+        id:            driver.id,
+        name:          driver.name,
+        email:         driver.email,
+        phone:         driver.phone,
+        role:          driver.role,
+        status:        driver.status,
+        plan:          driver.plan,
+        trialEndDate:  driver.trialEndDate,
+        slug:          driver.slug,
+      },
+    });
+  } catch (err) {
+    logger.error(`[REGISTER] Erreur inscription : ${err.message}`);
+    res.status(500).json({ error: 'Erreur lors de la création du compte.' });
+  }
 };
 
 exports.changePassword = async (req, res) => {

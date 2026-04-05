@@ -1,38 +1,20 @@
 import { Link } from 'react-router-dom';
 import { useEffect, useRef } from 'react';
+import {
+  Users, Clock, ShieldCheck, EyeOff, Receipt, Smartphone,
+  Armchair, Wind, VolumeX, Droplets, Zap, Sparkles, Star,
+  Plane, Train, Building2, Landmark,
+  Phone, Mail, MapPin, Calculator, Car,
+} from 'lucide-react';
 import { gsap, ScrollTrigger } from '../animations/gsap';
 
 const features = [
-  {
-    icon: '🤝',
-    title: 'Service Personnalisé',
-    desc: 'Un chauffeur dédié, toujours le même. Une relation directe, sans intermédiaire.',
-  },
-  {
-    icon: '⏱️',
-    title: 'Ponctualité Garantie',
-    desc: 'Suivi du trafic en temps réel. Présent à l\'heure, à chaque course, sans exception.',
-  },
-  {
-    icon: '🛡️',
-    title: 'Sécurité & Sérénité',
-    desc: 'Chauffeur VTC agréé, véhicule assuré et entretenu. Vous êtes entre de bonnes mains.',
-  },
-  {
-    icon: '🤫',
-    title: 'Discrétion Absolue',
-    desc: 'Confidentialité totale. Idéal pour vos déplacements professionnels ou personnels.',
-  },
-  {
-    icon: '💳',
-    title: 'Facturation Automatique',
-    desc: 'Facture PDF envoyée immédiatement après la course. Parfait pour les notes de frais.',
-  },
-  {
-    icon: '📱',
-    title: 'Réservation Simple',
-    desc: 'Réservez en ligne en moins d\'une minute, de jour comme de nuit.',
-  },
+  { Icon: Users,      title: 'Service Personnalisé',   desc: 'Un chauffeur dédié, toujours le même. Une relation directe, sans intermédiaire.' },
+  { Icon: Clock,      title: 'Ponctualité Garantie',   desc: 'Suivi du trafic en temps réel. Présent à l\'heure, à chaque course, sans exception.' },
+  { Icon: ShieldCheck,title: 'Sécurité & Sérénité',    desc: 'Chauffeur VTC agréé, véhicule assuré et entretenu. Vous êtes entre de bonnes mains.' },
+  { Icon: EyeOff,     title: 'Discrétion Absolue',     desc: 'Confidentialité totale. Idéal pour vos déplacements professionnels ou personnels.' },
+  { Icon: Receipt,    title: 'Facturation Automatique',desc: 'Facture PDF envoyée immédiatement après la course. Parfait pour les notes de frais.' },
+  { Icon: Smartphone, title: 'Réservation Simple',     desc: 'Réservez en ligne en moins d\'une minute, de jour comme de nuit.' },
 ];
 
 const stats = [
@@ -43,35 +25,19 @@ const stats = [
 ];
 
 const vehicleHighlights = [
-  { icon: '🪑', label: 'Sièges cuir premium' },
-  { icon: '❄️', label: 'Climatisation 4 zones' },
-  { icon: '🔇', label: 'Habitacle silencieux' },
-  { icon: '💧', label: 'Eau fraîche à bord' },
-  { icon: '🔌', label: 'Chargeurs USB & sans fil' },
-  { icon: '🧼', label: 'Véhicule nettoyé chaque jour' },
+  { Icon: Armchair, label: 'Sièges cuir premium' },
+  { Icon: Wind,     label: 'Climatisation 4 zones' },
+  { Icon: VolumeX,  label: 'Habitacle silencieux' },
+  { Icon: Droplets, label: 'Eau fraîche à bord' },
+  { Icon: Zap,      label: 'Chargeurs USB & sans fil' },
+  { Icon: Sparkles, label: 'Véhicule nettoyé chaque jour' },
 ];
 
 const destinations = [
-  {
-    icon: '✈️',
-    title: 'Aéroport Toulouse-Blagnac',
-    desc: 'Transfert avec suivi des vols en temps réel. Prise en charge à l\'arrivée.',
-  },
-  {
-    icon: '🚉',
-    title: 'Gare Matabiau',
-    desc: 'Dépose et prise en charge directe sur le parvis, sans stress.',
-  },
-  {
-    icon: '🏢',
-    title: 'Déplacements professionnels',
-    desc: 'Réunions, séminaires, événements d\'entreprise sur Toulouse et sa région.',
-  },
-  {
-    icon: '🌆',
-    title: 'Sorties & événements',
-    desc: 'Restaurants, spectacles, mariages — arrivez en style et repartez l\'esprit léger.',
-  },
+  { Icon: Plane,     title: 'Aéroport Toulouse-Blagnac', desc: 'Transfert avec suivi des vols en temps réel. Prise en charge à l\'arrivée.' },
+  { Icon: Train,     title: 'Gare Matabiau',             desc: 'Dépose et prise en charge directe sur le parvis, sans stress.' },
+  { Icon: Building2, title: 'Déplacements professionnels', desc: 'Réunions, séminaires, événements d\'entreprise sur Toulouse et sa région.' },
+  { Icon: Landmark,  title: 'Sorties & événements',      desc: 'Restaurants, spectacles, mariages — arrivez en style et repartez l\'esprit léger.' },
 ];
 
 const testimonials = [
@@ -287,8 +253,8 @@ export default function Home() {
         <div className="container hero-container">
           <div className="hero-content">
             <div className="hero-badge">
-              <span>⭐</span>
-              <span>VTC Premium – Toulouse & Haute-Garonne (31)</span>
+              <Star size={11} strokeWidth={2} />
+              <span>VTC Premium – Toulouse &amp; Haute-Garonne (31)</span>
             </div>
             <h1 className="hero-title">
               Votre chauffeur<br />
@@ -300,11 +266,11 @@ export default function Home() {
               une expérience irréprochable.
             </p>
             <div className="hero-actions">
-              <Link to="/reservation" className="btn btn-primary btn-lg">
-                🚗 Réserver maintenant
+              <Link to="/reservation" className="btn btn-primary btn-lg flex items-center gap-2" style={{ display: 'inline-flex' }}>
+                <Car size={16} strokeWidth={1.5} /> Réserver maintenant
               </Link>
-              <a href="tel:+33751044407" className="btn btn-outline btn-lg">
-                📞 Appeler directement
+              <a href="tel:+33751044407" className="btn btn-outline btn-lg flex items-center gap-2" style={{ display: 'inline-flex' }}>
+                <Phone size={16} strokeWidth={1.5} /> Appeler directement
               </a>
             </div>
           </div>
@@ -342,10 +308,11 @@ export default function Home() {
       {/* ── VOTRE CHAUFFEUR / VÉHICULE ────────────────────────────────────────── */}
       <section className="section" style={{ background: 'var(--color-light)' }}>
         <div className="container">
+          <p className="section-label" style={{ textAlign: 'center', display: 'block' }}>Notre service</p>
           <h2 className="section-title" style={{ textAlign: 'center' }}>
             Votre chauffeur &amp; <span className="gold-accent">votre véhicule</span>
           </h2>
-          <p className="section-subtitle" style={{ textAlign: 'center' }}>
+          <p className="section-subtitle" style={{ textAlign: 'center', margin: '0 auto var(--space-12)' }}>
             Un service individuel, une relation de confiance directe
           </p>
 
@@ -368,9 +335,9 @@ export default function Home() {
                   à chaque course.
                 </p>
                 <div className="driver-badges">
-                  <span>✅ Carte VTC officielle</span>
-                  <span>✅ Assurance professionnelle</span>
-                  <span>✅ Tenue professionnelle</span>
+                  <span><ShieldCheck size={13} strokeWidth={1.5} style={{ display: 'inline', marginRight: 4 }} /> Carte VTC officielle</span>
+                  <span><ShieldCheck size={13} strokeWidth={1.5} style={{ display: 'inline', marginRight: 4 }} /> Assurance professionnelle</span>
+                  <span><ShieldCheck size={13} strokeWidth={1.5} style={{ display: 'inline', marginRight: 4 }} /> Tenue professionnelle</span>
                 </div>
               </div>
             </div>
@@ -387,7 +354,7 @@ export default function Home() {
               <div className="vehicle-highlights">
                 {vehicleHighlights.map((h, i) => (
                   <div key={i} className="vehicle-highlight-item">
-                    <span className="vehicle-highlight-icon">{h.icon}</span>
+                    <span className="vehicle-highlight-icon"><h.Icon size={16} strokeWidth={1.5} /></span>
                     <span>{h.label}</span>
                   </div>
                 ))}
@@ -400,16 +367,17 @@ export default function Home() {
       {/* ── POURQUOI NOUS CHOISIR ─────────────���───────────────────────────────── */}
       <section className="section features">
         <div className="container">
+          <p className="section-label" style={{ textAlign: 'center', display: 'block' }}>Pourquoi nous</p>
           <h2 className="section-title" style={{ textAlign: 'center' }}>
             Pourquoi choisir <span className="gold-accent">3M Drive</span> ?
           </h2>
-          <p className="section-subtitle" style={{ textAlign: 'center' }}>
+          <p className="section-subtitle" style={{ textAlign: 'center', margin: '0 auto var(--space-12)' }}>
             Un chauffeur privé qui fait vraiment la différence
           </p>
           <div className="features-grid">
             {features.map((f, i) => (
               <div key={i} className="feature-card">
-                <div className="feature-icon">{f.icon}</div>
+                <div className="feature-icon"><f.Icon size={22} strokeWidth={1.5} /></div>
                 <h3>{f.title}</h3>
                 <p>{f.desc}</p>
               </div>
@@ -421,17 +389,18 @@ export default function Home() {
       {/* ── DESTINATIONS ──────────────────────────────────────────────────────── */}
       <section className="section" style={{ background: 'var(--color-light)' }}>
         <div className="container">
+          <p className="section-label" style={{ textAlign: 'center', display: 'block' }}>Où nous intervenons</p>
           <h2 className="section-title" style={{ textAlign: 'center' }}>
             Vos <span className="gold-accent">destinations</span>
           </h2>
-          <p className="section-subtitle" style={{ textAlign: 'center' }}>
+          <p className="section-subtitle" style={{ textAlign: 'center', margin: '0 auto var(--space-12)' }}>
             Toulouse et toute la Haute-Garonne (31)
           </p>
           <div className="destinations-grid-wrap">
             <div className="destinations-grid">
               {destinations.map((d, i) => (
                 <div key={i} className="destination-card">
-                  <div className="destination-icon">{d.icon}</div>
+                  <div className="destination-icon"><d.Icon size={20} strokeWidth={1.5} /></div>
                   <div>
                     <h3>{d.title}</h3>
                     <p>{d.desc}</p>
@@ -441,8 +410,8 @@ export default function Home() {
             </div>
           </div>
           <div className="section-cta">
-            <Link to="/reservation" className="btn btn-primary btn-lg">
-              🧮 Simuler le prix de ma course
+            <Link to="/reservation" className="btn btn-primary btn-lg flex items-center gap-2" style={{ display: 'inline-flex' }}>
+              <Calculator size={16} strokeWidth={1.5} /> Simuler le prix de ma course
             </Link>
           </div>
         </div>
@@ -451,10 +420,11 @@ export default function Home() {
       {/* ── GALERIE EXPÉRIENCE ────────────────────────────────────────────────── */}
       <section className="section gallery-section">
         <div className="container">
+          <p className="section-label" style={{ textAlign: 'center', display: 'block' }}>À bord</p>
           <h2 className="section-title" style={{ textAlign: 'center' }}>
             Une expérience <span className="gold-accent">premium</span>
           </h2>
-          <p className="section-subtitle" style={{ textAlign: 'center' }}>
+          <p className="section-subtitle" style={{ textAlign: 'center', margin: '0 auto var(--space-12)' }}>
             Du confort à bord à l'accueil personnalisé
           </p>
           <div className="gallery-grid">
@@ -473,33 +443,22 @@ export default function Home() {
       {/* ── COMMENT ÇA MARCHE ─────────────────────────────────────────────────── */}
       <section className="section">
         <div className="container">
+          <p className="section-label" style={{ textAlign: 'center', display: 'block' }}>Simple &amp; rapide</p>
           <h2 className="section-title" style={{ textAlign: 'center' }}>
             Comment ça <span className="gold-accent">fonctionne</span> ?
           </h2>
-          <p className="section-subtitle" style={{ textAlign: 'center' }}>
+          <p className="section-subtitle" style={{ textAlign: 'center', margin: '0 auto var(--space-12)' }}>
             Réservez votre course en 3 étapes simples
           </p>
           <div className="howto-grid">
             {[
-              {
-                step: '01', icon: '🧮',
-                title: 'Simulez le prix',
-                desc: 'Entrez vos adresses pour obtenir une estimation instantanée du tarif.',
-              },
-              {
-                step: '02', icon: '📝',
-                title: 'Confirmez la réservation',
-                desc: 'Renseignez vos coordonnées, date et heure. Votre bon de réservation arrive par email.',
-              },
-              {
-                step: '03', icon: '🚗',
-                title: 'Profitez du trajet',
-                desc: 'Votre chauffeur est ponctuel. La facture vous est envoyée automatiquement à l\'arrivée.',
-              },
+              { step: '01', Icon: Calculator, title: 'Simulez le prix',        desc: 'Entrez vos adresses pour obtenir une estimation instantanée du tarif.' },
+              { step: '02', Icon: Receipt,    title: 'Confirmez la réservation', desc: 'Renseignez vos coordonnées, date et heure. Votre bon de réservation arrive par email.' },
+              { step: '03', Icon: Car,        title: 'Profitez du trajet',       desc: 'Votre chauffeur est ponctuel. La facture vous est envoyée automatiquement à l\'arrivée.' },
             ].map((item, i) => (
               <div key={i} className="howto-step">
                 <div className="howto-icon-wrap">
-                  <span className="howto-icon">{item.icon}</span>
+                  <span className="howto-icon"><item.Icon size={22} strokeWidth={1.5} /></span>
                   <div className="howto-step-number">{item.step}</div>
                 </div>
                 <h3>{item.title}</h3>
@@ -508,8 +467,8 @@ export default function Home() {
             ))}
           </div>
           <div className="section-cta">
-            <Link to="/reservation" className="btn btn-primary btn-lg">
-              🚗 Réserver ma course maintenant
+            <Link to="/reservation" className="btn btn-primary btn-lg flex items-center gap-2" style={{ display: 'inline-flex' }}>
+              <Car size={16} strokeWidth={1.5} /> Réserver ma course maintenant
             </Link>
           </div>
         </div>
@@ -518,10 +477,11 @@ export default function Home() {
       {/* ── TÉMOIGNAGES ───────────────────────────────────────────────────────── */}
       <section className="section" style={{ background: 'var(--color-light)' }}>
         <div className="container">
+          <p className="section-label" style={{ textAlign: 'center', display: 'block' }}>Avis clients</p>
           <h2 className="section-title" style={{ textAlign: 'center' }}>
             Ils nous font <span className="gold-accent">confiance</span>
           </h2>
-          <p className="section-subtitle" style={{ textAlign: 'center' }}>
+          <p className="section-subtitle" style={{ textAlign: 'center', margin: '0 auto var(--space-12)' }}>
             Clients satisfaits à Toulouse et en Haute-Garonne
           </p>
           <div className="testimonials-grid">
@@ -542,22 +502,23 @@ export default function Home() {
       {/* ── CONTACT ───────────────────────────────────────────────────────────── */}
       <section className="section" id="contact">
         <div className="container">
+          <p className="section-label" style={{ textAlign: 'center', display: 'block' }}>Disponible 24h/24</p>
           <h2 className="section-title" style={{ textAlign: 'center' }}>
             <span className="gold-accent">Contactez</span>-nous
           </h2>
-          <p className="section-subtitle" style={{ textAlign: 'center' }}>
+          <p className="section-subtitle" style={{ textAlign: 'center', margin: '0 auto var(--space-12)' }}>
             Disponible 7j/7 pour tous vos déplacements à Toulouse
           </p>
           <div className="contact-grid">
             <div>
               {[
-                { icon: '📞', title: 'Téléphone', info: '+33 7 51 04 44 07', sub: 'Disponible 7j/7 – 24h/24' },
-                { icon: '✉️', title: 'Email', info: '3m.services31@gmail.com', sub: 'Réponse rapide garantie' },
-                { icon: '📍', title: 'Zone d\'intervention', info: 'Toulouse & Haute-Garonne (31)', sub: 'Longues distances sur demande' },
-                { icon: '⏰', title: 'Horaires', info: '24h/24 – 7j/7', sub: 'Jours fériés inclus' },
+                { Icon: Phone,  title: 'Téléphone',          info: '+33 7 51 04 44 07',              sub: 'Disponible 7j/7 – 24h/24' },
+                { Icon: Mail,   title: 'Email',              info: '3m.services31@gmail.com',        sub: 'Réponse rapide garantie' },
+                { Icon: MapPin, title: 'Zone d\'intervention', info: 'Toulouse & Haute-Garonne (31)', sub: 'Longues distances sur demande' },
+                { Icon: Clock,  title: 'Horaires',            info: '24h/24 – 7j/7',                 sub: 'Jours fériés inclus' },
               ].map((item, i) => (
                 <div key={i} className="contact-info-item">
-                  <div className="contact-icon">{item.icon}</div>
+                  <div className="contact-icon"><item.Icon size={18} strokeWidth={1.5} /></div>
                   <div>
                     <h4>{item.title}</h4>
                     <p style={{ color: 'var(--color-primary)', fontWeight: '600' }}>{item.info}</p>
@@ -570,7 +531,7 @@ export default function Home() {
               background: 'var(--color-primary)', borderRadius: 'var(--radius-lg)',
               padding: '40px', color: 'white', textAlign: 'center',
             }}>
-              <div style={{ fontSize: '4rem', marginBottom: '20px' }}>🚗</div>
+              <Car size={48} strokeWidth={1} style={{ color: 'var(--color-accent)', margin: '0 auto 20px' }} />
               <h3 style={{
                 fontFamily: 'var(--font-heading)', fontSize: '1.8rem',
                 color: 'var(--color-accent)', marginBottom: '16px',

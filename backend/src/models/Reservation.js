@@ -91,6 +91,15 @@ module.exports = (sequelize) => {
       type: DataTypes.BOOLEAN,
       defaultValue: false,
     },
+
+    // ── Multi-tenant : lien vers le chauffeur propriétaire ────────────────────
+    // Nullable pour compatibilité avec les réservations antérieures
+    chauffeur_id: {
+      type: DataTypes.UUID,
+      allowNull: true,
+      references: { model: 'drivers', key: 'id' },
+      onDelete: 'SET NULL',
+    },
   }, {
     tableName: 'reservations',
     timestamps: true,

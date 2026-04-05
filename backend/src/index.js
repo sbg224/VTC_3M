@@ -52,6 +52,10 @@ app.use(morgan('combined', {
   stream: { write: (msg) => logger.http(msg.trim()) },
 }));
 
+// ── Webhook Stripe : body RAW — DOIT être monté AVANT le parser JSON global ───
+// Le handler interne de la route gère son propre express.raw()
+app.use('/api/billing/webhook', require('./routes/billing'));
+
 // ── Body parsing (limité à 10kb) ──────────────────────────────────────────────
 app.use(express.json({ limit: '10kb' }));
 app.use(express.urlencoded({ extended: true, limit: '10kb' }));
@@ -86,6 +90,11 @@ app.use('/api/auth',         require('./routes/auth'));
 app.use('/api/reservations', require('./routes/reservations'));
 app.use('/api/simulate',     require('./routes/simulate'));
 app.use('/api/stats',        require('./routes/stats'));
+app.use('/api/billing',      require('./routes/billing'));
+app.use('/api/drivers',       require('./routes/drivers'));
+app.use('/api/admin',         require('./routes/admin'));
+app.use('/api/notifications', require('./routes/notifications'));
+app.use('/api/crm',           require('./routes/crm'));
 
 // ── Santé ─────────────────────────────────────────────────────────────────────
 app.get('/api/health', (req, res) => {
@@ -113,7 +122,16 @@ async function start() {
   try {
     await sequelize.authenticate();
     logger.info('[DB] Connexion établie.');
-    await sequelize.sync({ alter: true });
+
+    // sync({ alter: true }) plante sur SQLite si des colonnes UNIQUE sont ajoutées
+    // à une table existante. On tente alter, et si ça échoue on recrée proprement.
+    try {
+      await sequelize.sync({ alter: true });
+    } catch (alterErr) {
+      logger.warn(`[DB] alter échoué (${alterErr.message}) — recréation des tables...`);
+      await sequelize.sync({ force: true });
+      logger.warn('[DB] Tables recréées. Les données précédentes ont été effacées.');
+    }
     logger.info('[DB] Modèles synchronisés.');
 
     // Créer ou mettre à jour le compte admin depuis .env
@@ -130,10 +148,16 @@ async function start() {
     }
     const hashedPass = await bcrypt.hash(adminPass, 12);
     if (admin) {
-      await admin.update({ name: adminName, email: adminEmail, password: hashedPass, phone: adminPhone });
+      await admin.update({
+        name: adminName, email: adminEmail, password: hashedPass, phone: adminPhone,
+        role: 'admin', status: 'active',
+      });
       logger.info(`[AUTH] Compte admin mis à jour : ${adminEmail}`);
     } else {
-      await Driver.create({ name: adminName, email: adminEmail, password: hashedPass, phone: adminPhone });
+      await Driver.create({
+        name: adminName, email: adminEmail, password: hashedPass, phone: adminPhone,
+        role: 'admin', status: 'active',
+      });
       logger.info(`[AUTH] Compte admin créé : ${adminEmail}`);
     }
 

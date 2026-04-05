@@ -1,5 +1,6 @@
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
+import { Car, AlertCircle, Loader2, LogIn, Lock } from 'lucide-react';
 import { authAPI } from '../services/api';
 import { useAuth } from '../services/auth';
 
@@ -37,12 +38,18 @@ export default function Login() {
     <div className="login-page">
       <div className="login-card">
         <div className="login-card-header">
-          <div style={{ fontSize: '3rem', marginBottom: '12px' }}>🚗</div>
+          <div style={{ marginBottom: '12px', display: 'flex', justifyContent: 'center' }}>
+            <Car size={40} strokeWidth={1.5} style={{ color: 'var(--color-accent)' }} />
+          </div>
           <h2>Espace Chauffeur</h2>
           <p>Connectez-vous à votre tableau de bord</p>
         </div>
         <div className="login-card-body">
-          {error && <div className="alert alert-error">🚫 {error}</div>}
+          {error && (
+            <div className="alert alert-error flex items-center gap-2">
+              <AlertCircle size={15} strokeWidth={1.5} /> {error}
+            </div>
+          )}
 
           <form onSubmit={handleSubmit} noValidate>
             <div className="form-group">
@@ -68,20 +75,30 @@ export default function Login() {
 
             <button
               type="submit"
-              className="btn btn-primary"
+              className="btn btn-primary flex items-center justify-center gap-2"
               style={{ width: '100%', marginTop: '8px' }}
               disabled={loading}
             >
-              {loading ? '⏳ Connexion...' : '🔑 Se connecter'}
+              {loading
+                ? <><Loader2 size={15} className="animate-spin" /> Connexion...</>
+                : <><LogIn size={15} strokeWidth={1.5} /> Se connecter</>}
             </button>
           </form>
 
-          <div style={{
-            marginTop: '24px', padding: '12px 16px',
-            background: 'var(--color-light)', borderRadius: 'var(--radius)',
-            fontSize: '0.82rem', color: 'var(--color-gray)', textAlign: 'center',
-          }}>
-            🔒 Accès réservé au chauffeur autorisé
+          <div className="flex items-center justify-center gap-2"
+            style={{
+              marginTop: '24px', padding: '12px 16px',
+              background: 'var(--color-light)', borderRadius: 'var(--radius)',
+              fontSize: '0.82rem', color: 'var(--color-gray)',
+            }}>
+            <Lock size={13} strokeWidth={1.5} /> Accès réservé au chauffeur autorisé
+          </div>
+
+          <div style={{ marginTop: '16px', textAlign: 'center', fontSize: '0.85rem', color: 'var(--color-gray)' }}>
+            Pas encore de compte ?{' '}
+            <Link to="/register" style={{ color: 'var(--color-accent)', fontWeight: '600', textDecoration: 'none' }}>
+              Créer mon espace gratuit
+            </Link>
           </div>
         </div>
       </div>

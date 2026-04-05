@@ -20,8 +20,9 @@ function formatDate(dateStr) {
   });
 }
 
-// ── Email au chauffeur/admin ──────────────────────────────────────────────────
-async function sendAdminNotification(reservation, pdfPath) {
+// ── Email au chauffeur assigné ────────────────────────────────────────────────
+// driverEmail : email du chauffeur qui reçoit la course (pas l'email fixe du .env)
+async function sendAdminNotification(reservation, pdfPath, driverEmail) {
   const transporter = createTransporter();
 
   const html = `
@@ -84,7 +85,7 @@ async function sendAdminNotification(reservation, pdfPath) {
 
   const mailOptions = {
     from: process.env.EMAIL_FROM || 'VTC 3M <noreply@vtc3m.fr>',
-    to: process.env.ADMIN_EMAIL,
+    to: driverEmail || process.env.ADMIN_EMAIL,  // chauffeur ciblé, fallback sur ADMIN_EMAIL
     subject: `🚗 Nouvelle réservation ${reservation.reservationNumber} – ${reservation.firstName} ${reservation.lastName}`,
     html,
     attachments: pdfPath ? [{

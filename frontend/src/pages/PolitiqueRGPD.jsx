@@ -1,3 +1,5 @@
+import { Mail, Phone, MapPin } from 'lucide-react';
+
 const BREADCRUMB_LD = JSON.stringify({
   '@context': 'https://schema.org',
   '@type': 'BreadcrumbList',
@@ -205,19 +207,19 @@ export default function PolitiqueRGPD() {
             <h2 className="legal-h2">Contact — Protection des données</h2>
             <div className="legal-contact-block">
               <div className="legal-contact-item">
-                <span className="legal-contact-icon">✉️</span>
+                <Mail size={16} strokeWidth={1.5} className="legal-contact-icon" />
                 <a href="mailto:3m.services31@gmail.com" className="legal-link">
                   3m.services31@gmail.com
                 </a>
               </div>
               <div className="legal-contact-item">
-                <span className="legal-contact-icon">📞</span>
+                <Phone size={16} strokeWidth={1.5} className="legal-contact-icon" />
                 <a href="tel:+33751044407" className="legal-link">
                   +33 7 51 04 44 07
                 </a>
               </div>
               <div className="legal-contact-item">
-                <span className="legal-contact-icon">📍</span>
+                <MapPin size={16} strokeWidth={1.5} className="legal-contact-icon" />
                 <span>1 rue Virginia Woolf, 31000 Toulouse, France</span>
               </div>
             </div>

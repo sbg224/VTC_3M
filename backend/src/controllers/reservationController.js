@@ -1,7 +1,8 @@
-const { Reservation } = require('../models');
+const { Reservation, Driver } = require('../models');
 const { generateReservationPdf, generateInvoicePdf } = require('../services/pdfService');
 const { sendAdminNotification, sendClientConfirmation, sendInvoiceToClient } = require('../services/emailService');
 const { sendAdminSms } = require('../services/smsService');
+const sseService = require('../services/sseService');
 const logger = require('../middleware/logger');
 const path = require('path');
 const fs = require('fs');
@@ -15,22 +16,65 @@ exports.createReservation = async (req, res) => {
       departureAddress, arrivalAddress,
       date, time, passengers, luggage, comments,
       distance, estimatedPrice,
+      driverSlug,   // optionnel : slug du chauffeur ciblé (URL /book/:slug)
     } = req.body;
+
+    // ── Résoudre le chauffeur destinataire ──────────────────────────────────
+    // Priorité 1 : slug passé explicitement dans le formulaire
+    // Priorité 2 : premier chauffeur actif en DB (compatibilité mono-chauffeur)
+    let targetDriver = null;
+    if (driverSlug) {
+      targetDriver = await Driver.findOne({
+        where: { slug: driverSlug, status: { [Op.in]: ['trial', 'active'] } },
+      });
+      if (!targetDriver) {
+        return res.status(404).json({ error: 'Chauffeur introuvable ou compte inactif.' });
+      }
+    } else {
+      targetDriver = await Driver.findOne({
+        where: { status: { [Op.in]: ['trial', 'active'] } },
+        order: [['createdAt', 'ASC']],
+      });
+    }
+
+    if (!targetDriver) {
+      logger.error('[RESERVATION] Aucun chauffeur actif trouvé pour assigner la réservation.');
+      return res.status(503).json({ error: 'Le service de réservation est temporairement indisponible.' });
+    }
 
     const reservation = await Reservation.create({
       firstName, lastName, email, phone,
       departureAddress, arrivalAddress,
       date, time,
-      passengers: parseInt(passengers) || 1,
-      luggage: parseInt(luggage) || 0,
-      comments: comments || null,
+      passengers:     parseInt(passengers) || 1,
+      luggage:        parseInt(luggage) || 0,
+      comments:       comments || null,
       distance:       distance       ? parseFloat(distance)       : null,
       estimatedPrice: estimatedPrice ? parseFloat(estimatedPrice) : null,
-      gdprConsent: true,
-      status: 'pending',
+      gdprConsent:    true,
+      status:         'pending',
+      chauffeur_id:   targetDriver.id,  // ── Isolation multi-tenant
     });
 
     logger.info(`[RESERVATION] Créée : ${reservation.reservationNumber} – ${email} – IP: ${req.ip}`);
+
+    // Notification SSE temps réel au chauffeur concerné (non-bloquant)
+    const sseCount = sseService.emit(targetDriver.id, 'new_reservation', {
+      id:                reservation.id,
+      reservationNumber: reservation.reservationNumber,
+      firstName:         reservation.firstName,
+      lastName:          reservation.lastName,
+      departureAddress:  reservation.departureAddress,
+      arrivalAddress:    reservation.arrivalAddress,
+      date:              reservation.date,
+      time:              reservation.time,
+      passengers:        reservation.passengers,
+      estimatedPrice:    reservation.estimatedPrice,
+      ts:                Date.now(),
+    });
+    if (sseCount > 0) {
+      logger.info(`[SSE] Notification envoyée à ${targetDriver.email} (${sseCount} onglet(s))`);
+    }
 
     // Génération PDF réservation
     let pdfPath = null;
@@ -46,7 +90,7 @@ exports.createReservation = async (req, res) => {
 
     // Notifications asynchrones – ne bloquent pas la réponse
     Promise.allSettled([
-      sendAdminNotification(reservation, pdfPath),
+      sendAdminNotification(reservation, pdfPath, targetDriver.email),
       sendClientConfirmation(reservation, pdfPath),
       sendAdminSms(reservation),
     ]).then((results) => {
@@ -75,7 +119,7 @@ exports.createReservation = async (req, res) => {
   }
 };
 
-// ── Lister toutes les réservations (protégé) ──────────────────────────────────
+// ── Lister les réservations du chauffeur connecté (protégé) ───────────────────
 exports.getAllReservations = async (req, res) => {
   try {
     const { status, search, page = 1, limit = 20 } = req.query;
@@ -83,7 +127,9 @@ exports.getAllReservations = async (req, res) => {
     // Sécuriser les valeurs numériques
     const safePage  = Math.max(1, parseInt(page)  || 1);
     const safeLimit = Math.min(100, Math.max(1, parseInt(limit) || 20));
-    const where = {};
+
+    // ── Isolation multi-tenant : OBLIGATOIRE ─────────────────────────────────
+    const where = { chauffeur_id: req.driver.id };
 
     if (status && status !== 'all') {
       const validStatuses = ['pending', 'confirmed', 'completed', 'cancelled'];
@@ -91,7 +137,7 @@ exports.getAllReservations = async (req, res) => {
     }
 
     if (search && search.trim()) {
-      const term = search.trim().substring(0, 100); // Limiter la longueur
+      const term = search.trim().substring(0, 100);
       where[Op.or] = [
         { firstName: { [Op.like]: `%${term}%` } },
         { lastName:  { [Op.like]: `%${term}%` } },
@@ -107,7 +153,6 @@ exports.getAllReservations = async (req, res) => {
       order: [['createdAt', 'DESC']],
       limit: safeLimit,
       offset,
-      // Exclure les chemins PDF de la liste (données internes)
       attributes: { exclude: ['pdfReservationPath', 'pdfInvoicePath'] },
     });
 
@@ -123,10 +168,12 @@ exports.getAllReservations = async (req, res) => {
   }
 };
 
-// ── Détail d'une réservation (protégé) ───────────────────────────────────────
+// ── Détail d'une réservation (protégé, isolation chauffeur) ─────────────────
 exports.getReservation = async (req, res) => {
   try {
-    const reservation = await Reservation.findByPk(req.params.id);
+    const reservation = await Reservation.findOne({
+      where: { id: req.params.id, chauffeur_id: req.driver.id },
+    });
     if (!reservation) {
       return res.status(404).json({ error: 'Réservation introuvable.' });
     }
@@ -137,18 +184,20 @@ exports.getReservation = async (req, res) => {
   }
 };
 
-// ── Mettre à jour le statut (protégé) ────────────────────────────────────────
+// ── Mettre à jour le statut (protégé, isolation chauffeur) ───────────────────
 exports.updateStatus = async (req, res) => {
   try {
     const { status } = req.body;
     const validStatuses = ['pending', 'confirmed', 'cancelled'];
 
-    // On ne peut pas passer à "completed" via cette route (utiliser /complete)
     if (!validStatuses.includes(status)) {
       return res.status(400).json({ error: 'Statut invalide. Utilisez /complete pour terminer une course.' });
     }
 
-    const reservation = await Reservation.findByPk(req.params.id);
+    // ── Isolation multi-tenant ───────────────────────────────────────────────
+    const reservation = await Reservation.findOne({
+      where: { id: req.params.id, chauffeur_id: req.driver.id },
+    });
     if (!reservation) {
       return res.status(404).json({ error: 'Réservation introuvable.' });
     }
@@ -169,12 +218,15 @@ exports.updateStatus = async (req, res) => {
   }
 };
 
-// ── Compléter une course → génère et envoie facture (protégé) ─────────────────
+// ── Compléter une course → génère et envoie facture (protégé, isolation chauffeur)
 exports.completeReservation = async (req, res) => {
   try {
     const { price } = req.body;
 
-    const reservation = await Reservation.findByPk(req.params.id);
+    // ── Isolation multi-tenant ───────────────────────────────────────────────
+    const reservation = await Reservation.findOne({
+      where: { id: req.params.id, chauffeur_id: req.driver.id },
+    });
     if (!reservation) {
       return res.status(404).json({ error: 'Réservation introuvable.' });
     }
@@ -229,10 +281,12 @@ exports.completeReservation = async (req, res) => {
   }
 };
 
-// ── Télécharger PDF bon de réservation (protégé) ──────────────────────────────
+// ── Télécharger PDF bon de réservation (protégé, isolation chauffeur) ────────
 exports.downloadReservationPdf = async (req, res) => {
   try {
-    const reservation = await Reservation.findByPk(req.params.id);
+    const reservation = await Reservation.findOne({
+      where: { id: req.params.id, chauffeur_id: req.driver.id },
+    });
     if (!reservation) return res.status(404).json({ error: 'Réservation introuvable.' });
 
     const filename = `reservation-${reservation.reservationNumber}.pdf`;
@@ -252,10 +306,12 @@ exports.downloadReservationPdf = async (req, res) => {
   }
 };
 
-// ── Télécharger PDF facture (protégé) ────────────────────────────────────────
+// ── Télécharger PDF facture (protégé, isolation chauffeur) ───────────────────
 exports.downloadInvoicePdf = async (req, res) => {
   try {
-    const reservation = await Reservation.findByPk(req.params.id);
+    const reservation = await Reservation.findOne({
+      where: { id: req.params.id, chauffeur_id: req.driver.id },
+    });
     if (!reservation) return res.status(404).json({ error: 'Réservation introuvable.' });
 
     if (reservation.status !== 'completed' || !reservation.price) {

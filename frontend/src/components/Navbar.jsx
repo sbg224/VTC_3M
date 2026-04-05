@@ -1,5 +1,7 @@
 import { useState, useRef } from 'react';
 import { Link, NavLink, useNavigate } from 'react-router-dom';
+import { motion } from 'framer-motion';
+import { LogOut } from 'lucide-react';
 import { useAuth } from '../services/auth';
 import { gsap } from '../animations/gsap';
 import { useGsapInit } from '../animations/useGsapInit';
@@ -60,19 +62,15 @@ export default function Navbar() {
                 </NavLink>
               </li>
               <li>
-                <button
+                <motion.button
                   onClick={handleLogout}
-                  style={{
-                    background: 'none', border: '2px solid rgba(255,255,255,0.3)',
-                    color: 'rgba(255,255,255,0.8)', padding: '8px 16px',
-                    borderRadius: '8px', cursor: 'pointer', fontWeight: '500',
-                    fontSize: '0.95rem', transition: 'all 0.25s',
-                  }}
-                  onMouseOver={e => { e.target.style.borderColor = '#ef4444'; e.target.style.color = '#ef4444'; }}
-                  onMouseOut={e => { e.target.style.borderColor = 'rgba(255,255,255,0.3)'; e.target.style.color = 'rgba(255,255,255,0.8)'; }}
+                  className="flex items-center gap-2 border-2 border-white/30 text-white/80 px-4 py-2 rounded-lg font-medium text-[0.9rem] transition-colors duration-200"
+                  whileHover={{ borderColor: '#ef4444', color: '#ef4444' }}
+                  whileTap={{ scale: 0.97 }}
                 >
+                  <LogOut size={15} strokeWidth={1.5} />
                   Déconnexion
-                </button>
+                </motion.button>
               </li>
             </>
           ) : (
@@ -93,9 +91,9 @@ export default function Navbar() {
         </ul>
 
         <button className="navbar-hamburger" onClick={() => setMenuOpen(!menuOpen)} aria-label="Menu">
-          <span style={{ transform: menuOpen ? 'rotate(45deg) translateY(7px)' : 'none', transition: '0.25s' }}></span>
-          <span style={{ opacity: menuOpen ? 0 : 1, transition: '0.25s' }}></span>
-          <span style={{ transform: menuOpen ? 'rotate(-45deg) translateY(-7px)' : 'none', transition: '0.25s' }}></span>
+          <span className={`transition-transform duration-250 ${menuOpen ? 'rotate-45 translate-y-[7px]' : ''}`}></span>
+          <span className={`transition-opacity duration-250 ${menuOpen ? 'opacity-0' : 'opacity-100'}`}></span>
+          <span className={`transition-transform duration-250 ${menuOpen ? '-rotate-45 -translate-y-[7px]' : ''}`}></span>
         </button>
       </div>
     </nav>

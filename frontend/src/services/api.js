@@ -13,7 +13,7 @@ api.interceptors.request.use((config) => {
   return config;
 });
 
-// Gérer les erreurs 401 (session expirée)
+// Gérer les erreurs globales (401 session expirée, 402 abonnement requis)
 api.interceptors.response.use(
   (response) => response,
   (error) => {
@@ -21,6 +21,13 @@ api.interceptors.response.use(
       localStorage.removeItem('vtc_token');
       localStorage.removeItem('vtc_driver');
       window.location.href = '/login';
+    }
+    if (error.response?.status === 402) {
+      // Abonnement expiré → rediriger vers l'onglet abonnement du dashboard
+      const code = error.response?.data?.code;
+      if (code === 'SUBSCRIPTION_REQUIRED' || code === 'ACCOUNT_SUSPENDED') {
+        window.dispatchEvent(new CustomEvent('subscription:required', { detail: { code } }));
+      }
     }
     return Promise.reject(error);
   }
@@ -42,13 +49,35 @@ export const reservationAPI = {
 };
 
 export const authAPI = {
-  login: (data) => api.post('/auth/login', data),
-  me: () => api.get('/auth/me'),
+  login:          (data) => api.post('/auth/login', data),
+  register:       (data) => api.post('/auth/register', data),
+  me:             ()     => api.get('/auth/me'),
   changePassword: (data) => api.put('/auth/change-password', data),
 };
 
 export const statsAPI = {
   get: () => api.get('/stats'),
+};
+
+export const billingAPI = {
+  getInfo: () => api.get('/billing/info'),
+  createCheckout: (interval = 'month') => api.post('/billing/checkout', { interval }),
+  createPortal: () => api.post('/billing/portal'),
+};
+
+export const driverPublicAPI = {
+  getBySlug: (slug) => api.get(`/drivers/public/${slug}`),
+};
+
+export const adminAPI = {
+  getGlobalStats: ()           => api.get('/admin/stats'),
+  getDrivers:     (params)     => api.get('/admin/drivers', { params }),
+  updateStatus:   (id, status) => api.put(`/admin/drivers/${id}/status`, { status }),
+};
+
+export const crmAPI = {
+  getClients: (params) => api.get('/crm/clients', { params }),
+  exportCsv:  (params) => api.get('/crm/clients/export', { params, responseType: 'blob' }),
 };
 
 export function downloadBlob(blob, filename) {

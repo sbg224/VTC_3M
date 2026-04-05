@@ -10,7 +10,9 @@ function ScrollToTop() {
 import Footer from './components/Footer';
 import Home from './pages/Home';
 import Reservation from './pages/Reservation';
+import BookingPage from './pages/BookingPage';
 import Login from './pages/Login';
+import Register from './pages/Register';
 import Dashboard from './pages/Dashboard';
 import MentionsLegales from './pages/MentionsLegales';
 import PolitiqueRGPD from './pages/PolitiqueRGPD';
@@ -24,9 +26,9 @@ function ProtectedRoute({ children }) {
 
 function AppLayout({ children }) {
   return (
-    <div className="app-layout">
+    <div className="flex flex-col min-h-screen">
       <Navbar />
-      <main className="main-content">{children}</main>
+      <main className="flex-1">{children}</main>
       <Footer />
     </div>
   );
@@ -41,7 +43,9 @@ export default function App() {
         <Routes>
           <Route path="/" element={<AppLayout><Home /></AppLayout>} />
           <Route path="/reservation" element={<AppLayout><Reservation /></AppLayout>} />
+          <Route path="/book/:slug" element={<AppLayout><BookingPage /></AppLayout>} />
           <Route path="/login" element={<AppLayout><Login /></AppLayout>} />
+          <Route path="/register" element={<AppLayout><Register /></AppLayout>} />
           <Route path="/mentions-legales" element={<AppLayout><MentionsLegales /></AppLayout>} />
           <Route path="/politique-rgpd" element={<AppLayout><PolitiqueRGPD /></AppLayout>} />
           <Route

@@ -6,29 +6,35 @@ exports.getStats = async (req, res) => {
   try {
     const now = new Date();
     const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
-    const startOfYear = new Date(now.getFullYear(), 0, 1);
+    const startOfYear  = new Date(now.getFullYear(), 0, 1);
+
+    // ── Isolation multi-tenant : toutes les requêtes filtrées par chauffeur ──
+    const driverId = req.driver.id;
+    const baseWhere = { chauffeur_id: driverId };
 
     // Compteurs par statut
     const [total, pending, confirmed, completed, cancelled] = await Promise.all([
-      Reservation.count(),
-      Reservation.count({ where: { status: 'pending' } }),
-      Reservation.count({ where: { status: 'confirmed' } }),
-      Reservation.count({ where: { status: 'completed' } }),
-      Reservation.count({ where: { status: 'cancelled' } }),
+      Reservation.count({ where: { ...baseWhere } }),
+      Reservation.count({ where: { ...baseWhere, status: 'pending' } }),
+      Reservation.count({ where: { ...baseWhere, status: 'confirmed' } }),
+      Reservation.count({ where: { ...baseWhere, status: 'completed' } }),
+      Reservation.count({ where: { ...baseWhere, status: 'cancelled' } }),
     ]);
 
     // Revenus
-    const revenueAllTime = await Reservation.sum('price', { where: { status: 'completed' } });
+    const revenueAllTime = await Reservation.sum('price', {
+      where: { ...baseWhere, status: 'completed' },
+    });
     const revenueMonth = await Reservation.sum('price', {
-      where: { status: 'completed', createdAt: { [Op.gte]: startOfMonth } },
+      where: { ...baseWhere, status: 'completed', createdAt: { [Op.gte]: startOfMonth } },
     });
     const revenueYear = await Reservation.sum('price', {
-      where: { status: 'completed', createdAt: { [Op.gte]: startOfYear } },
+      where: { ...baseWhere, status: 'completed', createdAt: { [Op.gte]: startOfYear } },
     });
 
     // Réservations ce mois
     const reservationsThisMonth = await Reservation.count({
-      where: { createdAt: { [Op.gte]: startOfMonth } },
+      where: { ...baseWhere, createdAt: { [Op.gte]: startOfMonth } },
     });
 
     // Réservations des 7 derniers jours (pour graphique)
@@ -37,18 +43,16 @@ exports.getStats = async (req, res) => {
       const d = new Date();
       d.setDate(d.getDate() - i);
       const start = new Date(d.setHours(0, 0, 0, 0));
-      const end = new Date(d.setHours(23, 59, 59, 999));
+      const end   = new Date(d.setHours(23, 59, 59, 999));
       const count = await Reservation.count({
-        where: { createdAt: { [Op.between]: [start, end] } },
+        where: { ...baseWhere, createdAt: { [Op.between]: [start, end] } },
       });
-      last7Days.push({
-        date: start.toISOString().split('T')[0],
-        count,
-      });
+      last7Days.push({ date: start.toISOString().split('T')[0], count });
     }
 
-    // Dernières réservations
+    // Dernières réservations du chauffeur
     const latestReservations = await Reservation.findAll({
+      where: { ...baseWhere },
       order: [['createdAt', 'DESC']],
       limit: 5,
     });
@@ -59,8 +63,8 @@ exports.getStats = async (req, res) => {
       counts: { total, pending, confirmed, completed, cancelled },
       revenue: {
         allTime: revenueAllTime || 0,
-        month: revenueMonth || 0,
-        year: revenueYear || 0,
+        month:   revenueMonth   || 0,
+        year:    revenueYear    || 0,
       },
       reservationsThisMonth,
       last7Days,
