@@ -14,6 +14,7 @@ exports.getPublicProfile = async (req, res) => {
     const driver = await Driver.findOne({
       where: {
         slug,
+        role:   'driver',                          // jamais l'admin
         status: { [Op.in]: ['trial', 'active'] },
       },
       attributes: ['id', 'name', 'businessName', 'slug'],

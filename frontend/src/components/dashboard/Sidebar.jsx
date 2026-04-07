@@ -14,11 +14,9 @@ export default function Sidebar({ view, setView, driver, onLogout }) {
       {/* Logo */}
       <div className="p-6 border-b border-white/8">
         <div className="flex items-center gap-3">
-          <div className="w-9 h-9 bg-[#D4AF37] rounded-xl flex items-center justify-center text-black font-bold text-sm">
-            3M
-          </div>
+          <img src="/images/logo-3m-new.svg" alt="Logo 3M Drive" style={{ width: 36, height: 36, objectFit: 'contain', flexShrink: 0 }} />
           <div>
-            <div className="text-white font-semibold text-sm">3M Drive</div>
+            <div className="text-[#D4AF37] font-bold text-sm tracking-wide">3M Drive</div>
             <div className="text-white/30 text-xs">Cockpit chauffeur</div>
           </div>
         </div>

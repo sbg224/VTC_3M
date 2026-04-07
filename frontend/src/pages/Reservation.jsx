@@ -1,145 +1,134 @@
-import { useState, useRef } from 'react';
-import { Link } from 'react-router-dom';
-import { Calculator, Loader2, AlertTriangle, MapPin, Clock, Euro, Car, CheckCircle, FileText, ClipboardList, User, Lock } from 'lucide-react';
+import { useState, useRef, useEffect } from 'react';
+import { Link, useLocation } from 'react-router-dom';
+import {
+  Calculator, Loader2, AlertTriangle, MapPin, Clock, Euro, Car,
+  CheckCircle, FileText, ClipboardList, User, Lock, ArrowRight,
+  Phone, Mail, Users, Briefcase, MessageSquare, Navigation,
+  Timer, ShieldCheck, Zap,
+} from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { reservationAPI, simulateAPI } from '../services/api';
 
-// ── Widget de simulation ──────────────────────────────────────────────────────
+// ── Constantes ────────────────────────────────────────────────────────────────
+const DURATIONS = ['1h','2h','3h','4h','5h','6h','8h','10h','12h'];
 
-function SimulationWidget({ onReserve }) {
-  const [departure, setDeparture] = useState('');
-  const [arrival, setArrival] = useState('');
+// ── Animations ────────────────────────────────────────────────────────────────
+const fadeSlide = {
+  initial: { opacity: 0, y: 14 },
+  animate: { opacity: 1, y: 0, transition: { duration: 0.32, ease: 'easeOut' } },
+  exit:    { opacity: 0, y: -10, transition: { duration: 0.2 } },
+};
+
+// ── Composant champ de formulaire ─────────────────────────────────────────────
+function Field({ label, required, error, icon: Icon, children }) {
+  return (
+    <div className="resv-field">
+      <label className="resv-label">
+        {Icon && <Icon size={13} strokeWidth={1.75} />}
+        {label}{required && <span className="resv-required">*</span>}
+      </label>
+      <div className={`resv-input-wrap ${error ? 'has-error' : ''}`}>
+        {children}
+      </div>
+      <AnimatePresence>
+        {error && (
+          <motion.div className="resv-error" {...fadeSlide} key="err">
+            <AlertTriangle size={11} strokeWidth={2} /> {error}
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  );
+}
+
+// ── Widget simulation Transfert ───────────────────────────────────────────────
+function SimWidget({ departure, arrival, onResult, simData, onClear }) {
   const [loading, setLoading] = useState(false);
-  const [result, setResult] = useState(null);
-  const [error, setError] = useState('');
+  const [error, setError]     = useState('');
 
-  const canSimulate = departure.trim().length >= 3 && arrival.trim().length >= 3;
+  const canSim = departure.trim().length >= 3 && arrival.trim().length >= 3;
 
-  const handleSimulate = async (e) => {
-    e.preventDefault();
+  const handleSim = async () => {
     setError('');
-    setResult(null);
     setLoading(true);
     try {
       const { data } = await simulateAPI.calculate(departure.trim(), arrival.trim());
-      setResult(data);
-    } catch (err) {
-      setError(err.response?.data?.error || 'Impossible de calculer l\'itinéraire. Vérifiez les adresses.');
+      onResult(data);
+    } catch {
+      setError('Impossible de calculer l\'itinéraire. Vérifiez les adresses saisies.');
     } finally {
       setLoading(false);
     }
   };
 
-  const handleAddressChange = (setter) => (e) => {
-    setter(e.target.value);
-    setResult(null);
-    setError('');
-  };
-
   return (
-    <div className="simulation-card">
-      <div className="simulation-header">
-        <span className="simulation-icon"><Calculator size={24} strokeWidth={1.5} /></span>
-        <div>
-          <h2>Simuler le prix de votre trajet</h2>
-          <p>Obtenez une estimation instantanée avant de réserver</p>
-        </div>
-      </div>
-
-      <form onSubmit={handleSimulate} className="simulation-form">
-        <div className="simulation-fields">
-          <div className="form-group">
-            <label className="form-label flex items-center gap-1"><span style={{ width: 8, height: 8, borderRadius: '50%', background: 'var(--color-success)', display: 'inline-block' }}></span> Adresse de départ</label>
-            <input
-              type="text"
-              className="form-control"
-              value={departure}
-              onChange={handleAddressChange(setDeparture)}
-              placeholder="Ex : 12 Allée Jean Jaurès, Toulouse"
-            />
-          </div>
-          <div className="simulation-arrow">→</div>
-          <div className="form-group">
-            <label className="form-label flex items-center gap-1"><span style={{ width: 8, height: 8, borderRadius: '50%', background: 'var(--color-error)', display: 'inline-block' }}></span> Adresse d'arrivée</label>
-            <input
-              type="text"
-              className="form-control"
-              value={arrival}
-              onChange={handleAddressChange(setArrival)}
-              placeholder="Ex : Aéroport Toulouse-Blagnac"
-            />
-          </div>
-        </div>
-
-        <button
-          type="submit"
-          className="btn btn-primary"
-          disabled={!canSimulate || loading}
-          style={{ minWidth: '180px' }}
-        >
-          {loading
-            ? <><Loader2 size={15} className="animate-spin" /> Calcul en cours...</>
-            : <><Calculator size={15} strokeWidth={1.5} /> Estimer le prix</>}
-        </button>
-      </form>
-
+    <div className="resv-sim-area">
       {error && (
-        <div className="alert alert-error flex items-center gap-2" style={{ marginTop: '16px' }}>
-          <AlertTriangle size={14} strokeWidth={1.5} /> {error}
+        <div className="resv-alert-error">
+          <AlertTriangle size={13} strokeWidth={1.75} /> {error}
         </div>
       )}
 
-      {result && (
-        <div className="simulation-result">
-          <div className="simulation-result-grid">
-            <div className="sim-stat">
-              <span className="sim-stat-icon"><MapPin size={18} strokeWidth={1.5} /></span>
-              <div>
-                <div className="sim-stat-value">{result.distance_km} km</div>
-                <div className="sim-stat-label">Distance</div>
-              </div>
+      {!simData ? (
+        <button
+          type="button"
+          className="resv-sim-btn"
+          disabled={!canSim || loading}
+          onClick={handleSim}
+        >
+          {loading
+            ? <><Loader2 size={14} className="animate-spin" /> Calcul en cours…</>
+            : <><Calculator size={14} strokeWidth={1.75} /> Estimer le prix du trajet</>
+          }
+        </button>
+      ) : (
+        <motion.div className="resv-price-banner" {...fadeSlide}>
+          <div className="resv-price-inner">
+            <div className="resv-price-badge">
+              <Zap size={12} strokeWidth={2} /> Prix fixe calculé
             </div>
-            <div className="sim-stat">
-              <span className="sim-stat-icon"><Clock size={18} strokeWidth={1.5} /></span>
-              <div>
-                <div className="sim-stat-value">~{result.duration_min} min</div>
-                <div className="sim-stat-label">Durée estimée</div>
-              </div>
+            <div className="resv-price-value">
+              {Number(simData.estimatedPrice).toFixed(2)} €
             </div>
-            <div className="sim-stat sim-stat-price">
-              <span className="sim-stat-icon"><Euro size={18} strokeWidth={1.5} /></span>
-              <div>
-                <div className="sim-stat-value">{Number(result.estimatedPrice).toFixed(2)} €</div>
-                <div className="sim-stat-label">Prix estimé TTC</div>
-              </div>
+            <div className="resv-price-meta">
+              {simData.distance_km} km · ~{simData.duration_min} min · TTC
             </div>
           </div>
-          <div className="simulation-breakdown">
-            {result.breakdown.baseFee > 0 && (
-              <span>Frais fixes : {Number(result.breakdown.baseFee).toFixed(2)} €</span>
-            )}
-            <span>
-              {result.distance_km} km × {result.breakdown.pricePerKm} €/km
-              = {Number(result.breakdown.distanceCharge).toFixed(2)} €
-            </span>
-            {result.breakdown.distanceCharge < result.breakdown.minimumPrice && (
-              <span>Prix minimum appliqué : {Number(result.breakdown.minimumPrice).toFixed(2)} €</span>
-            )}
-          </div>
-          <button
-            className="btn btn-primary btn-lg"
-            style={{ width: '100%', marginTop: '16px' }}
-            onClick={() => onReserve({ departure, arrival, result })}
-          >
-            <Car size={15} strokeWidth={1.5} /> Réserver ce trajet →
+          <button type="button" className="resv-price-reset" onClick={onClear}>
+            Recalculer
           </button>
-        </div>
+        </motion.div>
       )}
     </div>
   );
 }
 
-// ── Formulaire de réservation ─────────────────────────────────────────────────
+// ── Validation ────────────────────────────────────────────────────────────────
+function validate(form, serviceType) {
+  const errors = {};
+  if (!form.firstName.trim()) errors.firstName = 'Le prénom est requis.';
+  if (!form.lastName.trim())  errors.lastName  = 'Le nom est requis.';
+  if (!form.email.trim() || !/\S+@\S+\.\S+/.test(form.email))
+    errors.email = 'Adresse email invalide.';
+  if (!form.phone.trim() || !/^(\+33|0)[1-9](\d{8})$/.test(form.phone.replace(/\s/g, '')))
+    errors.phone = 'Numéro invalide (format français).';
+  if (!form.departureAddress.trim())
+    errors.departureAddress = 'L\'adresse de départ est requise.';
+  if (serviceType === 'transfert' && !form.arrivalAddress.trim())
+    errors.arrivalAddress = 'L\'adresse d\'arrivée est requise.';
+  if (!form.date) {
+    errors.date = 'La date est requise.';
+  } else {
+    const sel = new Date(form.date);
+    const now = new Date(); now.setHours(0,0,0,0);
+    if (sel < now) errors.date = 'La date doit être dans le futur.';
+  }
+  if (!form.time) errors.time = 'L\'heure est requise.';
+  if (!form.gdprConsent) errors.gdprConsent = 'Vous devez accepter la politique de confidentialité.';
+  return errors;
+}
 
+// ── Formulaire principal ──────────────────────────────────────────────────────
 const emptyForm = {
   firstName: '', lastName: '', email: '', phone: '',
   departureAddress: '', arrivalAddress: '',
@@ -147,90 +136,86 @@ const emptyForm = {
   comments: '', gdprConsent: false,
 };
 
-function validate(form) {
-  const errors = {};
-  if (!form.firstName.trim()) errors.firstName = 'Le prénom est requis.';
-  if (!form.lastName.trim()) errors.lastName = 'Le nom est requis.';
-  if (!form.email.trim() || !/\S+@\S+\.\S+/.test(form.email)) errors.email = 'Email invalide.';
-  if (!form.phone.trim() || !/^(\+33|0)[1-9](\d{8})$/.test(form.phone.replace(/\s/g, ''))) {
-    errors.phone = 'Numéro de téléphone invalide (format français).';
-  }
-  if (!form.departureAddress.trim()) errors.departureAddress = 'L\'adresse de départ est requise.';
-  if (!form.arrivalAddress.trim()) errors.arrivalAddress = 'L\'adresse d\'arrivée est requise.';
-  if (!form.date) {
-    errors.date = 'La date est requise.';
-  } else {
-    const selected = new Date(form.date);
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    if (selected < today) errors.date = 'La date doit être dans le futur.';
-  }
-  if (!form.time) errors.time = 'L\'heure est requise.';
-  if (!form.gdprConsent) errors.gdprConsent = 'Vous devez accepter la politique de confidentialité.';
-  return errors;
-}
-
-function FormField({ label, required, error, children }) {
-  return (
-    <div className="form-group">
-      <label className="form-label">
-        {label}{required && <span>*</span>}
-      </label>
-      {children}
-      {error && <div className="form-error flex items-center gap-1"><AlertTriangle size={12} strokeWidth={1.5} /> {error}</div>}
-    </div>
-  );
-}
-
 export default function Reservation() {
-  const [form, setForm] = useState(emptyForm);
-  const [errors, setErrors] = useState({});
-  const [loading, setLoading] = useState(false);
-  const [success, setSuccess] = useState(null);
+  const location = useLocation();
+  const formRef  = useRef(null);
+  const today    = new Date().toISOString().split('T')[0];
+
+  const [serviceType, setServiceType] = useState('transfert');
+  const [duration,    setDuration]    = useState('2h');
+  const [form,        setForm]        = useState(emptyForm);
+  const [errors,      setErrors]      = useState({});
+  const [loading,     setLoading]     = useState(false);
+  const [success,     setSuccess]     = useState(null);
   const [serverError, setServerError] = useState('');
-  const [simData, setSimData] = useState(null); // { distance_km, estimatedPrice }
+  const [simData,     setSimData]     = useState(null);
 
-  const formRef = useRef(null);
-  const today = new Date().toISOString().split('T')[0];
+  // Pré-remplissage depuis le formulaire héro
+  useEffect(() => {
+    const state = location.state;
+    if (!state) return;
+    if (state.departure || state.arrival) {
+      setForm(prev => ({
+        ...prev,
+        departureAddress: state.departure || '',
+        arrivalAddress:   state.arrival   || '',
+      }));
+    }
+    if (state.tab === 'mise_a_disposition') setServiceType('mise_a_disposition');
+    if (state.duration) setDuration(state.duration);
+    if (state.simData)  setSimData(state.simData);
+    setTimeout(() => formRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 150);
+  }, []); // eslint-disable-line
 
-  const handleSimReserve = ({ departure, arrival, result }) => {
-    setForm(prev => ({ ...prev, departureAddress: departure, arrivalAddress: arrival }));
-    setSimData({ distance_km: result.distance_km, estimatedPrice: result.estimatedPrice });
-    setErrors({});
-    setTimeout(() => {
-      formRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    }, 100);
-  };
+  // Réinitialise l'estimation si les adresses changent
+  useEffect(() => { setSimData(null); }, [form.departureAddress, form.arrivalAddress]);
+
+  // Réinitialise le champ arrivée si on passe en mise à disposition
+  useEffect(() => {
+    if (serviceType === 'mise_a_disposition') {
+      setForm(prev => ({ ...prev, arrivalAddress: '' }));
+      setSimData(null);
+      setErrors(prev => ({ ...prev, arrivalAddress: '' }));
+    }
+  }, [serviceType]);
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
     setForm(prev => ({ ...prev, [name]: type === 'checkbox' ? checked : value }));
     if (errors[name]) setErrors(prev => ({ ...prev, [name]: '' }));
-    if ((name === 'departureAddress' || name === 'arrivalAddress') && simData) {
-      setSimData(null);
-    }
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setServerError('');
-    const errs = validate(form);
+    const errs = validate(form, serviceType);
     if (Object.keys(errs).length > 0) {
       setErrors(errs);
-      document.querySelector('.form-error')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      document.querySelector('.has-error')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
       return;
     }
     setLoading(true);
+
+    // Enrichit les commentaires avec le type de service
+    const serviceNote = serviceType === 'mise_a_disposition'
+      ? `[Mise à disposition – ${duration}] `
+      : '[Transfert] ';
+    const enrichedComments = serviceNote + (form.comments || '');
+
     try {
       const payload = {
         ...form,
+        arrivalAddress: serviceType === 'mise_a_disposition'
+          ? `Mise à disposition – ${duration}`
+          : form.arrivalAddress,
+        comments: enrichedComments,
         ...(simData && {
           distance:       simData.distance_km,
           estimatedPrice: simData.estimatedPrice,
         }),
       };
       const { data } = await reservationAPI.create(payload);
-      setSuccess({ ...data, simData });
+      setSuccess({ ...data, simData, serviceType, duration });
       window.scrollTo({ top: 0, behavior: 'smooth' });
     } catch (err) {
       setServerError(err.response?.data?.error || 'Une erreur est survenue. Veuillez réessayer.');
@@ -239,49 +224,54 @@ export default function Reservation() {
     }
   };
 
-  // ── Succès ───────────────────────────────────────────────────────────────────
+  // ── Écran succès ─────────────────────────────────────────────────────────────
   if (success) {
     return (
-      <section className="reservation-page">
+      <section className="resv-page">
         <div className="container">
-          <div className="success-card">
-            <div className="success-icon"><CheckCircle size={48} strokeWidth={1.5} style={{ color: 'var(--color-success)', margin: '0 auto' }} /></div>
-            <h2 style={{ fontFamily: 'var(--font-heading)', fontSize: '1.8rem', marginBottom: '8px' }}>
-              Réservation confirmée !
-            </h2>
-            <div className="success-number">{success.reservation?.reservationNumber}</div>
+          <motion.div className="resv-success" {...fadeSlide}>
+            <div className="resv-success-icon">
+              <CheckCircle size={52} strokeWidth={1.25} />
+            </div>
+            <h2 className="resv-success-title">Réservation confirmée !</h2>
+            <div className="resv-success-number">
+              {success.reservation?.reservationNumber}
+            </div>
+
             {success.simData && (
-              <div style={{
-                background: '#ecfdf5', border: '1px solid #bbf7d0',
-                borderRadius: 'var(--radius)', padding: '12px 24px',
-                margin: '16px auto', display: 'inline-block',
-              }}>
-                <span style={{ fontSize: '1.15rem', fontWeight: '700', color: '#065f46', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                  <Euro size={16} strokeWidth={1.5} /> {Number(success.simData.estimatedPrice).toFixed(2)} € – {success.simData.distance_km} km
-                </span>
+              <div className="resv-success-price">
+                <Euro size={15} strokeWidth={1.75} />
+                {Number(success.simData.estimatedPrice).toFixed(2)} € · {success.simData.distance_km} km
               </div>
             )}
-            <p className="success-desc">
-              Votre réservation a bien été enregistrée. Vous recevrez une confirmation
-              par email avec votre bon de réservation. Notre chauffeur vous contactera
-              pour confirmer votre prise en charge.
+            {success.serviceType === 'mise_a_disposition' && (
+              <div className="resv-success-price">
+                <Timer size={15} strokeWidth={1.75} />
+                Mise à disposition · {success.duration}
+              </div>
+            )}
+
+            <p className="resv-success-desc">
+              Votre bon de réservation vous a été envoyé par email.
+              Notre chauffeur vous contactera pour confirmer la prise en charge.
             </p>
+
             {success.reservation?.pdfUrl && (
-              <a href={success.reservation.pdfUrl} download className="btn btn-primary flex items-center gap-2" style={{ marginBottom: '16px', display: 'inline-flex' }}>
-                <FileText size={15} strokeWidth={1.5} /> Télécharger mon bon de réservation
+              <a href={success.reservation.pdfUrl} download className="btn btn-primary resv-success-dl">
+                <FileText size={15} strokeWidth={1.5} /> Télécharger mon bon
               </a>
             )}
-            <div style={{ display: 'flex', gap: '12px', justifyContent: 'center', flexWrap: 'wrap', marginTop: '16px' }}>
+
+            <div className="resv-success-actions">
               <button
-                className="btn btn-outline"
-                style={{ color: 'var(--color-primary)', borderColor: 'var(--color-gray-light)' }}
+                className="btn btn-ghost"
                 onClick={() => { setSuccess(null); setForm(emptyForm); setSimData(null); }}
               >
                 Nouvelle réservation
               </button>
               <Link to="/" className="btn btn-dark">Retour à l'accueil</Link>
             </div>
-          </div>
+          </motion.div>
         </div>
       </section>
     );
@@ -289,198 +279,290 @@ export default function Reservation() {
 
   // ── Page principale ──────────────────────────────────────────────────────────
   return (
-    <section className="reservation-page">
+    <section className="resv-page">
       <div className="container">
-        <div className="reservation-page-header">
+
+        {/* En-tête */}
+        <div className="resv-header">
           <p className="section-label" style={{ justifyContent: 'center' }}>Réservation en ligne</p>
-          <h1 className="section-title">
-            Réserver une <span className="gold-accent">course</span>
+          <h1 className="section-title" style={{ textAlign: 'center' }}>
+            Réserver votre <span className="gold-accent">course</span>
           </h1>
-          <p className="section-subtitle" style={{ margin: '0 auto var(--space-8)' }}>
-            Simulez le prix de votre trajet, puis réservez en quelques secondes.
+          <p className="section-subtitle" style={{ textAlign: 'center', margin: '0 auto' }}>
+            Transfert ponctuel ou mise à disposition — réservez en quelques secondes.
           </p>
         </div>
 
-        {/* Widget de simulation */}
-        <SimulationWidget onReserve={handleSimReserve} />
+        {/* Sélecteur de service */}
+        <div className="resv-type-selector">
+          <button
+            type="button"
+            className={`resv-type-btn ${serviceType === 'transfert' ? 'active' : ''}`}
+            onClick={() => setServiceType('transfert')}
+          >
+            <Navigation size={18} strokeWidth={1.5} />
+            <span>
+              <strong>Transfert</strong>
+              <small>D'un point A à un point B</small>
+            </span>
+          </button>
+          <button
+            type="button"
+            className={`resv-type-btn ${serviceType === 'mise_a_disposition' ? 'active' : ''}`}
+            onClick={() => setServiceType('mise_a_disposition')}
+          >
+            <Timer size={18} strokeWidth={1.5} />
+            <span>
+              <strong>Mise à disposition</strong>
+              <small>Chauffeur à la durée</small>
+            </span>
+          </button>
+        </div>
 
         {/* Formulaire */}
-        <div className="reservation-form-card" ref={formRef} style={{ marginTop: '32px' }}>
-          <div className="reservation-form-header">
-            <h2 className="flex items-center gap-2"><ClipboardList size={20} strokeWidth={1.5} /> Formulaire de réservation</h2>
-            <p>Tous les champs marqués d'un * sont obligatoires</p>
-          </div>
+        <div className="resv-form-card" ref={formRef}>
 
-          <form onSubmit={handleSubmit} className="reservation-form-body" noValidate>
-            {serverError && <div className="alert alert-error flex items-center gap-2"><AlertTriangle size={14} strokeWidth={1.5} /> {serverError}</div>}
+          <form onSubmit={handleSubmit} noValidate>
 
-            <div className="form-section-title flex items-center gap-2"><User size={14} strokeWidth={1.5} /> Informations personnelles</div>
-            <div className="form-row">
-              <FormField label="Prénom" required error={errors.firstName}>
-                <input
-                  type="text" name="firstName"
-                  className={`form-control ${errors.firstName ? 'error' : ''}`}
-                  value={form.firstName} onChange={handleChange}
-                  placeholder="Jean" autoComplete="given-name"
-                />
-              </FormField>
-              <FormField label="Nom" required error={errors.lastName}>
-                <input
-                  type="text" name="lastName"
-                  className={`form-control ${errors.lastName ? 'error' : ''}`}
-                  value={form.lastName} onChange={handleChange}
-                  placeholder="Dupont" autoComplete="family-name"
-                />
-              </FormField>
-            </div>
-            <div className="form-row">
-              <FormField label="Email" required error={errors.email}>
-                <input
-                  type="email" name="email"
-                  className={`form-control ${errors.email ? 'error' : ''}`}
-                  value={form.email} onChange={handleChange}
-                  placeholder="jean.dupont@email.fr" autoComplete="email"
-                />
-              </FormField>
-              <FormField label="Téléphone" required error={errors.phone}>
-                <input
-                  type="tel" name="phone"
-                  className={`form-control ${errors.phone ? 'error' : ''}`}
-                  value={form.phone} onChange={handleChange}
-                  placeholder="+33 6 12 34 56 78" autoComplete="tel"
-                />
-              </FormField>
-            </div>
-
-            <div className="form-section-title flex items-center gap-2" style={{ marginTop: '24px' }}><MapPin size={14} strokeWidth={1.5} /> Détails de la course</div>
-            <FormField label="Adresse de départ" required error={errors.departureAddress}>
-              <input
-                type="text" name="departureAddress"
-                className={`form-control ${errors.departureAddress ? 'error' : ''}`}
-                value={form.departureAddress} onChange={handleChange}
-                placeholder="Ex : Gare Matabiau, Toulouse"
-              />
-            </FormField>
-            <FormField label="Adresse d'arrivée" required error={errors.arrivalAddress}>
-              <input
-                type="text" name="arrivalAddress"
-                className={`form-control ${errors.arrivalAddress ? 'error' : ''}`}
-                value={form.arrivalAddress} onChange={handleChange}
-                placeholder="Ex : Aéroport Toulouse-Blagnac, Terminal A"
-              />
-            </FormField>
-
-            {/* Bandeau prix verrouillé */}
-            {simData && (
-              <div className="price-locked-banner">
-                <div className="price-locked-info">
-                  <span className="price-locked-badge flex items-center gap-1"><Lock size={12} strokeWidth={1.5} /> Prix calculé</span>
-                  <div className="price-locked-details">
-                    <span className="price-locked-amount">
-                      {Number(simData.estimatedPrice).toFixed(2)} ���
-                    </span>
-                    <span className="price-locked-meta">
-                      pour {simData.distance_km} km
-                    </span>
-                  </div>
-                </div>
-                <button
-                  type="button"
-                  className="price-locked-reset"
-                  onClick={() => setSimData(null)}
-                  title="Effacer le prix estimé"
-                >
-                  × Recalculer
-                </button>
+            {serverError && (
+              <div className="resv-server-error">
+                <AlertTriangle size={14} strokeWidth={1.75} /> {serverError}
               </div>
             )}
 
-            <div className="form-row">
-              <FormField label="Date de prise en charge" required error={errors.date}>
-                <input
-                  type="date" name="date"
-                  className={`form-control ${errors.date ? 'error' : ''}`}
-                  value={form.date} onChange={handleChange} min={today}
-                />
-              </FormField>
-              <FormField label="Heure de prise en charge" required error={errors.time}>
-                <input
-                  type="time" name="time"
-                  className={`form-control ${errors.time ? 'error' : ''}`}
-                  value={form.time} onChange={handleChange}
-                />
-              </FormField>
+            {/* ── Section 1 : Itinéraire ──────────────────────────────────────── */}
+            <div className="resv-section">
+              <div className="resv-section-head">
+                <div className="resv-section-icon"><Navigation size={16} strokeWidth={1.75} /></div>
+                <div>
+                  <h3>Itinéraire</h3>
+                  <p>
+                    {serviceType === 'transfert'
+                      ? 'Renseignez votre point de départ et d\'arrivée'
+                      : 'Renseignez votre point de départ et la durée souhaitée'}
+                  </p>
+                </div>
+              </div>
+
+              <div className="resv-fields">
+                <Field label="Adresse de départ" required error={errors.departureAddress} icon={MapPin}>
+                  <input
+                    type="text" name="departureAddress"
+                    className="resv-input"
+                    value={form.departureAddress} onChange={handleChange}
+                    placeholder="Ex : Gare Matabiau, Toulouse"
+                  />
+                </Field>
+
+                <AnimatePresence mode="wait">
+                  {serviceType === 'transfert' ? (
+                    <motion.div key="arrival" {...fadeSlide}>
+                      <Field label="Adresse d'arrivée" required error={errors.arrivalAddress} icon={MapPin}>
+                        <input
+                          type="text" name="arrivalAddress"
+                          className="resv-input"
+                          value={form.arrivalAddress} onChange={handleChange}
+                          placeholder="Ex : Aéroport Toulouse-Blagnac, Terminal A"
+                        />
+                      </Field>
+                    </motion.div>
+                  ) : (
+                    <motion.div key="duration" {...fadeSlide}>
+                      <Field label="Durée de mise à disposition" required icon={Timer}>
+                        <select
+                          className="resv-input resv-select"
+                          value={duration}
+                          onChange={e => setDuration(e.target.value)}
+                        >
+                          {DURATIONS.map(d => (
+                            <option key={d} value={d}>{d}</option>
+                          ))}
+                        </select>
+                      </Field>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+
+                {/* Simulation (Transfert uniquement) */}
+                <AnimatePresence>
+                  {serviceType === 'transfert' && (
+                    <motion.div key="sim" {...fadeSlide}>
+                      <SimWidget
+                        departure={form.departureAddress}
+                        arrival={form.arrivalAddress}
+                        simData={simData}
+                        onResult={setSimData}
+                        onClear={() => setSimData(null)}
+                      />
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+
+                {/* Info mise à disposition */}
+                <AnimatePresence>
+                  {serviceType === 'mise_a_disposition' && (
+                    <motion.div key="mada-info" {...fadeSlide} className="resv-mada-info">
+                      <Timer size={14} strokeWidth={1.75} />
+                      Le prix final sera établi selon la durée réelle et le kilométrage parcouru.
+                      Un devis vous sera confirmé avant la course.
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </div>
             </div>
 
-            <div className="form-row">
-              <FormField label="Nombre de passagers">
-                <select name="passengers" className="form-control" value={form.passengers} onChange={handleChange}>
-                  {[1,2,3,4,5,6,7].map(n => (
-                    <option key={n} value={n}>{n} passager{n > 1 ? 's' : ''}</option>
-                  ))}
-                </select>
-              </FormField>
-              <FormField label="Nombre de bagages">
-                <select name="luggage" className="form-control" value={form.luggage} onChange={handleChange}>
-                  {[0,1,2,3,4,5,6].map(n => (
-                    <option key={n} value={n}>{n} bagage{n > 1 ? 's' : ''}</option>
-                  ))}
-                </select>
-              </FormField>
+            {/* ── Section 2 : Date & Passagers ───────────────────────────────── */}
+            <div className="resv-section">
+              <div className="resv-section-head">
+                <div className="resv-section-icon"><Clock size={16} strokeWidth={1.75} /></div>
+                <div>
+                  <h3>Date &amp; Passagers</h3>
+                  <p>Quand souhaitez-vous être pris en charge ?</p>
+                </div>
+              </div>
+
+              <div className="resv-fields">
+                <div className="resv-row">
+                  <Field label="Date de prise en charge" required error={errors.date} icon={Clock}>
+                    <input
+                      type="date" name="date"
+                      className="resv-input"
+                      value={form.date} onChange={handleChange} min={today}
+                    />
+                  </Field>
+                  <Field label="Heure de prise en charge" required error={errors.time} icon={Clock}>
+                    <input
+                      type="time" name="time"
+                      className="resv-input"
+                      value={form.time} onChange={handleChange}
+                    />
+                  </Field>
+                </div>
+
+                <div className="resv-row">
+                  <Field label="Passagers" icon={Users}>
+                    <select name="passengers" className="resv-input resv-select" value={form.passengers} onChange={handleChange}>
+                      {[1,2,3,4,5,6,7].map(n => (
+                        <option key={n} value={n}>{n} passager{n > 1 ? 's' : ''}</option>
+                      ))}
+                    </select>
+                  </Field>
+                  <Field label="Bagages" icon={Briefcase}>
+                    <select name="luggage" className="resv-input resv-select" value={form.luggage} onChange={handleChange}>
+                      {[0,1,2,3,4,5,6].map(n => (
+                        <option key={n} value={n}>{n} bagage{n > 1 ? 's' : ''}</option>
+                      ))}
+                    </select>
+                  </Field>
+                </div>
+
+                <Field label="Instructions particulières" icon={MessageSquare}>
+                  <textarea
+                    name="comments"
+                    className="resv-input resv-textarea"
+                    value={form.comments} onChange={handleChange}
+                    rows="3"
+                    placeholder="Numéro de vol, besoin particulier, panneau d'accueil, etc."
+                  />
+                </Field>
+              </div>
             </div>
 
-            <FormField label="Commentaires / Instructions particulières" error={errors.comments}>
-              <textarea
-                name="comments" className="form-control"
-                value={form.comments} onChange={handleChange}
-                rows="3"
-                placeholder="Vol n°, besoin particulier, numéro de quai, etc."
-                style={{ resize: 'vertical', minHeight: '80px' }}
-              />
-            </FormField>
+            {/* ── Section 3 : Coordonnées ─────────────────────────────────────── */}
+            <div className="resv-section">
+              <div className="resv-section-head">
+                <div className="resv-section-icon"><User size={16} strokeWidth={1.75} /></div>
+                <div>
+                  <h3>Vos coordonnées</h3>
+                  <p>Pour vous envoyer la confirmation et le bon de réservation</p>
+                </div>
+              </div>
 
-            <div className="form-check">
-              <input
-                type="checkbox" id="gdprConsent" name="gdprConsent"
-                checked={form.gdprConsent} onChange={handleChange}
-              />
-              <label htmlFor="gdprConsent">
-                J'accepte que mes données personnelles soient utilisées pour le traitement de ma réservation,
-                conformément à la{' '}
-                <a href="#" style={{ color: 'var(--color-accent)' }}>politique de confidentialité</a>.
-                Ces données ne seront pas partagées avec des tiers. <strong>*</strong>
-              </label>
+              <div className="resv-fields">
+                <div className="resv-row">
+                  <Field label="Prénom" required error={errors.firstName} icon={User}>
+                    <input
+                      type="text" name="firstName"
+                      className="resv-input"
+                      value={form.firstName} onChange={handleChange}
+                      placeholder="Jean" autoComplete="given-name"
+                    />
+                  </Field>
+                  <Field label="Nom" required error={errors.lastName} icon={User}>
+                    <input
+                      type="text" name="lastName"
+                      className="resv-input"
+                      value={form.lastName} onChange={handleChange}
+                      placeholder="Dupont" autoComplete="family-name"
+                    />
+                  </Field>
+                </div>
+
+                <div className="resv-row">
+                  <Field label="Email" required error={errors.email} icon={Mail}>
+                    <input
+                      type="email" name="email"
+                      className="resv-input"
+                      value={form.email} onChange={handleChange}
+                      placeholder="jean.dupont@email.fr" autoComplete="email"
+                    />
+                  </Field>
+                  <Field label="Téléphone" required error={errors.phone} icon={Phone}>
+                    <input
+                      type="tel" name="phone"
+                      className="resv-input"
+                      value={form.phone} onChange={handleChange}
+                      placeholder="+33 6 12 34 56 78" autoComplete="tel"
+                    />
+                  </Field>
+                </div>
+
+                {/* RGPD */}
+                <div className={`resv-gdpr ${errors.gdprConsent ? 'has-error' : ''}`}>
+                  <input
+                    type="checkbox" id="gdpr" name="gdprConsent"
+                    checked={form.gdprConsent} onChange={handleChange}
+                  />
+                  <label htmlFor="gdpr">
+                    J'accepte que mes données personnelles soient utilisées pour le traitement
+                    de ma réservation, conformément à la{' '}
+                    <Link to="/politique-confidentialite" style={{ color: 'var(--color-accent)' }}>
+                      politique de confidentialité
+                    </Link>.
+                    Ces données ne seront pas transmises à des tiers. <strong>*</strong>
+                  </label>
+                </div>
+                <AnimatePresence>
+                  {errors.gdprConsent && (
+                    <motion.div className="resv-error" {...fadeSlide} key="gdpr-err">
+                      <AlertTriangle size={11} strokeWidth={2} /> {errors.gdprConsent}
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </div>
             </div>
-            {errors.gdprConsent && (
-              <div className="form-error flex items-center gap-1" style={{ marginLeft: '28px' }}><AlertTriangle size={12} strokeWidth={1.5} /> {errors.gdprConsent}</div>
-            )}
 
-            <div style={{ marginTop: '32px' }}>
+            {/* ── Bouton de soumission ────────────────────────────────────────── */}
+            <div className="resv-submit-area">
               <button
                 type="submit"
-                className="btn btn-primary btn-lg"
-                style={{ width: '100%' }}
+                className="resv-submit-btn"
                 disabled={loading}
               >
                 {loading
-                  ? <><Loader2 size={15} className="animate-spin" /> Envoi en cours...</>
-                  : <><Car size={15} strokeWidth={1.5} /> Confirmer ma réservation</>}
+                  ? <><Loader2 size={16} className="animate-spin" /> Envoi en cours…</>
+                  : <><Car size={16} strokeWidth={1.75} /> Confirmer ma réservation <ArrowRight size={15} strokeWidth={2} /></>
+                }
               </button>
+              <div className="resv-submit-note">
+                <ShieldCheck size={13} strokeWidth={1.75} />
+                Données chiffrées · Confirmation immédiate par email · Aucun paiement en ligne
+              </div>
             </div>
 
-            <div style={{
-              marginTop: '16px', padding: '16px',
-              background: 'var(--color-light)', borderRadius: 'var(--radius)',
-              display: 'flex', gap: '12px', alignItems: 'flex-start',
-            }}>
-              <Lock size={18} strokeWidth={1.5} />
-              <p style={{ fontSize: '0.82rem', color: 'var(--color-gray)' }}>
-                Vos données sont sécurisées et chiffrées. Un bon de réservation vous sera envoyé
-                par email immédiatement après validation.
-              </p>
-            </div>
           </form>
         </div>
+
       </div>
     </section>
   );

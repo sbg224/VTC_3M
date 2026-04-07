@@ -123,16 +123,11 @@ async function start() {
     await sequelize.authenticate();
     logger.info('[DB] Connexion établie.');
 
-    // sync({ alter: true }) plante sur SQLite si des colonnes UNIQUE sont ajoutées
-    // à une table existante. On tente alter, et si ça échoue on recrée proprement.
-    try {
-      await sequelize.sync({ alter: true });
-    } catch (alterErr) {
-      logger.warn(`[DB] alter échoué (${alterErr.message}) — recréation des tables...`);
-      await sequelize.sync({ force: true });
-      logger.warn('[DB] Tables recréées. Les données précédentes ont été effacées.');
-    }
-    logger.info('[DB] Modèles synchronisés.');
+    // sync() sans options = création des tables manquantes uniquement.
+    // JAMAIS de force:true en production — cela efface toutes les données.
+    // Pour des migrations de schéma, utiliser Sequelize-CLI migrations.
+    await sequelize.sync();
+    logger.info('[DB] Modèles synchronisés (tables créées si inexistantes).');
 
     // Créer ou mettre à jour le compte admin depuis .env
     const { Driver } = require('./models');
@@ -149,14 +144,29 @@ async function start() {
     const hashedPass = await bcrypt.hash(adminPass, 12);
     if (admin) {
       await admin.update({
-        name: adminName, email: adminEmail, password: hashedPass, phone: adminPhone,
-        role: 'admin', status: 'active',
+        name:          adminName,
+        email:         adminEmail,
+        password:      hashedPass,
+        phone:         adminPhone,
+        role:          'admin',
+        status:        'active',
+        slug:          null,          // l'admin n'a pas de page publique
+        trialEndDate:  null,          // l'admin n'a pas d'essai
+        plan:          'free',
+        subscriptionStatus: null,
       });
       logger.info(`[AUTH] Compte admin mis à jour : ${adminEmail}`);
     } else {
       await Driver.create({
-        name: adminName, email: adminEmail, password: hashedPass, phone: adminPhone,
-        role: 'admin', status: 'active',
+        name:          adminName,
+        email:         adminEmail,
+        password:      hashedPass,
+        phone:         adminPhone,
+        role:          'admin',
+        status:        'active',
+        slug:          null,
+        trialEndDate:  null,
+        plan:          'free',
       });
       logger.info(`[AUTH] Compte admin créé : ${adminEmail}`);
     }

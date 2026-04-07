@@ -5,7 +5,6 @@ import {
   CheckCircle, Clock, Zap, Shield,
 } from 'lucide-react';
 import { authAPI } from '../services/api';
-import { useAuth } from '../services/auth';
 
 // ── Validation côté client (miroir des règles backend) ────────────────────────
 
@@ -100,8 +99,8 @@ export default function Register() {
   const [loading,    setLoading]    = useState(false);
   const [showPass,   setShowPass]   = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
+  const [registered, setRegistered] = useState(false); // écran de confirmation post-inscription
 
-  const { login } = useAuth();
   const navigate  = useNavigate();
 
   const handleChange = (e) => {
@@ -129,9 +128,9 @@ export default function Register() {
         password: form.password,
         ...(form.phone.trim() && { phone: form.phone.trim() }),
       };
-      const { data } = await authAPI.register(payload);
-      login(data.token, data.driver);
-      navigate('/dashboard');
+      await authAPI.register(payload);
+      // Compte créé en statut "pending" — ne pas connecter, afficher confirmation
+      setRegistered(true);
     } catch (err) {
       setServerError(
         err.response?.data?.error ||
@@ -143,6 +142,41 @@ export default function Register() {
     }
   };
 
+  // ── Écran de confirmation post-inscription ────────────────────────────────
+  if (registered) {
+    return (
+      <div className="login-page">
+        <div className="login-card" style={{ maxWidth: '480px', textAlign: 'center' }}>
+          <div style={{ padding: '40px 32px' }}>
+            <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '20px' }}>
+              <div style={{
+                width: '72px', height: '72px', borderRadius: '50%',
+                background: 'rgba(212,175,55,0.15)', border: '2px solid var(--color-accent)',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+              }}>
+                <Clock size={32} strokeWidth={1.5} style={{ color: 'var(--color-accent)' }} />
+              </div>
+            </div>
+            <h2 style={{ fontWeight: '800', fontSize: '1.4rem', marginBottom: '12px' }}>
+              Demande envoyée !
+            </h2>
+            <p style={{ color: 'var(--color-gray)', lineHeight: '1.6', marginBottom: '24px' }}>
+              Votre compte est en attente de validation par l'administrateur.<br />
+              Vous recevrez un email dès que votre accès sera activé.
+            </p>
+            <button
+              className="btn btn-primary"
+              style={{ width: '100%' }}
+              onClick={() => navigate('/login')}
+            >
+              Retour à la connexion
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="login-page">
       <div className="login-card" style={{ maxWidth: '480px' }}>
@@ -153,7 +187,7 @@ export default function Register() {
             <Car size={40} strokeWidth={1.5} style={{ color: 'var(--color-accent)' }} />
           </div>
           <h2>Créer votre espace chauffeur</h2>
-          <p>14 jours d'essai gratuit — sans carte bancaire</p>
+          <p>Votre demande sera validée par l'administrateur</p>
         </div>
 
         {/* Avantages essai */}

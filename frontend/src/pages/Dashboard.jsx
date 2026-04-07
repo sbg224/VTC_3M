@@ -451,10 +451,11 @@ function CrmView({ showToast }) {
    ───────────────────────────────────────────────────────────────────────────── */
 
 const STATUS_DRIVER_META = {
-  trial:     { label: 'Essai',    color: '#D4AF37' },
-  active:    { label: 'Actif',    color: '#22c55e' },
-  suspended: { label: 'Suspendu', color: '#f97316' },
-  expired:   { label: 'Expiré',   color: '#ef4444' },
+  pending:   { label: 'En attente', color: '#a78bfa' },
+  trial:     { label: 'Essai',      color: '#D4AF37' },
+  active:    { label: 'Actif',      color: '#22c55e' },
+  suspended: { label: 'Suspendu',   color: '#f97316' },
+  expired:   { label: 'Expiré',     color: '#ef4444' },
 };
 
 function AdminView({ showToast }) {
@@ -553,6 +554,7 @@ function AdminView({ showToast }) {
             style={{ maxWidth: '160px', fontSize: '0.875rem' }}
           >
             <option value="all">Tous les statuts</option>
+            <option value="pending">En attente</option>
             <option value="trial">Essai</option>
             <option value="active">Actif</option>
             <option value="suspended">Suspendu</option>
@@ -633,7 +635,25 @@ function AdminView({ showToast }) {
                       </td>
                       <td>
                         <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
-                          {d.status !== 'active' && (
+                          {d.status === 'pending' && (<>
+                            <button
+                              className="btn btn-sm"
+                              style={{ background: '#f0fdf4', color: '#166534', border: '1px solid #bbf7d0', fontSize: '0.75rem', display: 'flex', alignItems: 'center', gap: '4px' }}
+                              onClick={() => handleStatusChange(d.id, 'trial')}
+                              disabled={isActioning}
+                            >
+                              <UserCheck size={12} strokeWidth={1.5} /> Valider
+                            </button>
+                            <button
+                              className="btn btn-sm"
+                              style={{ background: '#fef2f2', color: '#991b1b', border: '1px solid #fecaca', fontSize: '0.75rem', display: 'flex', alignItems: 'center', gap: '4px' }}
+                              onClick={() => handleStatusChange(d.id, 'suspended')}
+                              disabled={isActioning}
+                            >
+                              <Ban size={12} strokeWidth={1.5} /> Rejeter
+                            </button>
+                          </>)}
+                          {d.status !== 'pending' && d.status !== 'active' && (
                             <button
                               className="btn btn-sm"
                               style={{ background: '#f0fdf4', color: '#166534', border: '1px solid #bbf7d0', fontSize: '0.75rem', display: 'flex', alignItems: 'center', gap: '4px' }}
@@ -643,7 +663,7 @@ function AdminView({ showToast }) {
                               <UserCheck size={12} strokeWidth={1.5} /> Activer
                             </button>
                           )}
-                          {d.status !== 'suspended' && (
+                          {d.status !== 'pending' && d.status !== 'suspended' && (
                             <button
                               className="btn btn-sm"
                               style={{ background: '#fff7ed', color: '#c2410c', border: '1px solid #fed7aa', fontSize: '0.75rem', display: 'flex', alignItems: 'center', gap: '4px' }}
@@ -889,6 +909,7 @@ export default function Dashboard() {
   const [completeReservation, setCompleteReservation] = useState(null);
   const [toast, setToast] = useState({ msg: '', type: 'success' });
   const [unreadCount, setUnreadCount] = useState(0);
+  const [pendingDriversCount, setPendingDriversCount] = useState(0);
 
   const showToast = (msg, type = 'success') => {
     setToast({ msg, type });
@@ -926,6 +947,14 @@ export default function Dashboard() {
   useEffect(() => {
     loadStats();
   }, [loadStats]);
+
+  // Charger le nb de chauffeurs en attente (admins uniquement)
+  useEffect(() => {
+    if (driver?.role !== 'admin') return;
+    adminAPI.getGlobalStats()
+      .then(({ data }) => setPendingDriversCount(data.drivers.byStatus.pending || 0))
+      .catch(() => {});
+  }, [driver?.role]);
 
   useEffect(() => {
     if (view === 'reservations' || view === 'dashboard') {
@@ -1020,7 +1049,7 @@ export default function Dashboard() {
             { id: 'clients',      Icon: Users2,          label: 'Clients (CRM)' },
             { id: 'abonnement',   Icon: CreditCard,      label: 'Abonnement' },
             { id: 'settings',     Icon: Settings,        label: 'Paramètres' },
-            ...(driver?.role === 'admin' ? [{ id: 'admin', Icon: Users, label: 'Administration' }] : []),
+            ...(driver?.role === 'admin' ? [{ id: 'admin', Icon: Users, label: 'Administration', badge: pendingDriversCount }] : []),
           ].map(item => (
             <button
               key={item.id}
@@ -1041,6 +1070,17 @@ export default function Dashboard() {
                   padding: '0 5px',
                 }}>
                   {unreadCount > 9 ? '9+' : unreadCount}
+                </span>
+              )}
+              {item.id === 'admin' && item.badge > 0 && (
+                <span style={{
+                  marginLeft: 'auto', minWidth: '20px', height: '20px',
+                  background: '#ef4444', color: '#fff',
+                  borderRadius: '999px', fontSize: '0.7rem', fontWeight: '800',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  padding: '0 5px',
+                }}>
+                  {item.badge > 9 ? '9+' : item.badge}
                 </span>
               )}
             </button>
@@ -1376,6 +1416,49 @@ export default function Dashboard() {
               <h1 className="flex items-center gap-2"><Settings size={22} strokeWidth={1.5} /> Paramètres</h1>
               <p>Gérez votre compte</p>
             </div>
+
+            {/* ── Lien de réservation — chauffeurs uniquement ── */}
+            {driver?.role === 'driver' && driver?.slug && (
+              <div className="card" style={{ marginBottom: '24px' }}>
+                <div className="card-header">
+                  <h3 style={{ fontWeight: '700', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                    <Link size={16} strokeWidth={1.5} /> Mon lien de réservation
+                  </h3>
+                </div>
+                <div className="card-body">
+                  <p style={{ color: 'var(--color-gray)', fontSize: '0.9rem', marginBottom: '16px' }}>
+                    Partagez ce lien à vos clients. Toutes les réservations effectuées via ce lien vous seront directement attribuées.
+                  </p>
+                  <div style={{
+                    display: 'flex', alignItems: 'center', gap: '10px',
+                    background: 'rgba(255,255,255,0.04)', border: '1px solid var(--color-border)',
+                    borderRadius: '8px', padding: '12px 16px',
+                  }}>
+                    <span style={{ flex: 1, fontSize: '0.88rem', color: 'var(--color-white)', wordBreak: 'break-all' }}>
+                      {`${window.location.origin}/book/${driver.slug}`}
+                    </span>
+                    <button
+                      className="btn btn-sm"
+                      style={{ background: 'var(--color-accent)', color: '#000', fontWeight: '700', display: 'flex', alignItems: 'center', gap: '6px', whiteSpace: 'nowrap' }}
+                      onClick={() => {
+                        navigator.clipboard.writeText(`${window.location.origin}/book/${driver.slug}`)
+                          .then(() => showToast('Lien copié dans le presse-papiers !', 'success'));
+                      }}
+                    >
+                      <Copy size={13} strokeWidth={1.5} /> Copier
+                    </button>
+                    <a
+                      href={`/book/${driver.slug}`} target="_blank" rel="noopener noreferrer"
+                      className="btn btn-sm btn-dark"
+                      style={{ display: 'flex', alignItems: 'center', gap: '6px', whiteSpace: 'nowrap' }}
+                    >
+                      <ExternalLink size={13} strokeWidth={1.5} /> Ouvrir
+                    </a>
+                  </div>
+                </div>
+              </div>
+            )}
+
             <ChangePasswordForm showToast={showToast} />
           </>
         )}

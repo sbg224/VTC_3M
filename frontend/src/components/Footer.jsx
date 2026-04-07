@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import { Car, MapPin, Phone, Mail } from 'lucide-react';
+import { MapPin, Phone, Mail } from 'lucide-react';
 
 export default function Footer() {
   const year = new Date().getFullYear();
@@ -10,7 +10,10 @@ export default function Footer() {
       <div className="container" style={{ paddingTop: '3rem' }}>
         <div className="footer-grid">
           <div className="footer-brand">
-            <h3 className="flex items-center gap-2"><Car size={18} strokeWidth={1.5} /> 3M Drive</h3>
+            <div className="flex items-center gap-3 mb-3">
+              <img src="/images/logo-3m-new.svg" alt="Logo 3M Drive" style={{ width: 44, height: 44, objectFit: 'contain' }} />
+              <h3 style={{ margin: 0, color: 'var(--color-accent)' }}>3M Drive</h3>
+            </div>
             <p>
               Votre chauffeur VTC privé à Toulouse. Service premium,
               discret et ponctuel pour tous vos déplacements en Haute-Garonne.

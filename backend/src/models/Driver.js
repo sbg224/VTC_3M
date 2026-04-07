@@ -39,8 +39,8 @@ module.exports = (sequelize) => {
     // suspended: suspendu manuellement par l'admin plateforme
     // expired  : essai ou abonnement expiré, accès bloqué
     status: {
-      type: DataTypes.ENUM('trial', 'active', 'suspended', 'expired'),
-      defaultValue: 'trial',
+      type: DataTypes.ENUM('pending', 'trial', 'active', 'suspended', 'expired'),
+      defaultValue: 'pending',   // ← nouveau défaut : en attente de validation admin
       allowNull: false,
     },
 
@@ -98,8 +98,12 @@ module.exports = (sequelize) => {
     ],
   });
 
-  // ── Hook : générer le slug automatiquement à la création ─────────────────
+  // ── Hook : générer le slug et le trial uniquement pour les chauffeurs ──────
+  // L'admin n'a pas de slug (pas de page publique) ni de trialEndDate (pas d'abonnement)
   Driver.beforeCreate(async (driver) => {
+    if (driver.role === 'admin') return; // ← admin ignoré totalement
+
+    // Slug unique pour le chauffeur
     if (!driver.slug && driver.name) {
       const base = driver.name
         .toLowerCase()
@@ -107,7 +111,6 @@ module.exports = (sequelize) => {
         .replace(/[^a-z0-9]+/g, '-')
         .replace(/^-|-$/g, '')
         .substring(0, 40);
-      // S'assurer de l'unicité en ajoutant un suffix si nécessaire
       let slug = base;
       let n = 1;
       while (await Driver.findOne({ where: { slug } })) {
@@ -116,8 +119,10 @@ module.exports = (sequelize) => {
       }
       driver.slug = slug;
     }
-    // Essai gratuit de 14 jours à compter de la création
-    if (!driver.trialEndDate) {
+
+    // Essai gratuit de 14 jours — uniquement si le compte n'est pas en attente de validation
+    // (le trial commence quand l'admin valide le chauffeur, pas à l'inscription)
+    if (!driver.trialEndDate && driver.status !== 'pending') {
       const d = new Date();
       d.setDate(d.getDate() + 14);
       driver.trialEndDate = d;

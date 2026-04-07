@@ -1,6 +1,6 @@
 const { Reservation, Driver } = require('../models');
 const { generateReservationPdf, generateInvoicePdf } = require('../services/pdfService');
-const { sendAdminNotification, sendClientConfirmation, sendInvoiceToClient } = require('../services/emailService');
+const { sendAdminNotification, sendClientConfirmation, sendInvoiceToClient, sendInvoiceToDriver } = require('../services/emailService');
 const { sendAdminSms } = require('../services/smsService');
 const sseService = require('../services/sseService');
 const logger = require('../middleware/logger');
@@ -31,8 +31,9 @@ exports.createReservation = async (req, res) => {
         return res.status(404).json({ error: 'Chauffeur introuvable ou compte inactif.' });
       }
     } else {
+      // Fallback : premier chauffeur actif — exclure les admins (role:'driver' obligatoire)
       targetDriver = await Driver.findOne({
-        where: { status: { [Op.in]: ['trial', 'active'] } },
+        where: { role: 'driver', status: { [Op.in]: ['trial', 'active'] } },
         order: [['createdAt', 'ASC']],
       });
     }
@@ -263,11 +264,21 @@ exports.completeReservation = async (req, res) => {
       logger.error(`[PDF] Erreur génération facture ${reservation.reservationNumber} : ${pdfErr.message}`);
     }
 
-    // Envoi email facture au client (une seule fois)
+    // Envoi email facture — client ET chauffeur (non-bloquant)
     if (invoiceFilePath) {
-      sendInvoiceToClient(reservation, invoiceFilePath)
-        .then(() => logger.info(`[NOTIF] Facture envoyée au client – ${reservation.reservationNumber}`))
-        .catch((err) => logger.error(`[NOTIF] Erreur envoi facture client ${reservation.reservationNumber} : ${err.message}`));
+      Promise.allSettled([
+        sendInvoiceToClient(reservation, invoiceFilePath),
+        sendInvoiceToDriver(reservation, invoiceFilePath, req.driver.email),
+      ]).then((results) => {
+        const labels = ['facture-client', 'facture-chauffeur'];
+        results.forEach((r, i) => {
+          if (r.status === 'fulfilled') {
+            logger.info(`[NOTIF] ${labels[i]} envoyée – ${reservation.reservationNumber}`);
+          } else {
+            logger.error(`[NOTIF] ${labels[i]} échouée – ${reservation.reservationNumber} : ${r.reason?.message}`);
+          }
+        });
+      });
     }
 
     res.json({

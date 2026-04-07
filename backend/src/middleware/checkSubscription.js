@@ -17,8 +17,23 @@ module.exports = async (req, res, next) => {
   try {
     // Recharger le driver depuis la DB pour avoir les données à jour
     const driver = await Driver.findByPk(req.driver.id);
+
+    // ── L'admin plateforme bypass totalement la vérification d'abonnement ────
+    if (driver && driver.role === 'admin') {
+      req.driver = driver;
+      return next();
+    }
     if (!driver) {
       return res.status(401).json({ error: 'Compte introuvable.' });
+    }
+
+    // ── Compte en attente de validation admin ────────────────────────────────
+    if (driver.status === 'pending') {
+      logger.warn(`[SUBSCRIPTION] Accès refusé – compte en attente de validation : ${driver.email}`);
+      return res.status(403).json({
+        error: 'Votre compte est en attente de validation par l\'administrateur. Vous recevrez un email dès que votre accès sera activé.',
+        code: 'ACCOUNT_PENDING',
+      });
     }
 
     // ── Compte suspendu par l'admin plateforme ───────────────────────────────

@@ -59,6 +59,10 @@ export const statsAPI = {
   get: () => api.get('/stats'),
 };
 
+export const publicStatsAPI = {
+  get: () => api.get('/stats/public'),
+};
+
 export const billingAPI = {
   getInfo: () => api.get('/billing/info'),
   createCheckout: (interval = 'month') => api.post('/billing/checkout', { interval }),
@@ -70,9 +74,13 @@ export const driverPublicAPI = {
 };
 
 export const adminAPI = {
-  getGlobalStats: ()           => api.get('/admin/stats'),
-  getDrivers:     (params)     => api.get('/admin/drivers', { params }),
-  updateStatus:   (id, status) => api.put(`/admin/drivers/${id}/status`, { status }),
+  getGlobalStats:      ()                    => api.get('/admin/stats'),
+  getDrivers:          (params)              => api.get('/admin/drivers', { params }),
+  getDriverDetail:     (id)                  => api.get(`/admin/drivers/${id}`),
+  updateStatus:        (id, status)          => api.put(`/admin/drivers/${id}/status`, { status }),
+  notifyDriver:        (id, subject, message)=> api.post(`/admin/drivers/${id}/notify`, { subject, message }),
+  getAllReservations:  (params)              => api.get('/admin/reservations', { params }),
+  getGlobalClients:    (params)              => api.get('/admin/clients', { params }),
 };
 
 export const crmAPI = {

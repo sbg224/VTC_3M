@@ -1,7 +1,7 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { Link, NavLink, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { LogOut } from 'lucide-react';
+import { LogOut, Sun, Moon } from 'lucide-react';
 import { useAuth } from '../services/auth';
 import { gsap } from '../animations/gsap';
 import { useGsapInit } from '../animations/useGsapInit';
@@ -9,6 +9,18 @@ import { useGsapInit } from '../animations/useGsapInit';
 export default function Navbar() {
   const [menuOpen, setMenuOpen] = useState(false);
   const navRef = useRef(null);
+
+  // ── Gestion du thème clair / sombre ────────────────────────────────────────
+  const [theme, setTheme] = useState(() => {
+    return localStorage.getItem('vtc_theme') || 'dark';
+  });
+
+  useEffect(() => {
+    document.documentElement.setAttribute('data-theme', theme);
+    localStorage.setItem('vtc_theme', theme);
+  }, [theme]);
+
+  const toggleTheme = () => setTheme(t => t === 'dark' ? 'light' : 'dark');
 
   // Animation d'entrée : uniquement les items internes (jamais le nav entier)
   // On anime en "to" depuis un état CSS pour éviter le flash opacity:0
@@ -35,8 +47,12 @@ export default function Navbar() {
   return (
     <nav className="navbar" ref={navRef}>
       <div className="container navbar-inner">
-        <Link to="/" className="navbar-logo" onClick={() => setMenuOpen(false)}>
-          <div className="navbar-logo-icon">3M</div>
+        <Link to="/" className="navbar-logo" onClick={() => { setMenuOpen(false); window.scrollTo({ top: 0, behavior: 'smooth' }); }}>
+          <img
+            src="/images/logo-3m-new.svg"
+            alt="3M Drive – VTC Premium Toulouse"
+            style={{ height: '40px', width: '40px', objectFit: 'contain', flexShrink: 0 }}
+          />
           3M Drive
         </Link>
 
@@ -89,6 +105,21 @@ export default function Navbar() {
             </>
           )}
         </ul>
+
+        {/* Toggle thème clair / sombre */}
+        <motion.button
+          className="theme-toggle"
+          onClick={toggleTheme}
+          aria-label={theme === 'dark' ? 'Passer en mode clair' : 'Passer en mode sombre'}
+          whileHover={{ scale: 1.08 }}
+          whileTap={{ scale: 0.92 }}
+          title={theme === 'dark' ? 'Mode clair' : 'Mode sombre'}
+        >
+          {theme === 'dark'
+            ? <Sun size={16} strokeWidth={1.75} />
+            : <Moon size={16} strokeWidth={1.75} />
+          }
+        </motion.button>
 
         <button className="navbar-hamburger" onClick={() => setMenuOpen(!menuOpen)} aria-label="Menu">
           <span className={`transition-transform duration-250 ${menuOpen ? 'rotate-45 translate-y-[7px]' : ''}`}></span>

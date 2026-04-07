@@ -212,4 +212,65 @@ async function sendInvoiceToClient(reservation, pdfPath) {
   }
 }
 
-module.exports = { sendAdminNotification, sendClientConfirmation, sendInvoiceToClient };
+// ── Email de facture au chauffeur ─────────────────────────────────────────────
+async function sendInvoiceToDriver(reservation, pdfPath, driverEmail) {
+  if (!driverEmail) {
+    logger.warn(`[EMAIL] sendInvoiceToDriver : aucun email chauffeur fourni pour ${reservation.reservationNumber}`);
+    return;
+  }
+  const transporter = createTransporter();
+
+  const mailOptions = {
+    from: process.env.EMAIL_FROM || 'VTC 3M <noreply@vtc3m.fr>',
+    to: driverEmail,
+    subject: `🧾 Facture émise – ${reservation.reservationNumber} (${reservation.firstName} ${reservation.lastName})`,
+    html: `
+      <div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto">
+        <div style="background:#1a1a2e;color:#c9a227;padding:30px;text-align:center">
+          <h1 style="margin:0">🚗 ${process.env.COMPANY_NAME || 'VTC 3M'}</h1>
+          <p style="color:#aaa;margin:5px 0 0">Récapitulatif de course</p>
+        </div>
+        <div style="padding:30px">
+          <p>Bonjour,</p>
+          <p>La course <strong>${reservation.reservationNumber}</strong> a été validée et la facture a été émise.</p>
+          <table style="width:100%;border-collapse:collapse;margin:16px 0">
+            <tr style="background:#f9f9f9">
+              <td style="padding:8px 12px;font-size:12px;color:#888;text-transform:uppercase">Client</td>
+              <td style="padding:8px 12px;font-weight:bold">${reservation.firstName} ${reservation.lastName}</td>
+            </tr>
+            <tr>
+              <td style="padding:8px 12px;font-size:12px;color:#888;text-transform:uppercase">Date</td>
+              <td style="padding:8px 12px;font-weight:bold">${formatDate(reservation.date)} à ${reservation.time}</td>
+            </tr>
+            <tr style="background:#f9f9f9">
+              <td style="padding:8px 12px;font-size:12px;color:#888;text-transform:uppercase">Trajet</td>
+              <td style="padding:8px 12px;font-weight:bold">${reservation.departureAddress} → ${reservation.arrivalAddress}</td>
+            </tr>
+            <tr>
+              <td style="padding:8px 12px;font-size:12px;color:#888;text-transform:uppercase">Montant facturé</td>
+              <td style="padding:8px 12px;font-weight:bold;color:#c9a227">${Number(reservation.price).toFixed(2)} €</td>
+            </tr>
+          </table>
+          <p style="color:#666;font-size:13px">La facture PDF est jointe à cet email pour vos archives.</p>
+        </div>
+        <div style="background:#1a1a2e;color:#888;padding:20px;text-align:center;font-size:12px">
+          ${process.env.COMPANY_NAME || 'VTC 3M'} – Tableau de bord disponible sur votre espace chauffeur
+        </div>
+      </div>
+    `,
+    attachments: pdfPath ? [{
+      filename: `facture-${reservation.reservationNumber}.pdf`,
+      path: pdfPath,
+    }] : [],
+  };
+
+  try {
+    const info = await transporter.sendMail(mailOptions);
+    logger.info(`[EMAIL] Facture envoyée au chauffeur (${driverEmail}) : ${info.messageId}`);
+    return info;
+  } catch (err) {
+    logger.error(`[EMAIL] Erreur envoi facture chauffeur ${reservation.reservationNumber} : ${err.message}`);
+  }
+}
+
+module.exports = { sendAdminNotification, sendClientConfirmation, sendInvoiceToClient, sendInvoiceToDriver };

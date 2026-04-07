@@ -87,10 +87,10 @@ exports.register = async (req, res) => {
       password: hashedPassword,
       phone:    phone || null,
       role:     'driver',
-      status:   'trial',
+      status:   'pending',   // ← en attente de validation par l'admin
       plan:     'free',
       subscriptionStatus: 'trialing',
-      // trialEndDate et slug sont générés automatiquement par les hooks beforeCreate
+      // slug généré automatiquement par beforeCreate ; trialEndDate défini à la validation
     });
 
     const token = jwt.sign(

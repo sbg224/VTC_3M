@@ -22,6 +22,12 @@ if [ ! -f .env ]; then
   echo "⚠️  Fichier .env créé depuis .env.example. Configurez vos paramètres avant la production."
 fi
 
+# Libérer les ports si déjà occupés
+echo "🔧 Libération des ports 5001 et 3000..."
+lsof -ti :5001 | xargs kill -9 2>/dev/null
+lsof -ti :3000 | xargs kill -9 2>/dev/null
+sleep 1
+
 echo "🚀 Démarrage du backend (port 5001)..."
 npm run dev &
 BACKEND_PID=$!

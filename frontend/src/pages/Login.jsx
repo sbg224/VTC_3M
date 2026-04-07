@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Car, AlertCircle, Loader2, LogIn, Lock } from 'lucide-react';
+import { AlertCircle, Loader2, LogIn, Lock } from 'lucide-react';
 import { authAPI } from '../services/api';
 import { useAuth } from '../services/auth';
 
@@ -26,7 +26,7 @@ export default function Login() {
     try {
       const { data } = await authAPI.login(form);
       login(data.token, data.driver);
-      navigate('/dashboard');
+      navigate(data.driver?.role === 'admin' ? '/admin' : '/dashboard');
     } catch (err) {
       setError(err.response?.data?.error || 'Identifiants incorrects.');
     } finally {
@@ -39,7 +39,7 @@ export default function Login() {
       <div className="login-card">
         <div className="login-card-header">
           <div style={{ marginBottom: '12px', display: 'flex', justifyContent: 'center' }}>
-            <Car size={40} strokeWidth={1.5} style={{ color: 'var(--color-accent)' }} />
+            <img src="/images/logo-3m-new.svg" alt="Logo 3M Drive" style={{ width: 64, height: 64, objectFit: 'contain' }} />
           </div>
           <h2>Espace Chauffeur</h2>
           <p>Connectez-vous à votre tableau de bord</p>

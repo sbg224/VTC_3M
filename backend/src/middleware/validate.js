@@ -125,7 +125,7 @@ const registerRules = [
   body('email')
     .trim().notEmpty().withMessage('Email requis.')
     .isEmail().withMessage('Adresse email invalide.')
-    .normalizeEmail()
+    .toLowerCase()
     .isLength({ max: 254 }).withMessage('Email trop long.'),
 
   body('password')

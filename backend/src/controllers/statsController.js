@@ -2,6 +2,49 @@ const { Reservation } = require('../models');
 const { Op, fn, col, literal } = require('sequelize');
 const logger = require('../middleware/logger');
 
+// ── Stats publiques (pas de JWT) — homepage ───────────────────────────────────
+exports.getPublicStats = async (req, res) => {
+  try {
+    // Courses effectuées (toutes complétées, tous chauffeurs confondus)
+    const totalCompleted = await Reservation.count({
+      where: { status: 'completed' },
+    });
+
+    // Clients uniques (emails distincts sur toutes les réservations)
+    const uniqueClientsResult = await Reservation.count({
+      distinct: true,
+      col: 'email',
+    });
+
+    // Première réservation en base → calcul ancienneté
+    const firstReservation = await Reservation.findOne({
+      order: [['createdAt', 'ASC']],
+      attributes: ['createdAt'],
+    });
+
+    let yearsActive = 0;
+    if (firstReservation) {
+      const startYear  = new Date(firstReservation.createdAt).getFullYear();
+      const currentYear = new Date().getFullYear();
+      yearsActive = currentYear - startYear;
+    }
+    // Fallback : variable d'environnement COMPANY_START_YEAR
+    if (yearsActive === 0 && process.env.COMPANY_START_YEAR) {
+      yearsActive = new Date().getFullYear() - parseInt(process.env.COMPANY_START_YEAR);
+    }
+
+    res.json({
+      totalCompleted,
+      uniqueClients: uniqueClientsResult,
+      yearsActive,
+      availability: '24/7',
+    });
+  } catch (err) {
+    logger.error(`[PUBLIC STATS] Erreur : ${err.message}`);
+    res.status(500).json({ error: 'Erreur lors du chargement des statistiques publiques.' });
+  }
+};
+
 exports.getStats = async (req, res) => {
   try {
     const now = new Date();
