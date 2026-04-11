@@ -1,6 +1,7 @@
 const { Op, fn, col, literal } = require('sequelize');
-const { Driver, Reservation, sequelize } = require('../models');
+const { Driver, Reservation, PricingConfig, sequelize } = require('../models');
 const logger = require('../middleware/logger');
+const { updatePricingCache, getPricingValues } = require('../services/priceService');
 
 // ── Statistiques globales plateforme ─────────────────────────────────────────
 
@@ -327,14 +328,15 @@ exports.notifyDriver = async (req, res) => {
 
     const nodemailer = require('nodemailer');
     const transporter = nodemailer.createTransport({
-      host:   process.env.SMTP_HOST,
-      port:   parseInt(process.env.SMTP_PORT || '587'),
-      secure: process.env.SMTP_SECURE === 'true',
-      auth:   { user: process.env.SMTP_USER, pass: process.env.SMTP_PASS },
+      host:   process.env.EMAIL_HOST || 'smtp.gmail.com',
+      port:   parseInt(process.env.EMAIL_PORT || '587'),
+      secure: false,
+      auth:   { user: process.env.EMAIL_USER, pass: process.env.EMAIL_PASS },
+      tls:    { rejectUnauthorized: false },
     });
 
     await transporter.sendMail({
-      from:    `"3M Drive Admin" <${process.env.SMTP_FROM || process.env.SMTP_USER}>`,
+      from:    `"3M Drive Admin" <${process.env.EMAIL_FROM || process.env.EMAIL_USER}>`,
       to:      driver.email,
       subject: subject || 'Message de l\'administration 3M Drive',
       html: `
@@ -359,6 +361,80 @@ exports.notifyDriver = async (req, res) => {
     res.json({ message: `Email envoyé à ${driver.email}` });
   } catch (err) {
     logger.error('Erreur adminController.notifyDriver', { error: err.message });
-    res.status(500).json({ error: 'Erreur lors de l\'envoi de la notification.' });
+    res.status(500).json({ error: `Erreur lors de l'envoi : ${err.message}` });
+  }
+};
+
+// ── Tarification dynamique ────────────────────────────────────────────────────
+
+exports.getPricing = async (req, res) => {
+  try {
+    // Récupère (ou crée) la config tarifaire singleton (id=1)
+    let config = await PricingConfig.findByPk(1);
+    if (!config) {
+      const current = getPricingValues();
+      config = await PricingConfig.create({
+        id:           1,
+        pricePerKm:   current.PRICE_PER_KM,
+        minimumPrice: current.MINIMUM_PRICE,
+        baseFee:      current.BASE_FEE,
+        updatedBy:    'system',
+      });
+    }
+    res.json({
+      pricePerKm:   config.pricePerKm,
+      minimumPrice: config.minimumPrice,
+      baseFee:      config.baseFee,
+      updatedBy:    config.updatedBy,
+      updatedAt:    config.updatedAt,
+    });
+  } catch (err) {
+    logger.error('Erreur adminController.getPricing', { error: err.message });
+    res.status(500).json({ error: 'Erreur serveur.' });
+  }
+};
+
+exports.updatePricing = async (req, res) => {
+  try {
+    const { pricePerKm, minimumPrice, baseFee } = req.body;
+
+    // Validation des valeurs
+    if (pricePerKm !== undefined && (isNaN(pricePerKm) || pricePerKm < 0)) {
+      return res.status(400).json({ error: 'pricePerKm invalide (doit être >= 0).' });
+    }
+    if (minimumPrice !== undefined && (isNaN(minimumPrice) || minimumPrice < 0)) {
+      return res.status(400).json({ error: 'minimumPrice invalide (doit être >= 0).' });
+    }
+    if (baseFee !== undefined && (isNaN(baseFee) || baseFee < 0)) {
+      return res.status(400).json({ error: 'baseFee invalide (doit être >= 0).' });
+    }
+
+    // Upsert : met à jour la ligne id=1 ou la crée si absente
+    const [config] = await PricingConfig.upsert({
+      id:           1,
+      pricePerKm:   parseFloat(pricePerKm),
+      minimumPrice: parseFloat(minimumPrice),
+      baseFee:      parseFloat(baseFee),
+      updatedBy:    req.driver?.name || req.driver?.email || 'admin',
+    });
+
+    // Mise à jour du cache mémoire → effective immédiatement
+    updatePricingCache({ pricePerKm, minimumPrice, baseFee });
+
+    logger.info(`[Admin] Tarification mise à jour par ${req.driver?.email}`, {
+      pricePerKm, minimumPrice, baseFee,
+    });
+
+    res.json({
+      message: 'Tarification mise à jour avec succès.',
+      pricePerKm:   parseFloat(pricePerKm),
+      minimumPrice: parseFloat(minimumPrice),
+      baseFee:      parseFloat(baseFee),
+      updatedBy:    req.driver?.name || req.driver?.email || 'admin',
+      updatedAt:    new Date(),
+    });
+  } catch (err) {
+    logger.error('Erreur adminController.updatePricing', { error: err.message });
+    res.status(500).json({ error: 'Erreur serveur.' });
   }
 };

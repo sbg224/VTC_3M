@@ -10,8 +10,8 @@ export function AuthProvider({ children }) {
     return d ? JSON.parse(d) : null;
   });
 
-  // Rafraîchir le profil depuis /api/auth/me à chaque démarrage
-  // pour s'assurer que role, status, slug, trialEndDate sont à jour
+  // Rafraîchir le profil depuis /api/auth/me à chaque démarrage.
+  // Si le token est révoqué (blacklisté), le /me retourne 401 → déconnexion propre.
   useEffect(() => {
     const storedToken = localStorage.getItem('vtc_token');
     if (!storedToken) return;
@@ -23,13 +23,13 @@ export function AuthProvider({ children }) {
         localStorage.setItem('vtc_driver', JSON.stringify(fresh));
       })
       .catch(() => {
-        // Token invalide ou expiré → déconnexion silencieuse
+        // Token invalide, expiré ou révoqué → déconnexion silencieuse
         localStorage.removeItem('vtc_token');
         localStorage.removeItem('vtc_driver');
         setToken(null);
         setDriver(null);
       });
-  }, []); // une seule fois au montage
+  }, []);
 
   const login = (newToken, newDriver) => {
     localStorage.setItem('vtc_token', newToken);
@@ -38,7 +38,21 @@ export function AuthProvider({ children }) {
     setDriver(newDriver);
   };
 
-  const logout = () => {
+  // Logout : révoque le token côté serveur (blacklist) AVANT de vider le localStorage.
+  // Même si l'appel API échoue (offline, token déjà expiré), la déconnexion locale s'effectue.
+  const logout = async () => {
+    const storedToken = localStorage.getItem('vtc_token');
+    if (storedToken) {
+      try {
+        await axios.post(
+          '/api/auth/logout',
+          {},
+          { headers: { Authorization: `Bearer ${storedToken}` } }
+        );
+      } catch {
+        // Non-bloquant — on déconnecte quoi qu'il arrive côté client
+      }
+    }
     localStorage.removeItem('vtc_token');
     localStorage.removeItem('vtc_driver');
     setToken(null);

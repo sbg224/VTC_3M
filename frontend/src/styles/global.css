@@ -4884,4 +4884,507 @@ textarea.form-control { resize: vertical; min-height: 88px; }
   .adm-notif-cards { grid-template-columns: 1fr; }
   .adm-filters { flex-direction: column; align-items: stretch; }
   .adm-search-wrap { min-width: 0; }
+  .adm-pricing-grid { grid-template-columns: 1fr; }
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   ADMIN — Section Tarification
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+.adm-pricing-card {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 16px;
+  padding: 28px;
+}
+
+.adm-pricing-card-title {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-weight: 700;
+  font-size: 0.95rem;
+  color: rgba(255, 255, 255, 0.9);
+  margin-bottom: 24px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+}
+
+.adm-pricing-field {
+  margin-bottom: 20px;
+}
+
+.adm-pricing-field label {
+  display: block;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.55);
+  margin-bottom: 8px;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+}
+
+.adm-pricing-input-wrap {
+  position: relative;
+}
+
+.adm-pricing-input-wrap .adm-input {
+  padding-right: 52px;
+  margin-bottom: 4px;
+}
+
+.adm-pricing-unit {
+  position: absolute;
+  right: 14px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: rgba(212, 175, 55, 0.7);
+  pointer-events: none;
+}
+
+.adm-pricing-hint {
+  font-size: 0.74rem;
+  color: rgba(255, 255, 255, 0.3);
+  margin: 0;
+  line-height: 1.5;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   ADMIN — Section Comptabilité
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+.adm-acc-period-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 14px;
+  margin-bottom: 22px;
+}
+
+.adm-acc-custom-range {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.adm-acc-period-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: rgba(212, 175, 55, 0.8);
+  background: rgba(212, 175, 55, 0.08);
+  border: 1px solid rgba(212, 175, 55, 0.2);
+  border-radius: 8px;
+  padding: 6px 14px;
+  margin-bottom: 20px;
+}
+
+/* Ligne sans activité (grisée) */
+.adm-acc-row-inactive td {
+  opacity: 0.45;
+}
+
+/* Badge taux de commission */
+.adm-acc-rate {
+  display: inline-block;
+  padding: 3px 9px;
+  border-radius: 6px;
+  background: rgba(212, 175, 55, 0.1);
+  border: 1px solid rgba(212, 175, 55, 0.25);
+  color: #D4AF37;
+  font-weight: 700;
+  font-size: 0.82rem;
+}
+
+/* Panel détail chauffeur */
+.adm-acc-detail-panel {
+  margin-top: 28px;
+  background: rgba(255, 255, 255, 0.025);
+  border: 1px solid rgba(212, 175, 55, 0.2);
+  border-radius: 16px;
+  padding: 24px 28px;
+}
+
+/* Recap financier 4 cases */
+.adm-acc-recap {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 14px;
+  margin-bottom: 8px;
+  padding: 16px;
+  background: rgba(255, 255, 255, 0.03);
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.adm-acc-recap-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  text-align: center;
+}
+
+.adm-acc-recap-value {
+  font-family: var(--font-heading);
+  font-size: 1.3rem;
+  font-weight: 800;
+  line-height: 1;
+}
+
+.adm-acc-recap-label {
+  font-size: 0.72rem;
+  color: rgba(255, 255, 255, 0.38);
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+}
+
+@media (max-width: 900px) {
+  .adm-acc-recap { grid-template-columns: repeat(2, 1fr); }
+  .adm-acc-period-bar { flex-direction: column; align-items: flex-start; }
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   DASHBOARD — Indicateurs de performance M vs M-1
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+.perf-cards {
+  display: flex;
+  gap: 14px;
+  margin-bottom: 24px;
+  flex-wrap: wrap;
+}
+
+.perf-card {
+  flex: 1;
+  min-width: 200px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  background: #ffffff;
+  border: 1px solid var(--color-gray-200, #e5e7eb);
+  border-radius: 14px;
+  padding: 16px 18px;
+  box-shadow: var(--shadow-xs, 0 1px 3px rgba(0,0,0,0.08));
+  transition: box-shadow 0.2s, transform 0.2s;
+}
+
+.perf-card:hover {
+  box-shadow: var(--shadow-md, 0 4px 16px rgba(0,0,0,0.12));
+  transform: translateY(-2px);
+}
+
+.perf-card-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  background: rgba(212, 175, 55, 0.12);
+  color: #D4AF37;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.perf-card-label {
+  font-size: 0.72rem;
+  color: var(--color-gray, #6b7280);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 4px;
+  font-weight: 600;
+}
+
+.perf-card-value {
+  font-size: 1.25rem;
+  font-weight: 800;
+  color: var(--color-primary, #050508);
+  line-height: 1;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   DASHBOARD — Planning hebdomadaire
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+.planning-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 8px;
+  margin-bottom: 20px;
+}
+
+.planning-col {
+  background: #ffffff;
+  border: 1px solid var(--color-gray-200, #e5e7eb);
+  border-radius: 12px;
+  overflow: hidden;
+  min-height: 260px;
+  box-shadow: var(--shadow-xs, 0 1px 3px rgba(0,0,0,0.06));
+}
+
+.planning-col--today {
+  border-color: rgba(212, 175, 55, 0.55);
+  background: rgba(212, 175, 55, 0.04);
+}
+
+.planning-col-header {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  padding: 10px 6px 8px;
+  border-bottom: 1px solid var(--color-gray-200, #e5e7eb);
+  background: #f9fafb;
+}
+
+.planning-day-name {
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: var(--color-gray, #6b7280);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.planning-day-num {
+  font-size: 1.1rem;
+  font-weight: 800;
+  color: var(--color-primary, #050508);
+  line-height: 1;
+}
+
+.planning-day-num--today {
+  color: #D4AF37;
+}
+
+.planning-count {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 18px;
+  height: 18px;
+  background: rgba(212, 175, 55, 0.2);
+  color: #D4AF37;
+  border-radius: 999px;
+  font-size: 0.68rem;
+  font-weight: 800;
+  padding: 0 4px;
+}
+
+.planning-col-body {
+  padding: 8px 6px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.planning-empty {
+  text-align: center;
+  color: #c4c9d4;
+  font-size: 0.82rem;
+  padding: 16px 0;
+}
+
+.planning-ride {
+  border-radius: 7px;
+  padding: 7px 8px;
+  cursor: default;
+  transition: opacity 0.15s;
+}
+
+.planning-ride:hover { opacity: 0.85; }
+
+.planning-ride-time {
+  font-size: 0.72rem;
+  font-weight: 700;
+  margin-bottom: 2px;
+}
+
+.planning-ride-client {
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: rgba(5, 5, 8, 0.85);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.planning-ride-addr {
+  font-size: 0.7rem;
+  color: rgba(5, 5, 8, 0.45);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  margin-top: 1px;
+}
+
+.planning-ride-price {
+  font-size: 0.72rem;
+  font-weight: 700;
+  margin-top: 3px;
+}
+
+.planning-legend {
+  display: flex;
+  gap: 16px;
+  flex-wrap: wrap;
+  align-items: center;
+  font-size: 0.78rem;
+  color: var(--color-gray, #6b7280);
+}
+
+.planning-legend-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+@media (max-width: 900px) {
+  .planning-grid { grid-template-columns: repeat(4, 1fr); }
+}
+@media (max-width: 640px) {
+  .planning-grid { grid-template-columns: repeat(2, 1fr); }
+  .perf-cards    { flex-direction: column; }
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   DASHBOARD — Avis clients
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+.reviews-summary-card {
+  display: flex;
+  gap: 32px;
+  align-items: flex-start;
+  background: #ffffff;
+  border: 1px solid rgba(212, 175, 55, 0.3);
+  border-radius: 16px;
+  padding: 24px 28px;
+  margin-bottom: 24px;
+  flex-wrap: wrap;
+  box-shadow: var(--shadow-xs, 0 1px 3px rgba(0,0,0,0.06));
+}
+
+.reviews-big-score {
+  display: flex;
+  align-items: baseline;
+  gap: 4px;
+  line-height: 1;
+}
+
+.reviews-score-num {
+  font-size: 4rem;
+  font-weight: 900;
+  color: #D4AF37;
+  font-family: var(--font-heading, sans-serif);
+}
+
+.reviews-score-denom {
+  font-size: 1.2rem;
+  color: var(--color-gray, #6b7280);
+  font-weight: 600;
+}
+
+.reviews-dist {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  margin-top: 12px;
+}
+
+.reviews-dist-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.78rem;
+}
+
+.reviews-dist-label {
+  width: 12px;
+  text-align: right;
+  color: var(--color-gray, #6b7280);
+  font-weight: 700;
+}
+
+.reviews-dist-bar {
+  width: 120px;
+  height: 6px;
+  background: var(--color-gray-200, #e5e7eb);
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.reviews-dist-count {
+  width: 18px;
+  color: var(--color-gray, #6b7280);
+  font-size: 0.72rem;
+}
+
+.reviews-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.review-card {
+  background: #ffffff;
+  border: 1px solid var(--color-gray-200, #e5e7eb);
+  border-radius: 12px;
+  padding: 16px 20px;
+  transition: border-color 0.2s, box-shadow 0.2s;
+  box-shadow: var(--shadow-xs, 0 1px 3px rgba(0,0,0,0.06));
+}
+
+.review-card:hover {
+  border-color: rgba(212, 175, 55, 0.4);
+  box-shadow: var(--shadow-sm, 0 2px 8px rgba(0,0,0,0.09));
+}
+
+.review-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 6px;
+}
+
+.review-client-name {
+  font-weight: 700;
+  color: var(--color-primary, #050508);
+  font-size: 0.9rem;
+}
+
+.review-res-num {
+  font-size: 0.78rem;
+  color: #D4AF37;
+  font-weight: 600;
+}
+
+.review-date {
+  font-size: 0.75rem;
+  color: var(--color-gray, #6b7280);
+}
+
+.review-trip {
+  display: flex;
+  align-items: flex-start;
+  gap: 5px;
+  font-size: 0.78rem;
+  color: var(--color-gray, #6b7280);
+  margin-bottom: 8px;
+  line-height: 1.5;
+}
+
+.review-comment {
+  font-size: 0.87rem;
+  color: #374151;
+  font-style: italic;
+  line-height: 1.6;
+  margin: 0;
+  padding-left: 12px;
+  border-left: 3px solid rgba(212, 175, 55, 0.4);
 }

@@ -321,4 +321,183 @@ async function generateInvoicePdf(reservation) {
   });
 }
 
-module.exports = { generateReservationPdf, generateInvoicePdf };
+// ── BORDEREAU DE VERSEMENT (Comptabilité) ────────────────────────────────────
+/**
+ * Génère un PDF "Bordereau de versement" pour un chauffeur sur une période.
+ * @param {object} data - { period, driver, rides, summary, generatedBy, generatedAt }
+ * @returns {{ filename: string, filepath: string }}
+ */
+async function generateBordereauPdf(data) {
+  ensurePdfsDir();
+  const { period, driver, rides, summary, generatedBy, generatedAt } = data;
+  const safePeriod = period.label.replace(/[^a-z0-9]/gi, '_').slice(0, 40);
+  const safeDriver = (driver.name || 'chauffeur').toLowerCase().replace(/[^a-z0-9]/gi, '-').slice(0, 30);
+  const filename   = `bordereau-${safeDriver}-${safePeriod}.pdf`;
+  const filepath   = path.join(PDFS_DIR, filename);
+
+  const fmt = (n) => parseFloat(n || 0).toLocaleString('fr-FR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  const fmtDate = (d) => new Date(d).toLocaleDateString('fr-FR', { day: '2-digit', month: 'short', year: 'numeric' });
+
+  return new Promise((resolve, reject) => {
+    const doc = new PDFDocument({ size: 'A4', margin: 50, bufferPages: true });
+    const stream = fs.createWriteStream(filepath);
+    doc.pipe(stream);
+
+    // ── En-tête ──────────────────────────────────────────────────────────────
+    doc.rect(0, 0, doc.page.width, 110).fill('#1a1a2e');
+    doc.rect(0, 105, doc.page.width, 5).fill('#c9a227');
+    doc.fontSize(22).fillColor('#c9a227').font('Helvetica-Bold')
+      .text(process.env.COMPANY_NAME || 'VTC 3M', 50, 28);
+    doc.fontSize(9).fillColor('#aaaaaa').font('Helvetica')
+      .text('Plateforme de gestion VTC', 50, 56);
+    doc.fontSize(13).fillColor('#ffffff').font('Helvetica-Bold')
+      .text('BORDEREAU DE VERSEMENT', 0, 36, { align: 'right', width: doc.page.width - 50 });
+    doc.fontSize(9).fillColor('#c9a227').font('Helvetica')
+      .text(`Généré le ${fmtDate(generatedAt)}`, 0, 56, { align: 'right', width: doc.page.width - 50 });
+
+    let y = 130;
+
+    // ── Période & référence ──────────────────────────────────────────────────
+    doc.rect(50, y, doc.page.width - 100, 36).fill('#f5f0e8');
+    doc.rect(50, y, 4, 36).fill('#c9a227');
+    doc.fontSize(11).fillColor('#1a1a2e').font('Helvetica-Bold')
+      .text(`Période : ${period.label}`, 62, y + 5);
+    doc.fontSize(9).fillColor('#666666').font('Helvetica')
+      .text(`Établi par : ${generatedBy}   |   Document non contractuel — à usage interne uniquement`, 62, y + 22);
+    y += 52;
+
+    // ── Identité chauffeur ───────────────────────────────────────────────────
+    doc.rect(50, y, doc.page.width - 100, 24).fill('#1a1a2e');
+    doc.fontSize(10).fillColor('#c9a227').font('Helvetica-Bold').text('CHAUFFEUR', 60, y + 7);
+    y += 32;
+
+    const col1 = 60, col2 = 300;
+    doc.fontSize(9).fillColor('#888888').font('Helvetica')
+      .text('Nom', col1, y).text('Email', col2, y);
+    doc.fontSize(10).fillColor('#1a1a2e').font('Helvetica-Bold')
+      .text(driver.name || '—', col1, y + 13)
+      .text(driver.email || '—', col2, y + 13);
+    y += 36;
+
+    if (driver.businessName || driver.phone) {
+      doc.fontSize(9).fillColor('#888888').font('Helvetica')
+        .text('Société / Enseigne', col1, y)
+        .text('Téléphone', col2, y);
+      doc.fontSize(10).fillColor('#1a1a2e').font('Helvetica-Bold')
+        .text(driver.businessName || '—', col1, y + 13)
+        .text(driver.phone || '—', col2, y + 13);
+      y += 36;
+    }
+
+    y += 8;
+
+    // ── Liste des courses ────────────────────────────────────────────────────
+    doc.rect(50, y, doc.page.width - 100, 24).fill('#1a1a2e');
+    doc.fontSize(10).fillColor('#c9a227').font('Helvetica-Bold')
+      .text(`COURSES RÉALISÉES  (${summary.rideCount})`, 60, y + 7);
+    y += 30;
+
+    if (rides.length === 0) {
+      doc.fontSize(10).fillColor('#999999').font('Helvetica')
+        .text('Aucune course terminée sur cette période.', 60, y);
+      y += 24;
+    } else {
+      // En-tête colonnes
+      const COL = { date: 60, trajet: 135, dist: 370, prix: 445 };
+      doc.fontSize(8).fillColor('#888888').font('Helvetica-Bold')
+        .text('DATE',      COL.date,  y)
+        .text('TRAJET',    COL.trajet, y)
+        .text('DIST.',     COL.dist,  y)
+        .text('MONTANT',   COL.prix,  y, { align: 'right', width: 90 });
+      y += 16;
+      doc.rect(50, y, doc.page.width - 100, 1).fill('#e5e5e5');
+      y += 8;
+
+      rides.forEach((ride, i) => {
+        // Saut de page si nécessaire
+        if (y > doc.page.height - 180) {
+          doc.addPage();
+          y = 60;
+        }
+
+        const rowBg = i % 2 === 0 ? '#fafafa' : '#ffffff';
+        doc.rect(50, y - 2, doc.page.width - 100, 22).fill(rowBg);
+
+        const dep = (ride.departureAddress || '').slice(0, 32);
+        const arr = (ride.arrivalAddress   || '').slice(0, 32);
+        const dist = ride.distance ? `${parseFloat(ride.distance).toFixed(1)} km` : '—';
+
+        doc.fontSize(8.5).fillColor('#333333').font('Helvetica')
+          .text(fmtDate(ride.date),              COL.date,   y + 4, { width: 68 })
+          .text(`${dep}\n→ ${arr}`,              COL.trajet, y,     { width: 225, lineGap: 1 })
+          .text(dist,                            COL.dist,   y + 4, { width: 60, align: 'center' });
+        doc.fontSize(8.5).fillColor('#1a1a2e').font('Helvetica-Bold')
+          .text(`${fmt(ride.price)} €`,          COL.prix,   y + 4, { width: 90, align: 'right' });
+
+        y += 24;
+      });
+
+      doc.rect(50, y, doc.page.width - 100, 1).fill('#c9a227');
+      y += 12;
+    }
+
+    // ── Récapitulatif financier ──────────────────────────────────────────────
+    if (y > doc.page.height - 200) { doc.addPage(); y = 60; }
+
+    y += 6;
+    doc.rect(50, y, doc.page.width - 100, 24).fill('#1a1a2e');
+    doc.fontSize(10).fillColor('#c9a227').font('Helvetica-Bold').text('RÉCAPITULATIF', 60, y + 7);
+    y += 32;
+
+    const recapX  = doc.page.width - 50 - 260;
+    const lineH   = 28;
+    const drawRecapLine = (label, value, bold = false, highlight = false) => {
+      if (highlight) {
+        doc.rect(recapX - 10, y - 4, 270, lineH).fill('#f5f0e8');
+        doc.rect(recapX - 10, y - 4, 4, lineH).fill('#c9a227');
+      }
+      doc.fontSize(10)
+        .fillColor(highlight ? '#1a1a2e' : '#555555')
+        .font(bold ? 'Helvetica-Bold' : 'Helvetica')
+        .text(label, recapX, y, { width: 160 });
+      doc.fontSize(10)
+        .fillColor(highlight ? '#1a1a2e' : '#333333')
+        .font('Helvetica-Bold')
+        .text(value, recapX + 160, y, { width: 100, align: 'right' });
+      y += lineH;
+    };
+
+    drawRecapLine('Nombre de courses',       `${summary.rideCount}`);
+    doc.rect(recapX - 10, y - 6, 270, 1).fill('#eeeeee'); y += 2;
+    drawRecapLine('Chiffre d\'affaires brut', `${fmt(summary.grossRevenue)} €`, true);
+    drawRecapLine(`Commission plateforme (${summary.commissionRate}%)`, `– ${fmt(summary.commissionAmount)} €`, false);
+    doc.rect(recapX - 10, y - 6, 270, 1).fill('#c9a227'); y += 4;
+    drawRecapLine('NET À REVERSER AU CHAUFFEUR', `${fmt(summary.netAmount)} €`, true, true);
+
+    y += 20;
+
+    // ── Mention légale ───────────────────────────────────────────────────────
+    if (y > doc.page.height - 120) { doc.addPage(); y = 60; }
+    doc.rect(50, y, doc.page.width - 100, 1).fill('#dddddd');
+    y += 12;
+    doc.fontSize(7.5).fillColor('#aaaaaa').font('Helvetica')
+      .text(
+        'Ce document est un relevé interne de gestion et ne constitue pas un bulletin de salaire, une facture ou tout autre document à valeur fiscale ou légale. ' +
+        'Les montants indiqués sont calculés à partir des courses réalisées et du taux de commission convenu entre les parties. ' +
+        `${process.env.COMPANY_NAME || 'VTC 3M'} – ${process.env.COMPANY_ADDRESS || ''} – ${process.env.COMPANY_EMAIL || ''}`,
+        50, y, { width: doc.page.width - 100, align: 'justify', lineGap: 2 }
+      );
+
+    // ── Pied de page ─────────────────────────────────────────────────────────
+    drawFooter(doc);
+    doc.end();
+
+    stream.on('finish', () => {
+      logger.info(`[ACCOUNTING] Bordereau PDF généré : ${filename}`);
+      resolve({ filename, filepath });
+    });
+    stream.on('error', reject);
+  });
+}
+
+module.exports = { generateReservationPdf, generateInvoicePdf, generateBordereauPdf };

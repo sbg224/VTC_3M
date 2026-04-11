@@ -132,6 +132,15 @@ exports.getAllReservations = async (req, res) => {
     // ── Isolation multi-tenant : OBLIGATOIRE ─────────────────────────────────
     const where = { chauffeur_id: req.driver.id };
 
+    // Filtre date pour le planning hebdomadaire
+    const dateFrom = req.query.dateFrom;
+    const dateTo   = req.query.dateTo;
+    if (dateFrom || dateTo) {
+      where.date = {};
+      if (dateFrom) where.date[Op.gte] = dateFrom;
+      if (dateTo)   where.date[Op.lte] = dateTo;
+    }
+
     if (status && status !== 'all') {
       const validStatuses = ['pending', 'confirmed', 'completed', 'cancelled'];
       if (validStatuses.includes(status)) where.status = status;
@@ -246,6 +255,11 @@ exports.completeReservation = async (req, res) => {
 
     reservation.status = 'completed';
     reservation.price  = parseFloat(price);
+    // Générer un token unique pour le lien de notation client
+    if (!reservation.reviewToken) {
+      const { v4: uuidv4 } = require('uuid');
+      reservation.reviewToken = uuidv4();
+    }
     await reservation.save();
 
     logger.info(`[COURSE] Validée : ${reservation.reservationNumber} – ${price}€ (par ${req.driver.email})`);
@@ -267,7 +281,7 @@ exports.completeReservation = async (req, res) => {
     // Envoi email facture — client ET chauffeur (non-bloquant)
     if (invoiceFilePath) {
       Promise.allSettled([
-        sendInvoiceToClient(reservation, invoiceFilePath),
+        sendInvoiceToClient(reservation, invoiceFilePath, reservation.reviewToken),
         sendInvoiceToDriver(reservation, invoiceFilePath, req.driver.email),
       ]).then((results) => {
         const labels = ['facture-client', 'facture-chauffeur'];

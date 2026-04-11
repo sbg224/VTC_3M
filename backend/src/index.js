@@ -32,10 +32,19 @@ app.use(helmet({
 
 // ── CORS ──────────────────────────────────────────────────────────────────────
 const allowedOrigins = (process.env.FRONTEND_URL || 'http://localhost:3000').split(',');
+const isProd = process.env.NODE_ENV === 'production';
 app.use(cors({
   origin: (origin, cb) => {
-    // Autoriser les requêtes sans origine (curl, Postman) en dev
-    if (!origin || allowedOrigins.includes(origin)) return cb(null, true);
+    // En production : rejeter toute requête sans header Origin (scripts, curl, etc.)
+    if (!origin) {
+      if (isProd) {
+        logger.warn('[CORS] Requête sans Origin rejetée (production)');
+        return cb(new Error('Origine non autorisée par CORS.'));
+      }
+      // En développement : autoriser les outils comme Postman, curl
+      return cb(null, true);
+    }
+    if (allowedOrigins.includes(origin)) return cb(null, true);
     logger.warn(`[CORS] Origine bloquée : ${origin}`);
     cb(new Error('Origine non autorisée par CORS.'));
   },
@@ -82,8 +91,10 @@ app.use('/api', rateLimit({
 
 
 
-// ── Servir les PDFs générés ───────────────────────────────────────────────────
-app.use('/pdfs', express.static(path.join(__dirname, '../pdfs')));
+// ── PDFs : NE PAS servir en statique — les téléchargements passent par
+//    /api/reservations/:id/pdf-reservation et /api/reservations/:id/pdf-invoice
+//    qui sont protégés par JWT + isolation chauffeur_id.
+//    (route statique supprimée pour éviter l'accès public aux PDFs clients)
 
 // ── Routes API ────────────────────────────────────────────────────────────────
 app.use('/api/auth',         require('./routes/auth'));
@@ -93,6 +104,8 @@ app.use('/api/stats',        require('./routes/stats'));
 app.use('/api/billing',      require('./routes/billing'));
 app.use('/api/drivers',       require('./routes/drivers'));
 app.use('/api/admin',         require('./routes/admin'));
+app.use('/api/admin/accounting', require('./routes/accounting'));
+app.use('/api/reviews',          require('./routes/reviews'));
 app.use('/api/notifications', require('./routes/notifications'));
 app.use('/api/crm',           require('./routes/crm'));
 
@@ -128,6 +141,39 @@ async function start() {
     // Pour des migrations de schéma, utiliser Sequelize-CLI migrations.
     await sequelize.sync();
     logger.info('[DB] Modèles synchronisés (tables créées si inexistantes).');
+
+    // ── Migrations SQLite-safe (AVANT tout accès aux modèles) ────────────────
+    // Ces migrations ajoutent les colonnes manquantes sans toucher aux données.
+    const { DataTypes } = require('sequelize');
+    const qi = sequelize.getQueryInterface();
+    try {
+      const driversDesc = await qi.describeTable('drivers');
+      if (!driversDesc.commissionRate) {
+        await qi.addColumn('drivers', 'commissionRate', {
+          type: DataTypes.FLOAT,
+          allowNull: false,
+          defaultValue: 20.0,
+        });
+        logger.info('[MIGRATION] Colonne commissionRate ajoutée à drivers (défaut : 20%).');
+      }
+    } catch (migErr) {
+      logger.warn('[MIGRATION] commissionRate :', migErr.message);
+    }
+    // Ajouter reviewToken sur reservations si absent
+    try {
+      const resDesc = await qi.describeTable('reservations');
+      if (!resDesc.reviewToken) {
+        await qi.addColumn('reservations', 'reviewToken', {
+          type: DataTypes.STRING,
+          allowNull: true,
+          unique: true,
+        });
+        logger.info('[MIGRATION] Colonne reviewToken ajoutée à reservations.');
+      }
+    } catch (migErr) {
+      logger.warn('[MIGRATION] reviewToken :', migErr.message);
+    }
+    // ────────────────────────────────────────────────────────────────────────
 
     // Créer ou mettre à jour le compte admin depuis .env
     const { Driver } = require('./models');
@@ -170,6 +216,42 @@ async function start() {
       });
       logger.info(`[AUTH] Compte admin créé : ${adminEmail}`);
     }
+
+    // Charger la tarification depuis la DB (ou l'initialiser si absente)
+    const { PricingConfig } = require('./models');
+    const { updatePricingCache } = require('./services/priceService');
+    let pricingConfig = await PricingConfig.findByPk(1);
+    if (!pricingConfig) {
+      pricingConfig = await PricingConfig.create({
+        id:           1,
+        pricePerKm:   parseFloat(process.env.PRICE_PER_KM)  || 2.0,
+        minimumPrice: parseFloat(process.env.MINIMUM_PRICE) || 10.0,
+        baseFee:      parseFloat(process.env.BASE_FEE)      || 0.0,
+        updatedBy:    'system',
+      });
+      logger.info('[PRICING] Config tarifaire initialisée avec les valeurs par défaut.');
+    } else {
+      updatePricingCache({
+        pricePerKm:   pricingConfig.pricePerKm,
+        minimumPrice: pricingConfig.minimumPrice,
+        baseFee:      pricingConfig.baseFee,
+      });
+      logger.info(`[PRICING] Tarification chargée : ${pricingConfig.pricePerKm}€/km, min ${pricingConfig.minimumPrice}€, base ${pricingConfig.baseFee}€`);
+    }
+
+    // ── Cron : nettoyage des tokens révoqués expirés (toutes les heures) ────────
+    const { RevokedToken } = require('./models');
+    const { Op } = require('sequelize');
+    setInterval(async () => {
+      try {
+        const deleted = await RevokedToken.destroy({
+          where: { expiresAt: { [Op.lt]: new Date() } },
+        });
+        if (deleted > 0) logger.info(`[CRON] ${deleted} token(s) révoqués expirés supprimés.`);
+      } catch (e) {
+        logger.warn('[CRON] Nettoyage revoked_tokens :', e.message);
+      }
+    }, 60 * 60 * 1000); // toutes les heures
 
     app.listen(PORT, () => {
       logger.info(`[SERVER] VTC 3M démarré sur le port ${PORT} – mode ${process.env.NODE_ENV || 'development'}`);

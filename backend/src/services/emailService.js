@@ -174,8 +174,22 @@ async function sendClientConfirmation(reservation, pdfPath) {
 }
 
 // ── Email de facture au client ────────────────────────────────────────────────
-async function sendInvoiceToClient(reservation, pdfPath) {
+async function sendInvoiceToClient(reservation, pdfPath, reviewToken) {
   const transporter = createTransporter();
+
+  const appUrl    = (process.env.FRONTEND_URL || 'http://localhost:3000').split(',')[0];
+  const reviewUrl = reviewToken ? `${appUrl}/review/${reviewToken}` : null;
+
+  const reviewBlock = reviewUrl ? `
+    <div style="margin:28px 0 0;padding:24px;background:#fffbf0;border-radius:12px;border:2px solid #c9a227;text-align:center">
+      <p style="margin:0 0 6px;font-size:1rem;font-weight:700;color:#1a1a2e">Votre avis compte pour nous !</p>
+      <p style="margin:0 0 16px;font-size:0.88rem;color:#555">Comment s'est passée votre course ? Notez-nous en 30 secondes.</p>
+      <div style="font-size:1.8rem;margin-bottom:14px;letter-spacing:4px">&#11088;&#11088;&#11088;&#11088;&#11088;</div>
+      <a href="${reviewUrl}" style="display:inline-block;background:#c9a227;color:#1a1a2e;text-decoration:none;padding:12px 30px;border-radius:8px;font-weight:700;font-size:0.95rem">
+        Laisser un avis
+      </a>
+      <p style="margin:12px 0 0;font-size:0.75rem;color:#aaa">Lien valable une seule fois</p>
+    </div>` : '';
 
   const mailOptions = {
     from: process.env.EMAIL_FROM || 'VTC 3M <noreply@vtc3m.fr>',
@@ -190,7 +204,8 @@ async function sendInvoiceToClient(reservation, pdfPath) {
           <p>Bonjour <strong>${reservation.firstName}</strong>,</p>
           <p>Veuillez trouver ci-joint votre facture pour la course du <strong>${formatDate(reservation.date)}</strong>.</p>
           <p style="color:#666">Montant total : <strong>${Number(reservation.price).toFixed(2)} €</strong></p>
-          <p>Merci de votre confiance et à bientôt !</p>
+          ${reviewBlock}
+          <p style="margin-top:24px">Merci de votre confiance et à bientôt !</p>
         </div>
         <div style="background:#1a1a2e;color:#888;padding:20px;text-align:center;font-size:12px">
           ${process.env.COMPANY_NAME || 'VTC 3M'} – ${process.env.COMPANY_PHONE || ''}

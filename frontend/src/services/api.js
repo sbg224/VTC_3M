@@ -81,6 +81,19 @@ export const adminAPI = {
   notifyDriver:        (id, subject, message)=> api.post(`/admin/drivers/${id}/notify`, { subject, message }),
   getAllReservations:  (params)              => api.get('/admin/reservations', { params }),
   getGlobalClients:    (params)              => api.get('/admin/clients', { params }),
+  getPricing:          ()                    => api.get('/admin/pricing'),
+  updatePricing:       (data)               => api.put('/admin/pricing', data),
+};
+
+export const reviewAPI = {
+  getDriverReviews: (params) => api.get('/reviews/driver/me', { params }),
+};
+
+export const accountingAPI = {
+  getSummary:          (params)               => api.get('/admin/accounting/summary', { params }),
+  getDriverStatement:  (driverId, params)     => api.get(`/admin/accounting/${driverId}/statement`, { params }),
+  downloadPdf:         (driverId, params)     => api.get(`/admin/accounting/${driverId}/pdf`, { params, responseType: 'blob' }),
+  updateCommission:    (driverId, commissionRate) => api.put(`/admin/accounting/${driverId}/commission`, { commissionRate }),
 };
 
 export const crmAPI = {

@@ -1,9 +1,38 @@
 const bcrypt = require('bcryptjs');
 const jwt    = require('jsonwebtoken');
-const { Op } = require('sequelize');
-const { Driver } = require('../models');
+const { v4: uuidv4 } = require('uuid');
+const { Driver, RevokedToken } = require('../models');
 const logger = require('../middleware/logger');
 
+// ── Helper : signe un JWT avec un JTI unique ──────────────────────────────────
+function signToken(driver) {
+  const jti = uuidv4(); // Identifiant unique du token — permet la révocation
+  const expiresIn = process.env.JWT_EXPIRES_IN || '8h';
+  const token = jwt.sign(
+    { id: driver.id, email: driver.email, jti },
+    process.env.JWT_SECRET,
+    { expiresIn }
+  );
+  return { token, jti };
+}
+
+// ── Payload public chauffeur ──────────────────────────────────────────────────
+function driverPayload(driver) {
+  return {
+    id:           driver.id,
+    name:         driver.name,
+    email:        driver.email,
+    phone:        driver.phone,
+    role:         driver.role,
+    status:       driver.status,
+    plan:         driver.plan,
+    slug:         driver.slug,
+    trialEndDate: driver.trialEndDate,
+    businessName: driver.businessName,
+  };
+}
+
+// ── Login ─────────────────────────────────────────────────────────────────────
 exports.login = async (req, res) => {
   try {
     const { email, password } = req.body;
@@ -24,37 +53,18 @@ exports.login = async (req, res) => {
       return res.status(401).json({ error: 'Identifiants incorrects.' });
     }
 
-    const token = jwt.sign(
-      { id: driver.id, email: driver.email },
-      process.env.JWT_SECRET,
-      { expiresIn: process.env.JWT_EXPIRES_IN || '8h' }
-    );
-
+    const { token } = signToken(driver);
     logger.info(`Connexion réussie : ${driver.email}`);
 
-    res.json({
-      token,
-      driver: {
-        id:           driver.id,
-        name:         driver.name,
-        email:        driver.email,
-        phone:        driver.phone,
-        role:         driver.role,
-        status:       driver.status,
-        plan:         driver.plan,
-        slug:         driver.slug,
-        trialEndDate: driver.trialEndDate,
-        businessName: driver.businessName,
-      },
-    });
+    res.json({ token, driver: driverPayload(driver) });
   } catch (err) {
     logger.error(`Erreur login : ${err.message}`);
     res.status(500).json({ error: 'Erreur lors de la connexion.' });
   }
 };
 
+// ── Me (profil chauffeur connecté) ────────────────────────────────────────────
 exports.me = async (req, res) => {
-  // Recharger le driver depuis la DB pour avoir les champs à jour (statut, trial…)
   try {
     const driver = await Driver.findByPk(req.driver.id, {
       attributes: { exclude: ['password'] },
@@ -67,12 +77,30 @@ exports.me = async (req, res) => {
   }
 };
 
+// ── Logout — révoque le JWT courant ──────────────────────────────────────────
+exports.logout = async (req, res) => {
+  try {
+    const { jti, exp } = req.tokenPayload; // injecté par auth.js
+    if (jti) {
+      await RevokedToken.create({
+        jti,
+        expiresAt: new Date(exp * 1000), // exp est en secondes UNIX
+      });
+      logger.info(`[LOGOUT] Token révoqué : jti=${jti} – driver: ${req.driver.email}`);
+    }
+    res.json({ message: 'Déconnexion réussie.' });
+  } catch (err) {
+    // Ne pas bloquer la déconnexion côté client si la DB échoue
+    logger.error(`[LOGOUT] Erreur révocation token : ${err.message}`);
+    res.json({ message: 'Déconnexion réussie.' }); // On renvoie succès quand même
+  }
+};
+
 // ── Inscription chauffeur (auto-onboarding) ───────────────────────────────────
 exports.register = async (req, res) => {
   try {
     const { name, email, password, phone } = req.body;
 
-    // Vérifier l'unicité de l'email
     const existing = await Driver.findOne({ where: { email } });
     if (existing) {
       return res.status(409).json({ error: 'Un compte existe déjà avec cet email.' });
@@ -80,41 +108,24 @@ exports.register = async (req, res) => {
 
     const hashedPassword = await bcrypt.hash(password, 12);
 
-    // Créer le compte avec essai gratuit de 14 jours
     const driver = await Driver.create({
       name,
       email,
       password: hashedPassword,
       phone:    phone || null,
       role:     'driver',
-      status:   'pending',   // ← en attente de validation par l'admin
+      status:   'pending',
       plan:     'free',
       subscriptionStatus: 'trialing',
-      // slug généré automatiquement par beforeCreate ; trialEndDate défini à la validation
     });
 
-    const token = jwt.sign(
-      { id: driver.id, email: driver.email },
-      process.env.JWT_SECRET,
-      { expiresIn: process.env.JWT_EXPIRES_IN || '8h' }
-    );
-
-    logger.info(`[REGISTER] Nouveau chauffeur inscrit : ${driver.email} – essai jusqu'au ${driver.trialEndDate}`);
+    const { token } = signToken(driver);
+    logger.info(`[REGISTER] Nouveau chauffeur : ${driver.email}`);
 
     res.status(201).json({
-      message: 'Compte créé avec succès. Votre essai gratuit de 14 jours est activé.',
+      message: 'Compte créé. En attente de validation par l\'administrateur.',
       token,
-      driver: {
-        id:            driver.id,
-        name:          driver.name,
-        email:         driver.email,
-        phone:         driver.phone,
-        role:          driver.role,
-        status:        driver.status,
-        plan:          driver.plan,
-        trialEndDate:  driver.trialEndDate,
-        slug:          driver.slug,
-      },
+      driver: driverPayload(driver),
     });
   } catch (err) {
     logger.error(`[REGISTER] Erreur inscription : ${err.message}`);
@@ -122,6 +133,7 @@ exports.register = async (req, res) => {
   }
 };
 
+// ── Changement de mot de passe ────────────────────────────────────────────────
 exports.changePassword = async (req, res) => {
   try {
     const { currentPassword, newPassword } = req.body;
@@ -141,8 +153,15 @@ exports.changePassword = async (req, res) => {
     driver.password = await bcrypt.hash(newPassword, 12);
     await driver.save();
 
+    // Révoquer aussi le token courant pour forcer une reconnexion
+    const { jti, exp } = req.tokenPayload || {};
+    if (jti) {
+      await RevokedToken.create({ jti, expiresAt: new Date((exp || 0) * 1000) })
+        .catch(() => {}); // Non-bloquant
+    }
+
     logger.info(`Mot de passe modifié : ${driver.email}`);
-    res.json({ message: 'Mot de passe modifié avec succès.' });
+    res.json({ message: 'Mot de passe modifié. Veuillez vous reconnecter.' });
   } catch (err) {
     logger.error(`Erreur changement mdp : ${err.message}`);
     res.status(500).json({ error: 'Erreur lors du changement de mot de passe.' });

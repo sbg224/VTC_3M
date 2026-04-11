@@ -1,4 +1,4 @@
-const { Reservation } = require('../models');
+const { Reservation, Review } = require('../models');
 const { Op, fn, col, literal } = require('sequelize');
 const logger = require('../middleware/logger');
 
@@ -80,6 +80,36 @@ exports.getStats = async (req, res) => {
       where: { ...baseWhere, createdAt: { [Op.gte]: startOfMonth } },
     });
 
+    // ── Comparaison mois précédent (M-1) ─────────────────────────────────────
+    const startOfPrevMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+    const endOfPrevMonth   = new Date(now.getFullYear(), now.getMonth(), 0, 23, 59, 59, 999);
+
+    const [ridesThisMonth, ridesPrevMonth, revPrevMonth, completedThisMonth, completedPrevMonth] = await Promise.all([
+      Reservation.count({ where: { ...baseWhere, status: 'completed', updatedAt: { [Op.gte]: startOfMonth } } }),
+      Reservation.count({ where: { ...baseWhere, status: 'completed', updatedAt: { [Op.between]: [startOfPrevMonth, endOfPrevMonth] } } }),
+      Reservation.sum('price', { where: { ...baseWhere, status: 'completed', updatedAt: { [Op.between]: [startOfPrevMonth, endOfPrevMonth] } } }),
+      Reservation.count({ where: { ...baseWhere, status: 'completed', updatedAt: { [Op.gte]: startOfMonth } } }),
+      Reservation.count({ where: { ...baseWhere, status: 'completed', updatedAt: { [Op.between]: [startOfPrevMonth, endOfPrevMonth] } } }),
+    ]);
+
+    const delta = (curr, prev) => {
+      if (prev === 0) return curr > 0 ? 100 : 0;
+      return Math.round(((curr - prev) / prev) * 100);
+    };
+
+    // ── Avis clients ──────────────────────────────────────────────────────────
+    let reviewAverage = 0;
+    let reviewCount   = 0;
+    try {
+      const reviewStats = await Review.findAll({
+        where: { chauffeurId: driverId },
+        attributes: [[fn('AVG', col('rating')), 'avg'], [fn('COUNT', col('id')), 'total']],
+        raw: true,
+      });
+      reviewAverage = Math.round(parseFloat(reviewStats[0]?.avg || 0) * 10) / 10;
+      reviewCount   = parseInt(reviewStats[0]?.total || 0, 10);
+    } catch { /* table inexistante au premier démarrage */ }
+
     // Réservations des 7 derniers jours (pour graphique)
     const last7Days = [];
     for (let i = 6; i >= 0; i--) {
@@ -105,11 +135,24 @@ exports.getStats = async (req, res) => {
     res.json({
       counts: { total, pending, confirmed, completed, cancelled },
       revenue: {
-        allTime: revenueAllTime || 0,
-        month:   revenueMonth   || 0,
-        year:    revenueYear    || 0,
+        allTime:   revenueAllTime || 0,
+        month:     revenueMonth   || 0,
+        prevMonth: revPrevMonth   || 0,
+        year:      revenueYear    || 0,
       },
       reservationsThisMonth,
+      performance: {
+        ridesThisMonth,
+        ridesPrevMonth,
+        ridesDelta:    delta(ridesThisMonth, ridesPrevMonth),
+        revenueMonth:  revenueMonth  || 0,
+        revenuePrev:   revPrevMonth  || 0,
+        revenueDelta:  delta(revenueMonth || 0, revPrevMonth || 0),
+      },
+      reviews: {
+        average: reviewAverage,
+        count:   reviewCount,
+      },
       last7Days,
       latestReservations,
     });

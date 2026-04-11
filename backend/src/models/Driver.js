@@ -88,6 +88,15 @@ module.exports = (sequelize) => {
       type: DataTypes.STRING,
       allowNull: true,
     },
+
+    // ── Comptabilité ─────────────────────────────────────────────────────────
+    // Taux de commission de la plateforme (%) appliqué sur le CA brut du chauffeur
+    // Valeur par défaut : 20 % — modifiable individuellement par l'admin
+    commissionRate: {
+      type: DataTypes.FLOAT,
+      allowNull: false,
+      defaultValue: 20.0,
+    },
   }, {
     tableName: 'drivers',
     timestamps: true,

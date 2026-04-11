@@ -22,5 +22,7 @@ router.post('/register',         registerLimiter, registerRules, validate, authC
 router.post('/login',            loginLimiter, loginRules, validate, authController.login);
 router.get('/me',                authMiddleware, authController.me);
 router.put('/change-password',   authMiddleware, authController.changePassword);
+// POST /api/auth/logout — révoque le JWT courant (blacklist)
+router.post('/logout',           authMiddleware, authController.logout);
 
 module.exports = router;

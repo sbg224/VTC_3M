@@ -43,4 +43,19 @@ router.get('/reservations', adminCtrl.getAllReservations);
 // GET  /api/admin/clients                — CRM clients global
 router.get('/clients', adminCtrl.getGlobalClients);
 
+// GET  /api/admin/pricing                — lire la config tarifaire
+router.get('/pricing', adminCtrl.getPricing);
+
+// PUT  /api/admin/pricing                — mettre à jour la config tarifaire
+router.put(
+  '/pricing',
+  [
+    body('pricePerKm').isFloat({ min: 0 }).withMessage('pricePerKm doit être un nombre >= 0.'),
+    body('minimumPrice').isFloat({ min: 0 }).withMessage('minimumPrice doit être un nombre >= 0.'),
+    body('baseFee').isFloat({ min: 0 }).withMessage('baseFee doit être un nombre >= 0.'),
+  ],
+  handleValidation,
+  adminCtrl.updatePricing,
+);
+
 module.exports = router;
