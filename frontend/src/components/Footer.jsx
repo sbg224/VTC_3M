@@ -75,6 +75,7 @@ export default function Footer() {
           <span>© {year} 3M Drive – Toulouse. Tous droits réservés.</span>
           <span className="flex gap-5">
             <Link to="/mentions-legales" className="text-white/40 text-[0.82rem]">Mentions légales</Link>
+            <Link to="/cgu" className="text-white/40 text-[0.82rem]">CGU</Link>
             <Link to="/politique-rgpd" className="text-white/40 text-[0.82rem]">Politique de confidentialité</Link>
           </span>
         </div>

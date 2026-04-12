@@ -39,6 +39,14 @@ function validateForm(form) {
     errors.phone = 'Format invalide (ex: +33 6 12 34 56 78).';
   }
 
+  if (!form.gdprConsent) {
+    errors.gdprConsent = 'Vous devez accepter la politique de confidentialité.';
+  }
+
+  if (!form.termsAccepted) {
+    errors.termsAccepted = 'Vous devez accepter les CGU.';
+  }
+
   return errors;
 }
 
@@ -92,7 +100,7 @@ function PasswordStrength({ password }) {
 
 export default function Register() {
   const [form, setForm] = useState({
-    name: '', email: '', password: '', confirmPassword: '', phone: '',
+    name: '', email: '', password: '', confirmPassword: '', phone: '', gdprConsent: false, termsAccepted: false,
   });
   const [errors,     setErrors]     = useState({});
   const [serverError, setServerError] = useState('');
@@ -104,8 +112,8 @@ export default function Register() {
   const navigate  = useNavigate();
 
   const handleChange = (e) => {
-    const { name, value } = e.target;
-    setForm(prev => ({ ...prev, [name]: value }));
+    const { name, value, type, checked } = e.target;
+    setForm(prev => ({ ...prev, [name]: type === 'checkbox' ? checked : value }));
     if (errors[name]) setErrors(prev => ({ ...prev, [name]: '' }));
     setServerError('');
   };
@@ -126,6 +134,8 @@ export default function Register() {
         name:     form.name.trim(),
         email:    form.email.trim(),
         password: form.password,
+        gdprConsent: form.gdprConsent,
+        termsAccepted: form.termsAccepted,
         ...(form.phone.trim() && { phone: form.phone.trim() }),
       };
       await authAPI.register(payload);
@@ -336,6 +346,43 @@ export default function Register() {
             </div>
 
             {/* Submit */}
+            <div className="form-check" style={{ marginTop: '16px' }}>
+              <input
+                type="checkbox" id="registerGdprConsent" name="gdprConsent"
+                checked={form.gdprConsent} onChange={handleChange}
+              />
+              <label htmlFor="registerGdprConsent">
+                J'accepte la{' '}
+                <Link to="/politique-rgpd" style={{ color: 'var(--color-accent)' }}>
+                  politique de confidentialité
+                </Link>{' '}
+                et le traitement de mes données. <strong>*</strong>
+              </label>
+            </div>
+            {errors.gdprConsent && (
+              <div className="form-error flex items-center gap-1" style={{ fontSize: '0.78rem', marginTop: '4px', color: 'var(--color-error)' }}>
+                <AlertCircle size={11} strokeWidth={1.5} /> {errors.gdprConsent}
+              </div>
+            )}
+
+            <div className="form-check" style={{ marginTop: '12px' }}>
+              <input
+                type="checkbox" id="registerTermsAccepted" name="termsAccepted"
+                checked={form.termsAccepted} onChange={handleChange}
+              />
+              <label htmlFor="registerTermsAccepted">
+                J'ai lu et j'accepte les{' '}
+                <Link to="/cgu" style={{ color: 'var(--color-accent)' }}>
+                  conditions générales d'utilisation
+                </Link>. <strong>*</strong>
+              </label>
+            </div>
+            {errors.termsAccepted && (
+              <div className="form-error flex items-center gap-1" style={{ fontSize: '0.78rem', marginTop: '4px', color: 'var(--color-error)' }}>
+                <AlertCircle size={11} strokeWidth={1.5} /> {errors.termsAccepted}
+              </div>
+            )}
+
             <button
               type="submit"
               className="btn btn-primary flex items-center justify-center gap-2"

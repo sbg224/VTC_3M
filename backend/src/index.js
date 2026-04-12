@@ -7,6 +7,7 @@ const hpp     = require('hpp');
 const rateLimit = require('express-rate-limit');
 const path    = require('path');
 const { sequelize } = require('./models');
+const { runMigrations } = require('./db/runMigrations');
 const logger   = require('./middleware/logger');
 const sanitize = require('./middleware/sanitize');
 
@@ -142,38 +143,7 @@ async function start() {
     await sequelize.sync();
     logger.info('[DB] Modèles synchronisés (tables créées si inexistantes).');
 
-    // ── Migrations SQLite-safe (AVANT tout accès aux modèles) ────────────────
-    // Ces migrations ajoutent les colonnes manquantes sans toucher aux données.
-    const { DataTypes } = require('sequelize');
-    const qi = sequelize.getQueryInterface();
-    try {
-      const driversDesc = await qi.describeTable('drivers');
-      if (!driversDesc.commissionRate) {
-        await qi.addColumn('drivers', 'commissionRate', {
-          type: DataTypes.FLOAT,
-          allowNull: false,
-          defaultValue: 20.0,
-        });
-        logger.info('[MIGRATION] Colonne commissionRate ajoutée à drivers (défaut : 20%).');
-      }
-    } catch (migErr) {
-      logger.warn('[MIGRATION] commissionRate :', migErr.message);
-    }
-    // Ajouter reviewToken sur reservations si absent
-    try {
-      const resDesc = await qi.describeTable('reservations');
-      if (!resDesc.reviewToken) {
-        await qi.addColumn('reservations', 'reviewToken', {
-          type: DataTypes.STRING,
-          allowNull: true,
-          unique: true,
-        });
-        logger.info('[MIGRATION] Colonne reviewToken ajoutée à reservations.');
-      }
-    } catch (migErr) {
-      logger.warn('[MIGRATION] reviewToken :', migErr.message);
-    }
-    // ────────────────────────────────────────────────────────────────────────
+    await runMigrations(sequelize, logger);
 
     // Créer ou mettre à jour le compte admin depuis .env
     const { Driver } = require('./models');

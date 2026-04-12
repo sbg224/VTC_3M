@@ -16,8 +16,41 @@ exports.createReservation = async (req, res) => {
       departureAddress, arrivalAddress,
       date, time, passengers, luggage, comments,
       distance, estimatedPrice,
+      gdprConsent, termsAccepted,
       driverSlug,   // optionnel : slug du chauffeur ciblé (URL /book/:slug)
     } = req.body;
+
+    const validationErrors = {};
+    if (!firstName?.trim()) validationErrors.firstName = 'Le prénom est requis.';
+    if (!lastName?.trim()) validationErrors.lastName = 'Le nom est requis.';
+    if (!email?.trim() || !/\S+@\S+\.\S+/.test(email)) {
+      validationErrors.email = 'Adresse email invalide.';
+    }
+    const normalizedPhone = phone?.replace(/\s/g, '') || '';
+    if (!normalizedPhone || !/^(\+33|0)[1-9](\d{8})$/.test(normalizedPhone)) {
+      validationErrors.phone = 'Numéro de téléphone invalide (format français).';
+    }
+    if (!departureAddress?.trim()) {
+      validationErrors.departureAddress = 'L\'adresse de départ est requise.';
+    }
+    if (!arrivalAddress?.trim()) {
+      validationErrors.arrivalAddress = 'L\'adresse d\'arrivée est requise.';
+    }
+    if (!date) validationErrors.date = 'La date est requise.';
+    if (!time) validationErrors.time = 'L\'heure est requise.';
+    if (gdprConsent !== true) {
+      validationErrors.gdprConsent = 'Le consentement à la politique de confidentialité est requis.';
+    }
+    if (termsAccepted !== true) {
+      validationErrors.termsAccepted = 'L\'acceptation des CGU est requise.';
+    }
+
+    if (Object.keys(validationErrors).length > 0) {
+      return res.status(400).json({
+        error: 'Formulaire incomplet ou invalide.',
+        fields: validationErrors,
+      });
+    }
 
     // ── Résoudre le chauffeur destinataire ──────────────────────────────────
     // Priorité 1 : slug passé explicitement dans le formulaire
@@ -52,7 +85,8 @@ exports.createReservation = async (req, res) => {
       comments:       comments || null,
       distance:       distance       ? parseFloat(distance)       : null,
       estimatedPrice: estimatedPrice ? parseFloat(estimatedPrice) : null,
-      gdprConsent:    true,
+      gdprConsent,
+      termsAccepted,
       status:         'pending',
       chauffeur_id:   targetDriver.id,  // ── Isolation multi-tenant
     });

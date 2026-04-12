@@ -53,6 +53,20 @@ exports.login = async (req, res) => {
       return res.status(401).json({ error: 'Identifiants incorrects.' });
     }
 
+    if (driver.status === 'pending') {
+      return res.status(403).json({
+        error: 'Votre compte est en attente de validation par l\'administrateur.',
+        code: 'ACCOUNT_PENDING',
+      });
+    }
+
+    if (driver.status === 'suspended') {
+      return res.status(403).json({
+        error: 'Votre compte est suspendu. Contactez l\'administrateur.',
+        code: 'ACCOUNT_SUSPENDED',
+      });
+    }
+
     const { token } = signToken(driver);
     logger.info(`Connexion réussie : ${driver.email}`);
 
@@ -99,7 +113,27 @@ exports.logout = async (req, res) => {
 // ── Inscription chauffeur (auto-onboarding) ───────────────────────────────────
 exports.register = async (req, res) => {
   try {
-    const { name, email, password, phone } = req.body;
+    const { name, email, password, phone, gdprConsent, termsAccepted } = req.body;
+
+    if (!name?.trim() || name.trim().length < 2) {
+      return res.status(400).json({ error: 'Le nom complet est requis.' });
+    }
+    if (!email?.trim() || !/\S+@\S+\.\S+/.test(email)) {
+      return res.status(400).json({ error: 'Adresse email invalide.' });
+    }
+    if (!password || password.length < 8 || !/[A-Z]/.test(password) || !/[0-9]/.test(password)) {
+      return res.status(400).json({ error: 'Le mot de passe ne respecte pas les critères minimums.' });
+    }
+    const normalizedPhone = phone?.replace(/\s/g, '') || '';
+    if (normalizedPhone && !/^(\+33|0)[1-9](\d{8})$/.test(normalizedPhone)) {
+      return res.status(400).json({ error: 'Numéro de téléphone invalide (format français).' });
+    }
+    if (gdprConsent !== true) {
+      return res.status(400).json({ error: 'Le consentement à la politique de confidentialité est requis.' });
+    }
+    if (termsAccepted !== true) {
+      return res.status(400).json({ error: 'L\'acceptation des CGU est requise.' });
+    }
 
     const existing = await Driver.findOne({ where: { email } });
     if (existing) {
@@ -109,22 +143,22 @@ exports.register = async (req, res) => {
     const hashedPassword = await bcrypt.hash(password, 12);
 
     const driver = await Driver.create({
-      name,
-      email,
+      name: name.trim(),
+      email: email.trim(),
       password: hashedPassword,
-      phone:    phone || null,
+      phone: normalizedPhone || null,
       role:     'driver',
       status:   'pending',
       plan:     'free',
       subscriptionStatus: 'trialing',
+      gdprConsent,
+      termsAccepted,
     });
 
-    const { token } = signToken(driver);
     logger.info(`[REGISTER] Nouveau chauffeur : ${driver.email}`);
 
     res.status(201).json({
       message: 'Compte créé. En attente de validation par l\'administrateur.',
-      token,
       driver: driverPayload(driver),
     });
   } catch (err) {

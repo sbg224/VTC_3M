@@ -125,6 +125,7 @@ function validate(form, serviceType) {
   }
   if (!form.time) errors.time = 'L\'heure est requise.';
   if (!form.gdprConsent) errors.gdprConsent = 'Vous devez accepter la politique de confidentialité.';
+  if (!form.termsAccepted) errors.termsAccepted = 'Vous devez accepter les CGU.';
   return errors;
 }
 
@@ -133,7 +134,7 @@ const emptyForm = {
   firstName: '', lastName: '', email: '', phone: '',
   departureAddress: '', arrivalAddress: '',
   date: '', time: '', passengers: '1', luggage: '0',
-  comments: '', gdprConsent: false,
+  comments: '', gdprConsent: false, termsAccepted: false,
 };
 
 export default function Reservation() {
@@ -218,6 +219,11 @@ export default function Reservation() {
       setSuccess({ ...data, simData, serviceType, duration });
       window.scrollTo({ top: 0, behavior: 'smooth' });
     } catch (err) {
+      const backendFields = err.response?.data?.fields;
+      if (backendFields) {
+        setErrors(prev => ({ ...prev, ...backendFields }));
+        document.querySelector('.has-error')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }
       setServerError(err.response?.data?.error || 'Une erreur est survenue. Veuillez réessayer.');
     } finally {
       setLoading(false);
@@ -526,7 +532,7 @@ export default function Reservation() {
                   <label htmlFor="gdpr">
                     J'accepte que mes données personnelles soient utilisées pour le traitement
                     de ma réservation, conformément à la{' '}
-                    <Link to="/politique-confidentialite" style={{ color: 'var(--color-accent)' }}>
+                    <Link to="/politique-rgpd" style={{ color: 'var(--color-accent)' }}>
                       politique de confidentialité
                     </Link>.
                     Ces données ne seront pas transmises à des tiers. <strong>*</strong>
@@ -536,6 +542,26 @@ export default function Reservation() {
                   {errors.gdprConsent && (
                     <motion.div className="resv-error" {...fadeSlide} key="gdpr-err">
                       <AlertTriangle size={11} strokeWidth={2} /> {errors.gdprConsent}
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+
+                <div className={`resv-gdpr ${errors.termsAccepted ? 'has-error' : ''}`}>
+                  <input
+                    type="checkbox" id="termsAccepted" name="termsAccepted"
+                    checked={form.termsAccepted} onChange={handleChange}
+                  />
+                  <label htmlFor="termsAccepted">
+                    J'ai lu et j'accepte les{' '}
+                    <Link to="/cgu" style={{ color: 'var(--color-accent)' }}>
+                      conditions générales d'utilisation
+                    </Link>. <strong>*</strong>
+                  </label>
+                </div>
+                <AnimatePresence>
+                  {errors.termsAccepted && (
+                    <motion.div className="resv-error" {...fadeSlide} key="terms-err">
+                      <AlertTriangle size={11} strokeWidth={2} /> {errors.termsAccepted}
                     </motion.div>
                   )}
                 </AnimatePresence>

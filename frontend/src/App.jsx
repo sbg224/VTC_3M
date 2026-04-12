@@ -11,6 +11,7 @@ import Dashboard from './pages/Dashboard';
 import AdminDashboard from './pages/AdminDashboard';
 import MentionsLegales from './pages/MentionsLegales';
 import PolitiqueRGPD from './pages/PolitiqueRGPD';
+import ConditionsGenerales from './pages/ConditionsGenerales';
 import ReviewPage from './pages/ReviewPage';
 import { AuthProvider, useAuth } from './services/auth';
 import CursorEffect from './animations/CursorEffect';
@@ -68,6 +69,8 @@ export default function App() {
           <Route path="/register" element={<AppLayout><Register /></AppLayout>} />
           <Route path="/mentions-legales" element={<AppLayout><MentionsLegales /></AppLayout>} />
           <Route path="/politique-rgpd" element={<AppLayout><PolitiqueRGPD /></AppLayout>} />
+          <Route path="/politique-confidentialite" element={<Navigate to="/politique-rgpd" replace />} />
+          <Route path="/cgu" element={<AppLayout><ConditionsGenerales /></AppLayout>} />
           <Route path="/review/:token" element={<ReviewPage />} />
 
           {/* ── Espace chauffeur ──────────────────────────────────────── */}

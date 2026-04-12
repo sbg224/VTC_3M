@@ -89,6 +89,18 @@ module.exports = (sequelize) => {
       allowNull: true,
     },
 
+    // ── Consentements légaux ────────────────────────────────────────────────
+    gdprConsent: {
+      type: DataTypes.BOOLEAN,
+      allowNull: false,
+      defaultValue: false,
+    },
+    termsAccepted: {
+      type: DataTypes.BOOLEAN,
+      allowNull: false,
+      defaultValue: false,
+    },
+
     // ── Comptabilité ─────────────────────────────────────────────────────────
     // Taux de commission de la plateforme (%) appliqué sur le CA brut du chauffeur
     // Valeur par défaut : 20 % — modifiable individuellement par l'admin

@@ -148,7 +148,7 @@ const emptyForm = {
   firstName: '', lastName: '', email: '', phone: '',
   departureAddress: '', arrivalAddress: '',
   date: '', time: '', passengers: '1', luggage: '0',
-  comments: '', gdprConsent: false,
+  comments: '', gdprConsent: false, termsAccepted: false,
 };
 
 function validate(form) {
@@ -171,6 +171,7 @@ function validate(form) {
   }
   if (!form.time) errors.time = 'L\'heure est requise.';
   if (!form.gdprConsent) errors.gdprConsent = 'Vous devez accepter la politique de confidentialité.';
+  if (!form.termsAccepted) errors.termsAccepted = 'Vous devez accepter les CGU.';
   return errors;
 }
 
@@ -259,6 +260,11 @@ export default function BookingPage() {
       setSuccess({ ...data, simData });
       window.scrollTo({ top: 0, behavior: 'smooth' });
     } catch (err) {
+      const backendFields = err.response?.data?.fields;
+      if (backendFields) {
+        setErrors(prev => ({ ...prev, ...backendFields }));
+        document.querySelector('.form-error')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }
       setServerError(err.response?.data?.error || 'Une erreur est survenue. Veuillez réessayer.');
     } finally {
       setLoading(false);
@@ -558,6 +564,24 @@ export default function BookingPage() {
             {errors.gdprConsent && (
               <div className="form-error flex items-center gap-1" style={{ marginLeft: '28px' }}>
                 <AlertTriangle size={12} strokeWidth={1.5} /> {errors.gdprConsent}
+              </div>
+            )}
+
+            <div className="form-check">
+              <input
+                type="checkbox" id="termsAccepted" name="termsAccepted"
+                checked={form.termsAccepted} onChange={handleChange}
+              />
+              <label htmlFor="termsAccepted">
+                J'ai lu et j'accepte les{' '}
+                <Link to="/cgu" style={{ color: 'var(--color-accent)' }}>
+                  conditions générales d'utilisation
+                </Link>. <strong>*</strong>
+              </label>
+            </div>
+            {errors.termsAccepted && (
+              <div className="form-error flex items-center gap-1" style={{ marginLeft: '28px' }}>
+                <AlertTriangle size={12} strokeWidth={1.5} /> {errors.termsAccepted}
               </div>
             )}
 

@@ -86,8 +86,17 @@ module.exports = (sequelize) => {
       type: DataTypes.STRING,
       allowNull: true,
     },
-    // RGPD
+    reviewToken: {
+      type: DataTypes.STRING,
+      allowNull: true,
+      unique: true,
+    },
+    // RGPD / consentements
     gdprConsent: {
+      type: DataTypes.BOOLEAN,
+      defaultValue: false,
+    },
+    termsAccepted: {
       type: DataTypes.BOOLEAN,
       defaultValue: false,
     },
