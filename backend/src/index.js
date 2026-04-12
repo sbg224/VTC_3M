@@ -32,8 +32,13 @@ app.use(helmet({
 }));
 
 // ── CORS ──────────────────────────────────────────────────────────────────────
-const allowedOrigins = (process.env.FRONTEND_URL || 'http://localhost:3000').split(',');
+const normalizeOrigin = (value) => String(value || '').trim().replace(/\/$/, '');
+const allowedOrigins = (process.env.FRONTEND_URL || 'http://localhost:3000')
+  .split(',')
+  .map(normalizeOrigin)
+  .filter(Boolean);
 const isProd = process.env.NODE_ENV === 'production';
+const privateDevOriginRegex = /^https?:\/\/(localhost|127\.0\.0\.1|10\.\d+\.\d+\.\d+|192\.168\.\d+\.\d+|172\.(1[6-9]|2\d|3[0-1])\.\d+\.\d+|100\.\d+\.\d+\.\d+)(:\d+)?$/i;
 app.use(cors({
   origin: (origin, cb) => {
     // En production : rejeter toute requête sans header Origin (scripts, curl, etc.)
@@ -45,7 +50,9 @@ app.use(cors({
       // En développement : autoriser les outils comme Postman, curl
       return cb(null, true);
     }
-    if (allowedOrigins.includes(origin)) return cb(null, true);
+    const normalizedOrigin = normalizeOrigin(origin);
+    if (allowedOrigins.includes(normalizedOrigin)) return cb(null, true);
+    if (!isProd && privateDevOriginRegex.test(normalizedOrigin)) return cb(null, true);
     logger.warn(`[CORS] Origine bloquée : ${origin}`);
     cb(new Error('Origine non autorisée par CORS.'));
   },
