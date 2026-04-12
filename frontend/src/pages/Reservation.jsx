@@ -8,6 +8,7 @@ import {
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { reservationAPI, simulateAPI } from '../services/api';
+import Seo from '../components/Seo';
 
 // ── Constantes ────────────────────────────────────────────────────────────────
 const DURATIONS = ['1h','2h','3h','4h','5h','6h','8h','10h','12h'];
@@ -230,10 +231,19 @@ export default function Reservation() {
     }
   };
 
+  const seo = (
+    <Seo
+      title="Réservation VTC Toulouse, devis et réservation en ligne | 3M Drive"
+      description="Réservez votre chauffeur VTC à Toulouse en ligne, obtenez un tarif estimé pour vos transferts aéroport, gare ou mise à disposition avec 3M Drive."
+      canonicalPath="/reservation"
+    />
+  );
+
   // ── Écran succès ─────────────────────────────────────────────────────────────
   if (success) {
     return (
       <section className="resv-page">
+        {seo}
         <div className="container">
           <motion.div className="resv-success" {...fadeSlide}>
             <div className="resv-success-icon">
@@ -286,6 +296,7 @@ export default function Reservation() {
   // ── Page principale ──────────────────────────────────────────────────────────
   return (
     <section className="resv-page">
+      {seo}
       <div className="container">
 
         {/* En-tête */}

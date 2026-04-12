@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { AlertCircle, Loader2, LogIn, Lock } from 'lucide-react';
 import { authAPI } from '../services/api';
 import { useAuth } from '../services/auth';
+import Seo from '../components/Seo';
 
 export default function Login() {
   const [form, setForm] = useState({ email: '', password: '' });
@@ -36,6 +37,12 @@ export default function Login() {
 
   return (
     <div className="login-page">
+      <Seo
+        title="Connexion espace chauffeur | 3M Drive"
+        description="Connexion à l'espace chauffeur 3M Drive."
+        canonicalPath="/login"
+        noindex
+      />
       <div className="login-card">
         <div className="login-card-header">
           <div style={{ marginBottom: '12px', display: 'flex', justifyContent: 'center' }}>

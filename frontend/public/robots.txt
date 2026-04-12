@@ -1,6 +1,9 @@
 User-agent: *
 Allow: /
 Disallow: /dashboard
+Disallow: /admin
 Disallow: /login
+Disallow: /register
+Disallow: /review
 
 Sitemap: https://3mdrive.fr/sitemap.xml

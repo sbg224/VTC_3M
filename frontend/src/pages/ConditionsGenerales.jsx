@@ -1,3 +1,5 @@
+import Seo from '../components/Seo';
+
 const BREADCRUMB_LD = JSON.stringify({
   '@context': 'https://schema.org',
   '@type': 'BreadcrumbList',
@@ -10,6 +12,11 @@ const BREADCRUMB_LD = JSON.stringify({
 export default function ConditionsGenerales() {
   return (
     <>
+      <Seo
+        title="Conditions générales d'utilisation | 3M Drive"
+        description="Consultez les conditions générales d'utilisation du site 3M Drive, service de réservation VTC à Toulouse."
+        canonicalPath="/cgu"
+      />
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: BREADCRUMB_LD }} />
       <section className="section legal-page">
         <div className="container legal-container">

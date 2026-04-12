@@ -5,6 +5,7 @@ import {
   CheckCircle, FileText, ClipboardList, User, Lock, Star, Shield,
 } from 'lucide-react';
 import { reservationAPI, simulateAPI, driverPublicAPI } from '../services/api';
+import Seo from '../components/Seo';
 
 // ── Widget simulation (identique à Reservation.jsx) ──────────────────────────
 
@@ -271,6 +272,14 @@ export default function BookingPage() {
     }
   };
 
+  const seo = (
+    <Seo
+      title={`${driver?.businessName || driver?.name || 'Chauffeur VTC Toulouse'} | Réservation en ligne 3M Drive`}
+      description={`Réservez votre trajet avec ${driver?.businessName || driver?.name || 'un chauffeur partenaire'} sur 3M Drive, estimation rapide et réservation VTC à Toulouse.`}
+      canonicalPath={`/book/${slug}`}
+    />
+  );
+
   // ── États de chargement / erreur du profil ─────────────────────────────────
   if (driverLoading) {
     return (
@@ -307,6 +316,7 @@ export default function BookingPage() {
   if (success) {
     return (
       <section className="reservation-page">
+        {seo}
         <div className="container">
           <div className="success-card">
             <div className="success-icon"><CheckCircle size={48} strokeWidth={1.5} style={{ color: 'var(--color-success)', margin: '0 auto' }} /></div>
@@ -357,6 +367,7 @@ export default function BookingPage() {
   // ── Page principale ────────────────────────────────────────────────────────
   return (
     <section className="reservation-page">
+      {seo}
       <div className="container">
 
         {/* Bandeau identité chauffeur */}

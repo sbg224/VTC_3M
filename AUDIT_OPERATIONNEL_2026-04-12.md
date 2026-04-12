@@ -102,6 +102,14 @@ Rendre le code réellement opérationnel avant déploiement, en priorisant :
 - Avis client via `reviewToken` côté interface.
 - Émission réelle des emails/SMS en environnement contrôlé.
 
+## SEO
+- Mise en place d'un composant SEO réutilisable pour gérer dynamiquement : `title`, `description`, `canonical`, Open Graph, Twitter et `robots` selon la route.
+- Injection SEO faite sur les pages clés : accueil, réservation, booking chauffeur, mentions légales, politique RGPD, CGU, login, register, review.
+- `robots.txt` renforcé pour exclure `admin`, `login`, `register`, `review` et `dashboard`.
+- `sitemap.xml` mis à jour avec `/cgu` et des dates récentes.
+- Limite restante importante : l'application reste une SPA Vite classique. Pour un SEO maximal sur pages publiques, il faudra envisager plus tard du prerender / SSR / génération statique ciblée.
+- Dette perf/SEO restante : bundle frontend encore lourd (~700 kB minifié), à réduire plus tard via code-splitting.
+
 ## Risques / dette restante
 - Le contenu juridique doit être **revalidé métier/juridique** avant production finale.
 - La table `drivers_backup` existe encore dans la SQLite locale : à documenter ou nettoyer plus tard.

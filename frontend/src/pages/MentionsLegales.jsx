@@ -1,4 +1,5 @@
 import { Mail, Phone, MapPin } from 'lucide-react';
+import Seo from '../components/Seo';
 
 const BREADCRUMB_LD = JSON.stringify({
   '@context': 'https://schema.org',
@@ -12,6 +13,11 @@ const BREADCRUMB_LD = JSON.stringify({
 export default function MentionsLegales() {
   return (
     <>
+    <Seo
+      title="Mentions légales | 3M Drive Toulouse"
+      description="Consultez les mentions légales de 3M Drive, service de chauffeur VTC à Toulouse."
+      canonicalPath="/mentions-legales"
+    />
     <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: BREADCRUMB_LD }} />
     <section className="section legal-page">
       <div className="container legal-container">

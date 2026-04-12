@@ -1,4 +1,5 @@
 import { Mail, Phone, MapPin } from 'lucide-react';
+import Seo from '../components/Seo';
 
 const BREADCRUMB_LD = JSON.stringify({
   '@context': 'https://schema.org',
@@ -12,6 +13,11 @@ const BREADCRUMB_LD = JSON.stringify({
 export default function PolitiqueRGPD() {
   return (
     <>
+    <Seo
+      title="Politique de confidentialité et RGPD | 3M Drive"
+      description="Politique de confidentialité et traitement des données personnelles de 3M Drive, chauffeur VTC à Toulouse."
+      canonicalPath="/politique-rgpd"
+    />
     <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: BREADCRUMB_LD }} />
     <section className="section legal-page">
       <div className="container legal-container">

@@ -10,6 +10,7 @@ import {
 import { motion, AnimatePresence } from 'framer-motion';
 import { gsap, ScrollTrigger } from '../animations/gsap';
 import { simulateAPI, publicStatsAPI } from '../services/api';
+import Seo from '../components/Seo';
 
 // ── Données ───────────────────────────────────────────────────────────────────
 
@@ -320,6 +321,11 @@ export default function Home() {
 
   return (
     <div ref={pageRef}>
+      <Seo
+        title="3M Drive, Chauffeur VTC Premium à Toulouse"
+        description="Chauffeur VTC privé à Toulouse, transferts aéroport Blagnac, gare Matabiau, déplacements professionnels et service premium 24h/24 en Haute-Garonne."
+        canonicalPath="/"
+      />
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON_LD_LOCAL_BUSINESS }} />
 
       {/* ── HERO PLEIN ÉCRAN ──────────────────────────────────────────────────── */}

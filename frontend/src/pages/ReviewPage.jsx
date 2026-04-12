@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { Star, CheckCircle, AlertTriangle, Loader2, Car, MapPin, Calendar } from 'lucide-react';
 import axios from 'axios';
+import Seo from '../components/Seo';
 
 const api = axios.create({ baseURL: '/api', timeout: 10000 });
 
@@ -73,11 +74,17 @@ export default function ReviewPage() {
 
   return (
     <div style={{
-      minHeight: '100vh',
-      background: 'linear-gradient(135deg, #050508 0%, #111118 60%, #1a1a2e 100%)',
-      display: 'flex', alignItems: 'center', justifyContent: 'center',
-      padding: '24px 16px', fontFamily: 'system-ui, -apple-system, sans-serif',
-    }}>
+       minHeight: '100vh',
+       background: 'linear-gradient(135deg, #050508 0%, #111118 60%, #1a1a2e 100%)',
+       display: 'flex', alignItems: 'center', justifyContent: 'center',
+       padding: '24px 16px', fontFamily: 'system-ui, -apple-system, sans-serif',
+     }}>
+      <Seo
+        title="Avis client | 3M Drive"
+        description="Partagez votre avis sur votre course avec 3M Drive."
+        canonicalPath={`/review/${token}`}
+        noindex
+      />
       <div style={{
         width: '100%', maxWidth: 480,
         background: 'rgba(255,255,255,0.04)',

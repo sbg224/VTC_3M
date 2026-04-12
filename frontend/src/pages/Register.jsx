@@ -5,6 +5,7 @@ import {
   CheckCircle, Clock, Zap, Shield,
 } from 'lucide-react';
 import { authAPI } from '../services/api';
+import Seo from '../components/Seo';
 
 // ── Validation côté client (miroir des règles backend) ────────────────────────
 
@@ -189,6 +190,12 @@ export default function Register() {
 
   return (
     <div className="login-page">
+      <Seo
+        title="Créer un espace chauffeur | 3M Drive"
+        description="Demandez la création de votre espace chauffeur sur 3M Drive."
+        canonicalPath="/register"
+        noindex
+      />
       <div className="login-card" style={{ maxWidth: '480px' }}>
 
         {/* En-tête */}
