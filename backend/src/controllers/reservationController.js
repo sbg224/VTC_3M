@@ -132,7 +132,11 @@ exports.createReservation = async (req, res) => {
       const labels = ['email-admin', 'email-client', 'sms-admin'];
       results.forEach((r, i) => {
         if (r.status === 'fulfilled') {
-          logger.info(`[NOTIF] ${labels[i]} envoyé – ${reservation.reservationNumber}`);
+          if (r.value?.skipped) {
+            logger.warn(`[NOTIF] ${labels[i]} ignoré – ${reservation.reservationNumber} : ${r.value.reason}`);
+          } else {
+            logger.info(`[NOTIF] ${labels[i]} envoyé – ${reservation.reservationNumber}`);
+          }
         } else {
           logger.error(`[NOTIF] ${labels[i]} échoué – ${reservation.reservationNumber} : ${r.reason?.message}`);
         }
@@ -321,7 +325,11 @@ exports.completeReservation = async (req, res) => {
         const labels = ['facture-client', 'facture-chauffeur'];
         results.forEach((r, i) => {
           if (r.status === 'fulfilled') {
-            logger.info(`[NOTIF] ${labels[i]} envoyée – ${reservation.reservationNumber}`);
+            if (r.value?.skipped) {
+              logger.warn(`[NOTIF] ${labels[i]} ignorée – ${reservation.reservationNumber} : ${r.value.reason}`);
+            } else {
+              logger.info(`[NOTIF] ${labels[i]} envoyée – ${reservation.reservationNumber}`);
+            }
           } else {
             logger.error(`[NOTIF] ${labels[i]} échouée – ${reservation.reservationNumber} : ${r.reason?.message}`);
           }

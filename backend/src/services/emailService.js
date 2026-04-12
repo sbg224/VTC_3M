@@ -29,7 +29,7 @@ function formatDate(dateStr) {
 async function sendAdminNotification(reservation, pdfPath, driverEmail) {
   if (!emailsEnabled()) {
     logger.warn(`[EMAIL] Envoi désactivé par EMAIL_ENABLED=false (admin notification ${reservation.reservationNumber})`);
-    return;
+    return { skipped: true, reason: 'EMAIL_DISABLED' };
   }
   const transporter = createTransporter();
 
@@ -116,7 +116,7 @@ async function sendAdminNotification(reservation, pdfPath, driverEmail) {
 async function sendClientConfirmation(reservation, pdfPath) {
   if (!emailsEnabled()) {
     logger.warn(`[EMAIL] Envoi désactivé par EMAIL_ENABLED=false (confirmation client ${reservation.reservationNumber})`);
-    return;
+    return { skipped: true, reason: 'EMAIL_DISABLED' };
   }
   const transporter = createTransporter();
 
@@ -189,7 +189,7 @@ async function sendClientConfirmation(reservation, pdfPath) {
 async function sendInvoiceToClient(reservation, pdfPath, reviewToken) {
   if (!emailsEnabled()) {
     logger.warn(`[EMAIL] Envoi désactivé par EMAIL_ENABLED=false (facture client ${reservation.reservationNumber})`);
-    return;
+    return { skipped: true, reason: 'EMAIL_DISABLED' };
   }
   const transporter = createTransporter();
 
@@ -247,11 +247,11 @@ async function sendInvoiceToClient(reservation, pdfPath, reviewToken) {
 async function sendInvoiceToDriver(reservation, pdfPath, driverEmail) {
   if (!driverEmail) {
     logger.warn(`[EMAIL] sendInvoiceToDriver : aucun email chauffeur fourni pour ${reservation.reservationNumber}`);
-    return;
+    return { skipped: true, reason: 'MISSING_DRIVER_EMAIL' };
   }
   if (!emailsEnabled()) {
     logger.warn(`[EMAIL] Envoi désactivé par EMAIL_ENABLED=false (facture chauffeur ${reservation.reservationNumber})`);
-    return;
+    return { skipped: true, reason: 'EMAIL_DISABLED' };
   }
   const transporter = createTransporter();
 
