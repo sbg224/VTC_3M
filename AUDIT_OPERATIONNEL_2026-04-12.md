@@ -84,14 +84,23 @@ Rendre le code réellement opérationnel avant déploiement, en priorisant :
   - simulation tarifaire OK,
   - validation backend réservation OK,
   - validation backend inscription chauffeur OK.
+- Test de flux local complet validé en mode sûr, puis nettoyé :
+  - inscription chauffeur test,
+  - passage contrôlé en statut `trial`,
+  - login chauffeur,
+  - création de réservation publique via `driverSlug`,
+  - récupération de la réservation dans l'espace chauffeur,
+  - validation de course,
+  - génération PDF bon + facture,
+  - génération de `reviewToken`,
+  - notifications correctement ignorées en mode test.
 
 ## Points encore à vérifier en runtime
-- Réservation publique complète de bout en bout (sans casser les données métiers).
-- Réservation chauffeur via `/book/:slug`.
-- Login chauffeur actif / pending / suspendu avec comptes de test contrôlés.
-- Génération PDF réelle.
-- Émission réelle des emails/SMS.
-- Avis client via `reviewToken`.
+- Parcours UI complet dans le navigateur, pas seulement via API locale.
+- Réservation chauffeur via `/book/:slug` depuis l'interface front.
+- Login chauffeur actif / pending / suspendu depuis l'interface front.
+- Avis client via `reviewToken` côté interface.
+- Émission réelle des emails/SMS en environnement contrôlé.
 
 ## Risques / dette restante
 - Le contenu juridique doit être **revalidé métier/juridique** avant production finale.
