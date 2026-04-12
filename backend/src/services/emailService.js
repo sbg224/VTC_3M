@@ -1,6 +1,10 @@
 const nodemailer = require('nodemailer');
 const logger = require('../middleware/logger');
 
+function emailsEnabled() {
+  return String(process.env.EMAIL_ENABLED || 'true').toLowerCase() !== 'false';
+}
+
 function createTransporter() {
   return nodemailer.createTransport({
     host: process.env.EMAIL_HOST || 'smtp.gmail.com',
@@ -23,6 +27,10 @@ function formatDate(dateStr) {
 // ── Email au chauffeur assigné ────────────────────────────────────────────────
 // driverEmail : email du chauffeur qui reçoit la course (pas l'email fixe du .env)
 async function sendAdminNotification(reservation, pdfPath, driverEmail) {
+  if (!emailsEnabled()) {
+    logger.warn(`[EMAIL] Envoi désactivé par EMAIL_ENABLED=false (admin notification ${reservation.reservationNumber})`);
+    return;
+  }
   const transporter = createTransporter();
 
   const html = `
@@ -106,6 +114,10 @@ async function sendAdminNotification(reservation, pdfPath, driverEmail) {
 
 // ── Email de confirmation au client ──────────────────────────────────────────
 async function sendClientConfirmation(reservation, pdfPath) {
+  if (!emailsEnabled()) {
+    logger.warn(`[EMAIL] Envoi désactivé par EMAIL_ENABLED=false (confirmation client ${reservation.reservationNumber})`);
+    return;
+  }
   const transporter = createTransporter();
 
   const html = `
@@ -175,6 +187,10 @@ async function sendClientConfirmation(reservation, pdfPath) {
 
 // ── Email de facture au client ────────────────────────────────────────────────
 async function sendInvoiceToClient(reservation, pdfPath, reviewToken) {
+  if (!emailsEnabled()) {
+    logger.warn(`[EMAIL] Envoi désactivé par EMAIL_ENABLED=false (facture client ${reservation.reservationNumber})`);
+    return;
+  }
   const transporter = createTransporter();
 
   const appUrl    = (process.env.FRONTEND_URL || 'http://localhost:3000').split(',')[0];
@@ -231,6 +247,10 @@ async function sendInvoiceToClient(reservation, pdfPath, reviewToken) {
 async function sendInvoiceToDriver(reservation, pdfPath, driverEmail) {
   if (!driverEmail) {
     logger.warn(`[EMAIL] sendInvoiceToDriver : aucun email chauffeur fourni pour ${reservation.reservationNumber}`);
+    return;
+  }
+  if (!emailsEnabled()) {
+    logger.warn(`[EMAIL] Envoi désactivé par EMAIL_ENABLED=false (facture chauffeur ${reservation.reservationNumber})`);
     return;
   }
   const transporter = createTransporter();

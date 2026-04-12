@@ -5,6 +5,11 @@ function formatDate(dateStr) {
 }
 
 async function sendAdminSms(reservation) {
+  if (String(process.env.SMS_ENABLED || 'true').toLowerCase() === 'false') {
+    logger.warn(`[SMS] Envoi désactivé par SMS_ENABLED=false (${reservation.reservationNumber})`);
+    return;
+  }
+
   if (!process.env.TWILIO_ACCOUNT_SID || !process.env.TWILIO_AUTH_TOKEN ||
       process.env.TWILIO_ACCOUNT_SID.startsWith('AC0000')) {
     logger.warn('SMS désactivé : identifiants Twilio non configurés');
