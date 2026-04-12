@@ -77,7 +77,8 @@ Rendre le code réellement opérationnel avant déploiement, en priorisant :
   - index unique `reservations_review_token_unique`
   - `reservations.termsAccepted`
 - Frontend compilé avec succès via `npm run build`.
-- Frontend dev démarré avec succès, mais sur `3001` car le port `3000` est déjà occupé par un autre service.
+- Frontend dev démarré avec succès. Il a d'abord dû utiliser `3001`, puis a pu être remis sur `3000` après libération du port.
+- Mise en place d'un mode de test sûr sur la copie locale via `EMAIL_ENABLED=false` et `SMS_ENABLED=false`.
 - Tests non destructifs validés :
   - route publique chauffeur OK,
   - simulation tarifaire OK,
@@ -96,11 +97,12 @@ Rendre le code réellement opérationnel avant déploiement, en priorisant :
 - Le contenu juridique doit être **revalidé métier/juridique** avant production finale.
 - La table `drivers_backup` existe encore dans la SQLite locale : à documenter ou nettoyer plus tard.
 - Il reste à vérifier que les services externes (mail, SMS, Stripe, PDF) fonctionnent réellement avec la configuration locale.
-- Le port `3000` attendu par Vite et `FRONTEND_URL=http://localhost:3000` est déjà occupé par un autre service (`uvicorn`) sur cette machine. Tant que ce conflit n'est pas réglé, les liens frontend générés par le backend risquent de viser le mauvais service en local.
+- Le conflit du port `3000` a été identifié sur le conteneur Docker `open-webui` du projet `msb-ia`. Le port a ensuite été libéré pour remettre le front VTC sur `3000`.
 - Le premier essai de migration a révélé une contrainte SQLite importante : impossible d'ajouter une colonne `UNIQUE` directement via `ALTER TABLE ... ADD COLUMN`. Correctif appliqué en séparant ajout de colonne et création d'index unique.
+- Les logs de notifications ont dû être corrigés pour distinguer un envoi réellement effectué d'un envoi volontairement ignoré en mode test.
 
 ## Prochaine étape recommandée
-1. Décider quoi faire du conflit de port `3000` (libérer 3000 ou assumer un autre port local et ajuster `FRONTEND_URL`).
-2. Tester les parcours critiques de bout en bout avec prudence sur les services externes.
+1. Tester les parcours critiques de bout en bout en mode sûr local.
+2. Vérifier ensuite les flux externes réels (mail/SMS/PDF) de manière contrôlée.
 3. Corriger les derniers écarts runtime.
 4. Préparer ensuite le déploiement.
