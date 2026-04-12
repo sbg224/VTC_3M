@@ -55,9 +55,23 @@ const MIGRATIONS = [
         await qi.addColumn('reservations', 'reviewToken', {
           type: DataTypes.STRING,
           allowNull: true,
-          unique: true,
         });
         logger.info('[MIGRATION] Colonne reviewToken ajoutée à reservations.');
+      }
+    },
+  },
+  {
+    name: '20260412_add_reservations_review_token_unique_index',
+    up: async (sequelize, logger) => {
+      const qi = sequelize.getQueryInterface();
+      const indexes = await qi.showIndex('reservations');
+      const exists = indexes.some((index) => index.name === 'reservations_review_token_unique');
+      if (!exists) {
+        await qi.addIndex('reservations', ['reviewToken'], {
+          unique: true,
+          name: 'reservations_review_token_unique',
+        });
+        logger.info('[MIGRATION] Index unique ajouté sur reservations.reviewToken.');
       }
     },
   },

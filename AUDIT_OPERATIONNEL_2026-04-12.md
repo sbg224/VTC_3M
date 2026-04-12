@@ -67,27 +67,40 @@ Rendre le code réellement opérationnel avant déploiement, en priorisant :
   - `reservations.termsAccepted`
 - Remplacement du bricolage inline dans `backend/src/index.js` par le runner dédié.
 
+## Vérifications runtime déjà faites
+- Dépendances backend/frontend installées sur `projects/VTC_3M_local`.
+- Backend démarré avec la vraie SQLite locale après correction de migration SQLite.
+- Migrations réellement appliquées sur la base locale :
+  - `drivers.gdprConsent`
+  - `drivers.termsAccepted`
+  - `reservations.reviewToken`
+  - index unique `reservations_review_token_unique`
+  - `reservations.termsAccepted`
+- Frontend compilé avec succès via `npm run build`.
+- Frontend dev démarré avec succès, mais sur `3001` car le port `3000` est déjà occupé par un autre service.
+- Tests non destructifs validés :
+  - route publique chauffeur OK,
+  - simulation tarifaire OK,
+  - validation backend réservation OK,
+  - validation backend inscription chauffeur OK.
+
 ## Points encore à vérifier en runtime
-- Installer les dépendances backend/frontend sur la copie locale exécutable.
-- Démarrer le projet avec le vrai `.env` et la vraie SQLite locale.
-- Vérifier l'application réelle des migrations sur `backend/database.sqlite`.
-- Tester les parcours complets :
-  - réservation publique,
-  - réservation chauffeur via `/book/:slug`,
-  - inscription chauffeur,
-  - login chauffeur actif / pending / suspendu,
-  - génération PDF,
-  - émission d'emails/SMS,
-  - avis client via `reviewToken`.
+- Réservation publique complète de bout en bout (sans casser les données métiers).
+- Réservation chauffeur via `/book/:slug`.
+- Login chauffeur actif / pending / suspendu avec comptes de test contrôlés.
+- Génération PDF réelle.
+- Émission réelle des emails/SMS.
+- Avis client via `reviewToken`.
 
 ## Risques / dette restante
 - Le contenu juridique doit être **revalidé métier/juridique** avant production finale.
 - La table `drivers_backup` existe encore dans la SQLite locale : à documenter ou nettoyer plus tard.
 - Il reste à vérifier que les services externes (mail, SMS, Stripe, PDF) fonctionnent réellement avec la configuration locale.
+- Le port `3000` attendu par Vite et `FRONTEND_URL=http://localhost:3000` est déjà occupé par un autre service (`uvicorn`) sur cette machine. Tant que ce conflit n'est pas réglé, les liens frontend générés par le backend risquent de viser le mauvais service en local.
+- Le premier essai de migration a révélé une contrainte SQLite importante : impossible d'ajouter une colonne `UNIQUE` directement via `ALTER TABLE ... ADD COLUMN`. Correctif appliqué en séparant ajout de colonne et création d'index unique.
 
 ## Prochaine étape recommandée
-1. Installer les dépendances sur `projects/VTC_3M_local`.
-2. Lancer backend + frontend.
-3. Laisser les migrations s'exécuter.
-4. Tester les parcours critiques de bout en bout.
-5. Corriger les écarts restants, puis préparer le déploiement.
+1. Décider quoi faire du conflit de port `3000` (libérer 3000 ou assumer un autre port local et ajuster `FRONTEND_URL`).
+2. Tester les parcours critiques de bout en bout avec prudence sur les services externes.
+3. Corriger les derniers écarts runtime.
+4. Préparer ensuite le déploiement.
