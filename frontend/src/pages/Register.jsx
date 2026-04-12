@@ -143,11 +143,19 @@ export default function Register() {
       // Compte créé en statut "pending" — ne pas connecter, afficher confirmation
       setRegistered(true);
     } catch (err) {
-      setServerError(
-        err.response?.data?.error ||
-        err.response?.data?.errors?.[0]?.msg ||
-        'Une erreur est survenue. Veuillez réessayer.'
-      );
+      if (!err.response) {
+        setServerError('Impossible de joindre le serveur. Vérifiez que l\'application est bien démarrée.');
+      } else if (err.response.status === 409) {
+        setServerError('Un compte existe déjà avec cette adresse email.');
+      } else if (err.response.status === 429) {
+        setServerError('Trop de tentatives. Réessayez dans quelques minutes.');
+      } else {
+        setServerError(
+          err.response?.data?.error ||
+          err.response?.data?.errors?.[0]?.msg ||
+          'Une erreur est survenue. Veuillez réessayer.'
+        );
+      }
     } finally {
       setLoading(false);
     }

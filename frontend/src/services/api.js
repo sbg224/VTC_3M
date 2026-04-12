@@ -18,9 +18,18 @@ api.interceptors.response.use(
   (response) => response,
   (error) => {
     if (error.response?.status === 401) {
-      localStorage.removeItem('vtc_token');
-      localStorage.removeItem('vtc_driver');
-      window.location.href = '/login';
+      const requestUrl = error.config?.url || '';
+      const isAuthAttempt = requestUrl.includes('/auth/login') || requestUrl.includes('/auth/register');
+      const hadToken = Boolean(localStorage.getItem('vtc_token'));
+
+      if (hadToken) {
+        localStorage.removeItem('vtc_token');
+        localStorage.removeItem('vtc_driver');
+      }
+
+      if (hadToken && !isAuthAttempt) {
+        window.location.href = '/login';
+      }
     }
     if (error.response?.status === 402) {
       // Abonnement expiré → rediriger vers l'onglet abonnement du dashboard

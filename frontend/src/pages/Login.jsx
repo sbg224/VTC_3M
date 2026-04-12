@@ -29,7 +29,17 @@ export default function Login() {
       login(data.token, data.driver);
       navigate(data.driver?.role === 'admin' ? '/admin' : '/dashboard');
     } catch (err) {
-      setError(err.response?.data?.error || 'Identifiants incorrects.');
+      if (!err.response) {
+        setError('Impossible de joindre le serveur. Vérifiez que l\'application est bien démarrée.');
+      } else if (err.response.status === 401) {
+        setError('Email ou mot de passe incorrect.');
+      } else if (err.response.status === 403) {
+        setError(err.response?.data?.error || 'Accès refusé pour ce compte.');
+      } else if (err.response.status === 429) {
+        setError('Trop de tentatives. Réessayez dans quelques minutes.');
+      } else {
+        setError(err.response?.data?.error || 'Erreur lors de la connexion.');
+      }
     } finally {
       setLoading(false);
     }
