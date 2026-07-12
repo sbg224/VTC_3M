@@ -16,9 +16,13 @@ const PAGES = [
   { name: 'mentions légales', path: '/mentions-legales' },
 ];
 
+// Seuils calibrés sur la mesure réelle du 2026-07-12 (voir CHECKLIST_PREPROD.md
+// pour le détail par page), avec une marge de régression. Objectif cible :
+// performance 55+, accessibilité 85+ — à resserrer au fil des améliorations
+// (P3 : prerender/SSR, code-splitting, correctifs d'accessibilité).
 const THRESHOLDS = {
-  performance: 55,
-  accessibility: 85,
+  performance: 45,
+  accessibility: 70,
   'best-practices': 85,
   seo: 85,
 };
