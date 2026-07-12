@@ -1,7 +1,6 @@
 const fs = require('fs');
 const path = require('path');
 const { defineConfig } = require('cypress');
-const { lighthouse, prepareAudit } = require('cypress-audit');
 
 // Lit backend/.env (non commité) pour récupérer les identifiants admin locaux
 // sans les dupliquer en dur dans les specs Cypress.
@@ -23,21 +22,6 @@ module.exports = defineConfig({
     specPattern: 'cypress/e2e/**/*.cy.js',
     video: false,
     setupNodeEvents(on, config) {
-      on('before:browser:launch', (browser = {}, launchOptions) => {
-        // Stabilise Chrome headless en CI (crash au lancement observé sur les
-        // runners GitHub Actions sans ces flags — sandbox/partition mémoire
-        // partagée non disponibles dans ce contexte).
-        if (browser.family === 'chromium' && browser.name !== 'electron') {
-          launchOptions.args.push('--no-sandbox');
-          launchOptions.args.push('--disable-dev-shm-usage');
-          launchOptions.args.push('--disable-gpu');
-        }
-        prepareAudit(launchOptions);
-        return launchOptions;
-      });
-      on('task', {
-        lighthouse: lighthouse(),
-      });
       const backendEnv = readBackendEnv();
       config.env.ADMIN_EMAIL = backendEnv.ADMIN_LOGIN_EMAIL || 'admin@vtc3m.fr';
       config.env.ADMIN_PASSWORD = backendEnv.ADMIN_PASSWORD || 'Admin2024!';

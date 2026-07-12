@@ -58,15 +58,18 @@ jobs:
         run: npm run test:e2e
 
       - name: Installer une version stable de Chrome
-        # Le Chrome préinstallé sur les runners GitHub est parfois trop récent
-        # (build "150" observé) et incompatible avec Cypress 14 en mode
-        # headless CDP. On épingle un canal stable connu pour fonctionner.
+        id: setup-chrome
         uses: browser-actions/setup-chrome@v1
         with:
           chrome-version: stable
 
       - name: Audits Lighthouse (vitesse, fiabilité, SEO)
+        # Lighthouse pilote directement Chrome via chrome-launcher (indépendant
+        # de Cypress) — CHROME_PATH pointe vers le Chrome épinglé ci-dessus
+        # plutôt que de dépendre de la version préinstallée sur le runner.
         working-directory: frontend
+        env:
+          CHROME_PATH: ${{ steps.setup-chrome.outputs.chrome-path }}
         run: npm run test:speed
 
       - name: Logs serveurs et captures Cypress en cas d'échec
