@@ -57,6 +57,14 @@ jobs:
         working-directory: frontend
         run: npm run test:e2e
 
+      - name: Installer une version stable de Chrome
+        # Le Chrome préinstallé sur les runners GitHub est parfois trop récent
+        # (build "150" observé) et incompatible avec Cypress 14 en mode
+        # headless CDP. On épingle un canal stable connu pour fonctionner.
+        uses: browser-actions/setup-chrome@v1
+        with:
+          chrome-version: stable
+
       - name: Audits Lighthouse (vitesse, fiabilité, SEO)
         working-directory: frontend
         run: npm run test:speed
