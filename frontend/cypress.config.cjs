@@ -24,6 +24,14 @@ module.exports = defineConfig({
     video: false,
     setupNodeEvents(on, config) {
       on('before:browser:launch', (browser = {}, launchOptions) => {
+        // Stabilise Chrome headless en CI (crash au lancement observé sur les
+        // runners GitHub Actions sans ces flags — sandbox/partition mémoire
+        // partagée non disponibles dans ce contexte).
+        if (browser.family === 'chromium' && browser.name !== 'electron') {
+          launchOptions.args.push('--no-sandbox');
+          launchOptions.args.push('--disable-dev-shm-usage');
+          launchOptions.args.push('--disable-gpu');
+        }
         prepareAudit(launchOptions);
         return launchOptions;
       });
