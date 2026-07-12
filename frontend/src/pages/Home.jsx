@@ -623,7 +623,7 @@ export default function Home() {
                 <div key={i} className="contact-info-item">
                   <div className="contact-icon"><item.Icon size={18} strokeWidth={1.5} /></div>
                   <div>
-                    <h4>{item.title}</h4>
+                    <h3>{item.title}</h3>
                     <p style={{ color: 'var(--color-primary)', fontWeight: '600' }}>{item.info}</p>
                     <p>{item.sub}</p>
                   </div>

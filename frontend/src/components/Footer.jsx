@@ -18,16 +18,17 @@ export default function Footer() {
               Votre chauffeur VTC privé à Toulouse. Service premium,
               discret et ponctuel pour tous vos déplacements en Haute-Garonne.
             </p>
-            <div className="flex gap-3 mt-5">
+            <div className="footer-social-list">
               {[
-                { Icon: MapPin,  href: '#contact' },
-                { Icon: Phone,   href: 'tel:+33751044407' },
-                { Icon: Mail,    href: 'mailto:3m.services31@gmail.com' },
+                { Icon: MapPin,  href: '#contact', label: 'Aller à la section contact' },
+                { Icon: Phone,   href: 'tel:+33751044407', label: 'Appeler le +33 7 51 04 44 07' },
+                { Icon: Mail,    href: 'mailto:3m.services31@gmail.com', label: 'Envoyer un email à 3m.services31@gmail.com' },
               ].map((item, i) => (
                 <a
                   key={i}
                   href={item.href}
-                  className="w-10 h-10 rounded-[10px] flex items-center justify-center transition-colors duration-250"
+                  aria-label={item.label}
+                  className="footer-social-link"
                   style={{ background: 'rgba(212,175,55,0.15)', color: 'rgba(255,255,255,0.7)' }}
                 >
                   <item.Icon size={16} strokeWidth={1.5} />

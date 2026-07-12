@@ -16,6 +16,9 @@
   --color-accent:        #D4AF37;
   --color-accent-light:  #E1BA3A;
   --color-accent-dark:   #A88A2B;
+  /* Variante texte de l'accent or, assombrie pour un contraste AA (4.5:1+)
+     sur fond clair — --color-accent seul (2.1:1) échoue le test Lighthouse. */
+  --color-accent-text:   #7a5f18;
   --color-accent-muted:  rgba(212,175,55,0.12);
   --color-white:         #ffffff;
   --color-surface:       #fafafa;
@@ -158,7 +161,7 @@ input, select, textarea { font-family: var(--font-body); }
   font-weight: 700;
   letter-spacing: 1.6px;
   text-transform: uppercase;
-  color: var(--color-accent);
+  color: var(--color-accent-text);
   margin-bottom: var(--space-4);
 }
 
@@ -1144,7 +1147,7 @@ input, select, textarea { font-family: var(--font-body); }
   transition: background var(--transition);
 }
 .contact-info-item:hover .contact-icon { background: rgba(212,175,55,0.2); }
-.contact-info-item h4 { font-weight: 600; margin-bottom: 4px; font-size: 0.9rem; }
+.contact-info-item h3 { font-weight: 600; margin-bottom: 4px; font-size: 0.9rem; }
 .contact-info-item p { color: var(--color-gray); font-size: 0.88rem; }
 
 /* ── Forms ───────────────────────────────────────────────────────────────────── */
@@ -1616,6 +1619,17 @@ textarea.form-control { resize: vertical; min-height: 88px; }
   letter-spacing: -0.02em;
 }
 .footer-brand p { font-family: var(--font-body); font-size: 0.87rem; line-height: 1.75; max-width: 280px; color: rgba(255,255,255,0.45); }
+.footer-social-list { display: flex; gap: 12px; margin-top: 20px; }
+.footer-social-link {
+  width: 44px;
+  height: 44px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background-color 0.25s, color 0.25s;
+}
+.footer-social-link:hover { background: rgba(212,175,55,0.28) !important; }
 .footer-col h4 {
   font-family: var(--font-heading);
   color: rgba(255,255,255,0.85);
@@ -1764,7 +1778,7 @@ textarea.form-control { resize: vertical; min-height: 88px; }
   color: var(--color-accent);
   margin-top: 2px;
 }
-.resv-section-head h3 {
+.resv-section-head h2 {
   font-family: var(--font-heading);
   font-size: 1rem;
   font-weight: 700;
@@ -3755,7 +3769,7 @@ textarea.form-control { resize: vertical; min-height: 88px; }
   justify-content: center;
   gap: 5px;
   font-size: 0.70rem;
-  color: rgba(255, 255, 255, 0.28);
+  color: rgba(255, 255, 255, 0.62);
   text-align: center;
 }
 
