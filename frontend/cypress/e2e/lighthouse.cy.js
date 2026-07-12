@@ -13,16 +13,28 @@ const thresholds = {
 describe('Audits Lighthouse (vitesse, fiabilité, SEO)', () => {
   it('accueil', () => {
     cy.visit('/');
-    cy.lighthouse(thresholds);
+    // hostname forcé en IPv4 : sur certains environnements (dont les runners
+    // GitHub Actions), Chrome n'expose son port de debug distant que sur
+    // 127.0.0.1, alors que Lighthouse résout "localhost" en ::1 par défaut,
+    // ce qui casse la connexion (ECONNREFUSED ::1:<port>).
+    cy.lighthouse(thresholds, { hostname: '127.0.0.1' });
   });
 
   it('réservation', () => {
     cy.visit('/reservation');
-    cy.lighthouse(thresholds);
+    // hostname forcé en IPv4 : sur certains environnements (dont les runners
+    // GitHub Actions), Chrome n'expose son port de debug distant que sur
+    // 127.0.0.1, alors que Lighthouse résout "localhost" en ::1 par défaut,
+    // ce qui casse la connexion (ECONNREFUSED ::1:<port>).
+    cy.lighthouse(thresholds, { hostname: '127.0.0.1' });
   });
 
   it('mentions légales', () => {
     cy.visit('/mentions-legales');
-    cy.lighthouse(thresholds);
+    // hostname forcé en IPv4 : sur certains environnements (dont les runners
+    // GitHub Actions), Chrome n'expose son port de debug distant que sur
+    // 127.0.0.1, alors que Lighthouse résout "localhost" en ::1 par défaut,
+    // ce qui casse la connexion (ECONNREFUSED ::1:<port>).
+    cy.lighthouse(thresholds, { hostname: '127.0.0.1' });
   });
 });
