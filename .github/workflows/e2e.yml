@@ -1,0 +1,76 @@
+name: E2E
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  e2e:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+
+      - name: Installer les dépendances backend
+        working-directory: backend
+        run: npm ci
+
+      - name: Installer les dépendances frontend
+        working-directory: frontend
+        run: npm ci
+
+      - name: Vérifier que le frontend build sans erreur
+        working-directory: frontend
+        run: npm run build
+
+      - name: Configurer le backend en mode test (aucun envoi réel)
+        working-directory: backend
+        run: |
+          cp .env.example .env
+          JWT_SECRET=$(node -e "console.log(require('crypto').randomBytes(64).toString('hex'))")
+          sed -i "s|^JWT_SECRET=.*|JWT_SECRET=${JWT_SECRET}|" .env
+          sed -i "s|^NODE_ENV=.*|NODE_ENV=test|" .env
+          {
+            echo "EMAIL_ENABLED=false"
+            echo "SMS_ENABLED=false"
+          } >> .env
+
+      - name: Démarrer le backend
+        working-directory: backend
+        run: nohup npm run dev > backend.log 2>&1 &
+
+      - name: Démarrer le frontend
+        working-directory: frontend
+        run: nohup npm run dev > frontend.log 2>&1 &
+
+      - name: Attendre que les serveurs répondent
+        run: |
+          for i in $(seq 1 30); do curl -sf http://127.0.0.1:5001/api/health && break; sleep 2; done
+          for i in $(seq 1 30); do curl -sf http://127.0.0.1:3000 > /dev/null && break; sleep 2; done
+
+      - name: Suite fonctionnelle Cypress (parcours accueil/réservation/login/dashboard)
+        working-directory: frontend
+        run: npm run test:e2e
+
+      - name: Audits Lighthouse (vitesse, fiabilité, SEO)
+        working-directory: frontend
+        run: npm run test:speed
+
+      - name: Logs serveurs et captures Cypress en cas d'échec
+        if: failure()
+        run: |
+          echo "── backend.log ──"; cat backend/backend.log || true
+          echo "── frontend.log ──"; cat frontend/frontend.log || true
+
+      - name: Publier les captures d'écran Cypress en cas d'échec
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: cypress-screenshots
+          path: frontend/cypress/screenshots
+          if-no-files-found: ignore
