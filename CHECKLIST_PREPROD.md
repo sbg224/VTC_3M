@@ -1,11 +1,17 @@
 # Checklist pré-prod VTC_3M
 
 ## P0 — obligatoire avant déploiement
-- [ ] Valider les parcours UI réels dans le navigateur (accueil, réservation, login chauffeur, admin)
-- [ ] Tester une réservation complète en environnement contrôlé avec vrais emails/SMS ou sandbox dédiée
-- [ ] Vérifier toutes les variables d'environnement de prod
-- [ ] Vérifier les sauvegardes DB et fichiers PDF avant mise en ligne
-- [ ] Confirmer les accès réseau / reverse proxy / domaine / HTTPS
+- [x] Valider les parcours UI réels dans le navigateur (accueil, réservation, login chauffeur, admin) — automatisé via Cypress (`frontend/cypress/e2e/`), 11/11 tests verts localement
+- [ ] Tester une réservation complète en environnement contrôlé avec vrais emails/SMS ou sandbox dédiée — nécessite de vraies clés SMTP/Twilio, à faire manuellement
+- [ ] Vérifier toutes les variables d'environnement de prod — à faire sur la VM cible
+- [ ] Vérifier les sauvegardes DB et fichiers PDF avant mise en ligne — nécessite l'infra de prod
+- [ ] Confirmer les accès réseau / reverse proxy / domaine / HTTPS — nécessite l'infra de prod
+
+## Tests automatisés (nouveau)
+- [x] Suite Cypress fonctionnelle : accueil, réservation (avec/sans consentement, email invalide), login (valide/invalide/accès direct bloqué), dashboard admin — `frontend/npm run test:e2e`
+- [x] Audits Lighthouse (vitesse, accessibilité, bonnes pratiques, SEO) via `cypress-audit` sur accueil/réservation/mentions légales — `frontend/npm run test:speed` (nécessite Chrome installé localement ; tourne nativement en CI)
+- [x] CI GitHub Actions (`.github/workflows/e2e.yml`) : build + suite Cypress + audits Lighthouse sur chaque push/PR vers `main`
+- [ ] Étendre la couverture e2e : inscription chauffeur (pending/trial/suspended), avis client via `reviewToken`, webhook Stripe
 
 ## P1 — fortement recommandé
 - [x] Corriger les consentements RGPD + CGU dans les formulaires

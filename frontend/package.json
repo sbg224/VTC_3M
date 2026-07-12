@@ -6,7 +6,11 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "cy:open": "cypress open",
+    "cy:run": "cypress run",
+    "test:e2e": "cypress run --spec \"cypress/e2e/home.cy.js,cypress/e2e/reservation.cy.js,cypress/e2e/login.cy.js,cypress/e2e/dashboard.cy.js\"",
+    "test:speed": "node scripts/lighthouse-audit.js"
   },
   "dependencies": {
     "axios": "^1.7.4",
@@ -21,6 +25,9 @@
     "@types/react": "^18.3.5",
     "@types/react-dom": "^18.3.0",
     "@vitejs/plugin-react": "^4.3.1",
+    "chrome-launcher": "^1.2.1",
+    "cypress": "^14.5.4",
+    "lighthouse": "^12.8.2",
     "vite": "^5.4.2"
   }
 }

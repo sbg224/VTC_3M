@@ -21,6 +21,11 @@ backend/pdfs/
 frontend/dist/
 frontend/dist-ssr/
 
+# ── Cypress ───────────────────────────────────────────────────────────────────
+frontend/cypress/screenshots/
+frontend/cypress/videos/
+frontend/cypress/downloads/
+
 # ── Logs ──────────────────────────────────────────────────────────────────────
 *.log
 logs/
