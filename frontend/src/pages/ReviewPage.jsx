@@ -27,8 +27,8 @@ function StarRating({ value, onChange, readonly = false }) {
           <Star
             size={40}
             strokeWidth={1.5}
-            fill={(hovered || value) >= n ? '#D4AF37' : 'none'}
-            color={(hovered || value) >= n ? '#D4AF37' : 'rgba(255,255,255,0.2)'}
+            fill={(hovered || value) >= n ? '#267253' : 'none'}
+            color={(hovered || value) >= n ? '#267253' : 'rgba(255,255,255,0.2)'}
           />
         </button>
       ))}
@@ -96,17 +96,17 @@ export default function ReviewPage() {
         {/* Logo */}
         <div style={{ textAlign: 'center', marginBottom: 28 }}>
           <div style={{ display: 'inline-flex', alignItems: 'center', gap: 10 }}>
-            <div style={{ width: 44, height: 44, borderRadius: 12, background: 'rgba(212,175,55,0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-              <Car size={22} strokeWidth={1.5} color="#D4AF37" />
+            <div style={{ width: 44, height: 44, borderRadius: 12, background: 'rgba(38,114,83,0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <Car size={22} strokeWidth={1.5} color="#267253" />
             </div>
-            <span style={{ fontSize: '1.3rem', fontWeight: 800, color: '#D4AF37', letterSpacing: '-0.5px' }}>3M Drive</span>
+            <span style={{ fontSize: '1.3rem', fontWeight: 800, color: '#267253', letterSpacing: '-0.5px' }}>3M Drive</span>
           </div>
         </div>
 
         {/* ── Chargement ── */}
         {state === 'loading' && (
           <div style={{ textAlign: 'center', padding: '32px 0' }}>
-            <Loader2 size={32} className="animate-spin" color="#D4AF37" />
+            <Loader2 size={32} className="animate-spin" color="#267253" />
           </div>
         )}
 
@@ -116,7 +116,7 @@ export default function ReviewPage() {
             <AlertTriangle size={40} color="#ef4444" style={{ marginBottom: 16 }} />
             <p style={{ color: '#fff', fontWeight: 700, fontSize: '1.1rem', marginBottom: 8 }}>Lien invalide</p>
             <p style={{ color: 'rgba(255,255,255,0.45)', fontSize: '0.88rem' }}>{errorMsg}</p>
-            <Link to="/" style={{ display: 'inline-block', marginTop: 20, color: '#D4AF37', fontSize: '0.88rem' }}>
+            <Link to="/" style={{ display: 'inline-block', marginTop: 20, color: '#267253', fontSize: '0.88rem' }}>
               Retour à l'accueil
             </Link>
           </div>
@@ -128,7 +128,7 @@ export default function ReviewPage() {
             <CheckCircle size={40} color="#10b981" style={{ marginBottom: 16 }} />
             <p style={{ color: '#fff', fontWeight: 700, fontSize: '1.1rem', marginBottom: 8 }}>Avis déjà enregistré</p>
             <p style={{ color: 'rgba(255,255,255,0.45)', fontSize: '0.88rem' }}>Vous avez déjà soumis un avis pour cette course. Merci !</p>
-            <Link to="/" style={{ display: 'inline-block', marginTop: 20, color: '#D4AF37', fontSize: '0.88rem' }}>
+            <Link to="/" style={{ display: 'inline-block', marginTop: 20, color: '#267253', fontSize: '0.88rem' }}>
               Retour à l'accueil
             </Link>
           </div>
@@ -143,7 +143,7 @@ export default function ReviewPage() {
               Votre retour aide à améliorer la qualité du service.<br />À bientôt sur 3M Drive !
             </p>
             <StarRating value={rating} readonly />
-            <Link to="/" style={{ display: 'inline-block', marginTop: 24, color: '#D4AF37', fontSize: '0.88rem' }}>
+            <Link to="/" style={{ display: 'inline-block', marginTop: 24, color: '#267253', fontSize: '0.88rem' }}>
               Retour à l'accueil
             </Link>
           </div>
@@ -154,11 +154,11 @@ export default function ReviewPage() {
           <form onSubmit={handleSubmit}>
             {/* Infos course */}
             <div style={{
-              background: 'rgba(212,175,55,0.06)',
-              border: '1px solid rgba(212,175,55,0.18)',
+              background: 'rgba(38,114,83,0.06)',
+              border: '1px solid rgba(38,114,83,0.18)',
               borderRadius: 14, padding: '16px 18px', marginBottom: 28,
             }}>
-              <p style={{ color: '#D4AF37', fontWeight: 700, fontSize: '0.82rem', textTransform: 'uppercase', letterSpacing: '0.5px', margin: '0 0 10px' }}>
+              <p style={{ color: '#267253', fontWeight: 700, fontSize: '0.82rem', textTransform: 'uppercase', letterSpacing: '0.5px', margin: '0 0 10px' }}>
                 Votre course
               </p>
               <div style={{ display: 'flex', gap: 8, alignItems: 'flex-start', marginBottom: 6 }}>
@@ -231,7 +231,7 @@ export default function ReviewPage() {
               disabled={rating === 0 || submitting}
               style={{
                 width: '100%', padding: '14px', borderRadius: 12, border: 'none',
-                background: rating > 0 ? '#D4AF37' : 'rgba(255,255,255,0.08)',
+                background: rating > 0 ? '#267253' : 'rgba(255,255,255,0.08)',
                 color: rating > 0 ? '#1a1a2e' : 'rgba(255,255,255,0.3)',
                 fontWeight: 700, fontSize: '0.97rem', cursor: rating > 0 ? 'pointer' : 'not-allowed',
                 transition: 'all 0.2s ease',

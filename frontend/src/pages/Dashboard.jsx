@@ -452,7 +452,7 @@ function CrmView({ showToast }) {
 
 const STATUS_DRIVER_META = {
   pending:   { label: 'En attente', color: '#a78bfa' },
-  trial:     { label: 'Essai',      color: '#D4AF37' },
+  trial:     { label: 'Essai',      color: '#267253' },
   active:    { label: 'Actif',      color: '#22c55e' },
   suspended: { label: 'Suspendu',   color: '#f97316' },
   expired:   { label: 'Expiré',     color: '#ef4444' },
@@ -746,7 +746,7 @@ function SubscriptionView({ showToast, driver }) {
   const urgency    = daysLeft <= 3;
 
   // Badge couleur selon statut
-  const statusColor = isActive ? '#22c55e' : isTrial ? (urgency ? '#f97316' : '#D4AF37') : '#ef4444';
+  const statusColor = isActive ? '#22c55e' : isTrial ? (urgency ? '#f97316' : '#267253') : '#ef4444';
   const statusLabel = isActive
     ? (billing.plan === 'pro' ? 'Pro — Actif' : 'Actif')
     : isTrial ? `Essai gratuit — ${daysLeft} jour${daysLeft > 1 ? 's' : ''} restant${daysLeft > 1 ? 's' : ''}`
@@ -845,7 +845,7 @@ function SubscriptionView({ showToast, driver }) {
                 className="btn"
                 onClick={() => handleCheckout('year')}
                 disabled={actionLoading}
-                style={{ flex: '1', minWidth: '180px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', background: 'rgba(212,175,55,0.12)', color: 'var(--color-accent)', border: '1px solid rgba(212,175,55,0.3)' }}
+                style={{ flex: '1', minWidth: '180px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', background: 'rgba(38,114,83,0.12)', color: 'var(--color-accent)', border: '1px solid rgba(38,114,83,0.3)' }}
               >
                 {actionLoading
                   ? <><RefreshCw size={15} strokeWidth={1.5} className="animate-spin" /> Redirection…</>
@@ -895,7 +895,7 @@ function SubscriptionView({ showToast, driver }) {
 
 function PerfCard({ label, value, prev, delta, icon, starValue }) {
   const DeltaIcon = delta === null ? null : delta > 0 ? ArrowUp : delta < 0 ? ArrowDown : Minus;
-  const deltaColor = delta === null ? '#D4AF37' : delta > 0 ? '#10b981' : delta < 0 ? '#ef4444' : 'rgba(255,255,255,0.4)';
+  const deltaColor = delta === null ? '#267253' : delta > 0 ? '#10b981' : delta < 0 ? '#ef4444' : 'rgba(255,255,255,0.4)';
   return (
     <div className="perf-card">
       <div className="perf-card-icon">{icon}</div>
@@ -906,8 +906,8 @@ function PerfCard({ label, value, prev, delta, icon, starValue }) {
           <div style={{ display: 'flex', gap: 2, marginTop: 3 }}>
             {[1,2,3,4,5].map(n => (
               <Star key={n} size={11} strokeWidth={1.5}
-                fill={n <= Math.round(starValue) ? '#D4AF37' : 'none'}
-                color={n <= Math.round(starValue) ? '#D4AF37' : 'rgba(255,255,255,0.2)'} />
+                fill={n <= Math.round(starValue) ? '#267253' : 'none'}
+                color={n <= Math.round(starValue) ? '#267253' : 'rgba(255,255,255,0.2)'} />
             ))}
           </div>
         )}
@@ -932,8 +932,8 @@ function StarsDisplay({ value, size = 14 }) {
     <span style={{ display: 'inline-flex', gap: 2, alignItems: 'center' }}>
       {[1,2,3,4,5].map(n => (
         <Star key={n} size={size} strokeWidth={1.5}
-          fill={n <= Math.round(value) ? '#D4AF37' : 'none'}
-          color={n <= Math.round(value) ? '#D4AF37' : 'rgba(255,255,255,0.2)'} />
+          fill={n <= Math.round(value) ? '#267253' : 'none'}
+          color={n <= Math.round(value) ? '#267253' : 'rgba(255,255,255,0.2)'} />
       ))}
     </span>
   );
@@ -1582,9 +1582,9 @@ export default function Dashboard() {
                             return (
                               <div key={d.rating} className="reviews-dist-row">
                                 <span className="reviews-dist-label">{d.rating}</span>
-                                <Star size={10} strokeWidth={1.5} fill="#D4AF37" color="#D4AF37" />
+                                <Star size={10} strokeWidth={1.5} fill="#267253" color="#267253" />
                                 <div className="reviews-dist-bar">
-                                  <div style={{ width: `${pct}%`, height: '100%', background: '#D4AF37', borderRadius: 3, transition: 'width 0.4s ease' }} />
+                                  <div style={{ width: `${pct}%`, height: '100%', background: '#267253', borderRadius: 3, transition: 'width 0.4s ease' }} />
                                 </div>
                                 <span className="reviews-dist-count">{d.count}</span>
                               </div>
@@ -1599,7 +1599,7 @@ export default function Dashboard() {
                 {/* Liste des avis */}
                 {reviews.length === 0 ? (
                   <div className="card" style={{ padding: '48px 24px', textAlign: 'center' }}>
-                    <Star size={36} strokeWidth={1} style={{ color: 'rgba(212,175,55,0.3)', marginBottom: 12 }} />
+                    <Star size={36} strokeWidth={1} style={{ color: 'rgba(38,114,83,0.3)', marginBottom: 12 }} />
                     <p style={{ color: 'rgba(255,255,255,0.4)', fontSize: '0.9rem' }}>
                       Aucun avis pour l'instant. Les avis arrivent automatiquement après chaque course terminée.
                     </p>
@@ -1651,7 +1651,7 @@ export default function Dashboard() {
               <div style={{ display: 'grid', gap: '24px' }}>
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '20px' }}>
                   {[
-                    { label: 'Revenus totaux',      value: `${Number(stats.revenue.allTime || 0).toFixed(2)} €`, Icon: Euro,         color: '#D4AF37' },
+                    { label: 'Revenus totaux',      value: `${Number(stats.revenue.allTime || 0).toFixed(2)} €`, Icon: Euro,         color: '#267253' },
                     { label: 'Revenus ce mois',     value: `${Number(stats.revenue.month  || 0).toFixed(2)} €`, Icon: Calendar,     color: '#10b981' },
                     { label: 'Revenus cette année', value: `${Number(stats.revenue.year   || 0).toFixed(2)} €`, Icon: TrendingUp,   color: '#3b82f6' },
                     { label: 'Taux de réussite',    value: `${stats.counts.total > 0 ? Math.round((stats.counts.completed / stats.counts.total) * 100) : 0}%`, Icon: Flag, color: '#8b5cf6' },

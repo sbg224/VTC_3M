@@ -43,7 +43,7 @@ function DriverBadge({ status }) {
 }
 
 // ── Mini composant KPI ────────────────────────────────────────────────────────
-function KpiCard({ icon, value, label, sub, color = '#D4AF37', onClick }) {
+function KpiCard({ icon, value, label, sub, color = '#267253', onClick }) {
   return (
     <div className="adm-kpi" onClick={onClick} style={{ cursor: onClick ? 'pointer' : 'default' }}>
       <div className="adm-kpi-icon" style={{ background: `${color}1a`, color }}>{icon}</div>
@@ -111,7 +111,7 @@ function DriverModal({ driverId, onClose, onStatusChange }) {
         </div>
 
         {loading ? (
-          <div style={{ padding: 48, textAlign: 'center' }}><Loader2 size={28} className="animate-spin" style={{ color: '#D4AF37' }} /></div>
+          <div style={{ padding: 48, textAlign: 'center' }}><Loader2 size={28} className="animate-spin" style={{ color: '#267253' }} /></div>
         ) : !data ? (
           <div style={{ padding: 32, textAlign: 'center', color: '#ef4444' }}>Chauffeur introuvable.</div>
         ) : (
@@ -136,7 +136,7 @@ function DriverModal({ driverId, onClose, onStatusChange }) {
                 { label: 'Total courses',    value: data.stats.totalReservations, color: '#6366f1' },
                 { label: 'Terminées',        value: data.stats.completedReservations, color: '#10b981' },
                 { label: 'En attente',       value: data.stats.pendingReservations, color: '#f59e0b' },
-                { label: 'Revenus',          value: `${fmt(data.stats.totalRevenue)} €`, color: '#D4AF37' },
+                { label: 'Revenus',          value: `${fmt(data.stats.totalRevenue)} €`, color: '#267253' },
               ].map((s, i) => (
                 <div key={i} className="adm-driver-stat">
                   <span style={{ color: s.color, fontFamily:'var(--font-heading)', fontSize:'1.4rem', fontWeight:800 }}>{s.value}</span>
@@ -148,7 +148,7 @@ function DriverModal({ driverId, onClose, onStatusChange }) {
             {/* Infos compte */}
             <div className="adm-driver-info-grid">
               <div><span>Inscrit le</span><strong>{fmtDate(data.driver.createdAt)}</strong></div>
-              <div><span>Plan</span><strong style={{ color:'#D4AF37', textTransform:'uppercase' }}>{data.driver.plan}</strong></div>
+              <div><span>Plan</span><strong style={{ color:'#267253', textTransform:'uppercase' }}>{data.driver.plan}</strong></div>
               <div><span>Fin d'essai</span><strong>{fmtDate(data.driver.trialEndDate)}</strong></div>
               <div><span>Slug</span><strong>/book/{data.driver.slug || '—'}</strong></div>
             </div>
@@ -229,7 +229,7 @@ function DriverModal({ driverId, onClose, onStatusChange }) {
                     </div>
                     <div style={{ display:'flex', gap:8, alignItems:'center', marginTop:4 }}>
                       <span className={`badge ${STATUS_RES[r.status]?.cls || 'badge-pending'}`}>{STATUS_RES[r.status]?.label || r.status}</span>
-                      {r.price && <span style={{ color:'#D4AF37', fontSize:'0.82rem', fontWeight:700 }}>{fmt(r.price)} €</span>}
+                      {r.price && <span style={{ color:'#267253', fontSize:'0.82rem', fontWeight:700 }}>{fmt(r.price)} €</span>}
                     </div>
                   </div>
                 ))
@@ -554,10 +554,10 @@ export default function AdminDashboard() {
                 {/* KPIs courses */}
                 <div className="adm-kpi-section-title" style={{ marginTop:28 }}>Courses & Revenus</div>
                 <div className="adm-kpi-grid">
-                  <KpiCard icon={<ClipboardList size={20} strokeWidth={1.5} />} value={stats.reservations.total} label="Total réservations" color="#D4AF37" onClick={() => setSection('reservations')} />
+                  <KpiCard icon={<ClipboardList size={20} strokeWidth={1.5} />} value={stats.reservations.total} label="Total réservations" color="#267253" onClick={() => setSection('reservations')} />
                   <KpiCard icon={<Flag size={20} strokeWidth={1.5} />} value={stats.reservations.completed} label="Courses terminées" color="#10b981" />
                   <KpiCard icon={<Clock size={20} strokeWidth={1.5} />} value={stats.reservations.pending} label="En attente" color="#f59e0b" />
-                  <KpiCard icon={<Euro size={20} strokeWidth={1.5} />} value={`${fmt(stats.revenue.total)} €`} label="Revenus totaux" color="#D4AF37" />
+                  <KpiCard icon={<Euro size={20} strokeWidth={1.5} />} value={`${fmt(stats.revenue.total)} €`} label="Revenus totaux" color="#267253" />
                   <KpiCard icon={<TrendingUp size={20} strokeWidth={1.5} />} value={`${fmt(stats.revenue.month)} €`} label="Ce mois-ci" color="#6366f1" />
                 </div>
 
@@ -606,7 +606,7 @@ export default function AdminDashboard() {
                             <div className="adm-inscription-name">{d.name}</div>
                             <div className="adm-inscription-meta"><Mail size={12} /> {d.email}</div>
                             {d.phone && <div className="adm-inscription-meta"><Phone size={12} /> {d.phone}</div>}
-                            {d.businessName && <div className="adm-inscription-meta" style={{ color:'#D4AF37' }}>{d.businessName}</div>}
+                            {d.businessName && <div className="adm-inscription-meta" style={{ color:'#267253' }}>{d.businessName}</div>}
                             <div className="adm-inscription-date">Inscrit le {fmtDate(d.createdAt)}</div>
                           </div>
                         </div>
@@ -690,9 +690,9 @@ export default function AdminDashboard() {
                             <div style={{ fontSize:'0.76rem', color:'rgba(255,255,255,0.4)' }}>{d.email}</div>
                           </td>
                           <td><DriverBadge status={d.status} /></td>
-                          <td><span style={{ color:'#D4AF37', fontWeight:700, textTransform:'uppercase', fontSize:'0.78rem' }}>{d.plan}</span></td>
+                          <td><span style={{ color:'#267253', fontWeight:700, textTransform:'uppercase', fontSize:'0.78rem' }}>{d.plan}</span></td>
                           <td style={{ color:'rgba(255,255,255,0.75)' }}>{d.reservationCount}</td>
-                          <td style={{ color:'#D4AF37', fontWeight:700 }}>{fmt(d.totalRevenue)} €</td>
+                          <td style={{ color:'#267253', fontWeight:700 }}>{fmt(d.totalRevenue)} €</td>
                           <td style={{ color:'rgba(255,255,255,0.4)', fontSize:'0.8rem' }}>{fmtDate(d.createdAt)}</td>
                           <td>
                             <button className="adm-btn-icon-sm" onClick={() => setSelectedDriver(d.id)} title="Voir la fiche">
@@ -751,7 +751,7 @@ export default function AdminDashboard() {
                         <tr><td colSpan={7} style={{ textAlign:'center', padding:32, color:'rgba(255,255,255,0.3)' }}>Aucune réservation.</td></tr>
                       ) : reservations.map(r => (
                         <tr key={r.id}>
-                          <td style={{ color:'#D4AF37', fontWeight:700, fontSize:'0.82rem', whiteSpace:'nowrap' }}>{r.reservationNumber}</td>
+                          <td style={{ color:'#267253', fontWeight:700, fontSize:'0.82rem', whiteSpace:'nowrap' }}>{r.reservationNumber}</td>
                           <td>
                             <div style={{ fontWeight:600, color:'#fff' }}>{r.firstName} {r.lastName}</div>
                             <div style={{ fontSize:'0.74rem', color:'rgba(255,255,255,0.38)' }}>{r.email}</div>
@@ -767,7 +767,7 @@ export default function AdminDashboard() {
                           <td style={{ color:'rgba(255,255,255,0.6)', fontSize:'0.8rem', whiteSpace:'nowrap' }}>{fmtDate(r.date)} {r.time}</td>
                           <td style={{ fontSize:'0.8rem', color:'rgba(255,255,255,0.55)' }}>{r.chauffeur?.name || '—'}</td>
                           <td><span className={`badge ${STATUS_RES[r.status]?.cls || 'badge-pending'}`}>{STATUS_RES[r.status]?.label || r.status}</span></td>
-                          <td style={{ color:'#D4AF37', fontWeight:700, whiteSpace:'nowrap' }}>
+                          <td style={{ color:'#267253', fontWeight:700, whiteSpace:'nowrap' }}>
                             {r.price ? `${fmt(r.price)} €` : r.estimatedPrice ? `~${fmt(r.estimatedPrice)} €` : '—'}
                           </td>
                         </tr>
@@ -818,7 +818,7 @@ export default function AdminDashboard() {
                           </td>
                           <td style={{ color:'rgba(255,255,255,0.55)', fontSize:'0.82rem' }}>{c.phone || '—'}</td>
                           <td style={{ color:'rgba(255,255,255,0.75)', fontWeight:600 }}>{c.reservationCount}</td>
-                          <td style={{ color:'#D4AF37', fontWeight:700 }}>{c.totalSpent ? `${fmt(c.totalSpent)} €` : '—'}</td>
+                          <td style={{ color:'#267253', fontWeight:700 }}>{c.totalSpent ? `${fmt(c.totalSpent)} €` : '—'}</td>
                           <td style={{ color:'rgba(255,255,255,0.4)', fontSize:'0.8rem' }}>{fmtDateTime(c.lastReservation)}</td>
                         </tr>
                       ))}
@@ -873,7 +873,7 @@ export default function AdminDashboard() {
               <div className="adm-notif-card">
                 <div className="adm-notif-card-header">
                   <div style={{ display:'flex', alignItems:'center', gap:10 }}>
-                    <div style={{ width:40, height:40, borderRadius:12, background:'rgba(212,175,55,0.1)', display:'flex', alignItems:'center', justifyContent:'center', color:'#D4AF37' }}>
+                    <div style={{ width:40, height:40, borderRadius:12, background:'rgba(38,114,83,0.1)', display:'flex', alignItems:'center', justifyContent:'center', color:'#267253' }}>
                       <UserCog size={20} strokeWidth={1.5} />
                     </div>
                     <div>
@@ -954,7 +954,7 @@ export default function AdminDashboard() {
                 {accTotals && (
                   <div className="adm-kpi-grid" style={{ marginBottom:28 }}>
                     <KpiCard icon={<ReceiptText size={20} strokeWidth={1.5} />} value={accTotals.rideCount} label="Courses terminées" color="#6366f1" />
-                    <KpiCard icon={<Euro size={20} strokeWidth={1.5} />} value={`${fmt(accTotals.grossRevenue)} €`} label="CA brut total" color="#D4AF37" />
+                    <KpiCard icon={<Euro size={20} strokeWidth={1.5} />} value={`${fmt(accTotals.grossRevenue)} €`} label="CA brut total" color="#267253" />
                     <KpiCard icon={<Percent size={20} strokeWidth={1.5} />} value={`${fmt(accTotals.commissionAmount)} €`} label="Commissions plateforme" color="#f59e0b" />
                     <KpiCard icon={<Wallet size={20} strokeWidth={1.5} />} value={`${fmt(accTotals.netAmount)} €`} label="Net à reverser (total)" color="#10b981" />
                   </div>
@@ -982,12 +982,12 @@ export default function AdminDashboard() {
                           <td>
                             <div style={{ fontWeight:600, color:'#fff' }}>{d.name}</div>
                             <div style={{ fontSize:'0.76rem', color:'rgba(255,255,255,0.38)' }}>{d.email}</div>
-                            {d.businessName && <div style={{ fontSize:'0.74rem', color:'#D4AF37' }}>{d.businessName}</div>}
+                            {d.businessName && <div style={{ fontSize:'0.74rem', color:'#267253' }}>{d.businessName}</div>}
                           </td>
                           <td style={{ textAlign:'center', color: d.rideCount > 0 ? '#fff' : 'rgba(255,255,255,0.25)', fontWeight:700, fontSize:'1.05rem' }}>
                             {d.rideCount}
                           </td>
-                          <td style={{ textAlign:'right', color:'#D4AF37', fontWeight:700 }}>
+                          <td style={{ textAlign:'right', color:'#267253', fontWeight:700 }}>
                             {d.grossRevenue > 0 ? `${fmt(d.grossRevenue)} €` : <span style={{ color:'rgba(255,255,255,0.2)' }}>—</span>}
                           </td>
                           {/* Commission — édition inline */}
@@ -1046,7 +1046,7 @@ export default function AdminDashboard() {
                               <button
                                 className="adm-btn-icon-sm" title="Télécharger le bordereau PDF"
                                 disabled={accPdfLoading[d.id] || d.rideCount === 0}
-                                style={{ color: d.rideCount > 0 ? '#D4AF37' : 'rgba(255,255,255,0.2)', cursor: d.rideCount === 0 ? 'not-allowed' : 'pointer' }}
+                                style={{ color: d.rideCount > 0 ? '#267253' : 'rgba(255,255,255,0.2)', cursor: d.rideCount === 0 ? 'not-allowed' : 'pointer' }}
                                 onClick={() => downloadStatementPdf(d.id)}
                               >
                                 {accPdfLoading[d.id] ? <Loader2 size={14} className="animate-spin" /> : <Download size={14} strokeWidth={1.75} />}
@@ -1069,7 +1069,7 @@ export default function AdminDashboard() {
                     >
                       <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:16 }}>
                         <div style={{ display:'flex', alignItems:'center', gap:10 }}>
-                          <FileText size={16} strokeWidth={1.75} style={{ color:'#D4AF37' }} />
+                          <FileText size={16} strokeWidth={1.75} style={{ color:'#267253' }} />
                           <strong style={{ color:'#fff', fontSize:'0.97rem' }}>
                             {accDetailLoading ? 'Chargement…' : `Détail — ${accDetail?.driver?.name}`}
                           </strong>
@@ -1091,14 +1091,14 @@ export default function AdminDashboard() {
                       </div>
 
                       {accDetailLoading ? (
-                        <div style={{ textAlign:'center', padding:24 }}><Loader2 size={22} className="animate-spin" style={{ color:'#D4AF37' }} /></div>
+                        <div style={{ textAlign:'center', padding:24 }}><Loader2 size={22} className="animate-spin" style={{ color:'#267253' }} /></div>
                       ) : accDetail && (
                         <>
                           {/* Recap financier */}
                           <div className="adm-acc-recap">
                             {[
                               { label:'Courses',          value:`${accDetail.summary.rideCount}`,                  color:'#6366f1' },
-                              { label:'CA brut',          value:`${fmt(accDetail.summary.grossRevenue)} €`,        color:'#D4AF37' },
+                              { label:'CA brut',          value:`${fmt(accDetail.summary.grossRevenue)} €`,        color:'#267253' },
                               { label:`Commission (${accDetail.summary.commissionRate}%)`, value:`– ${fmt(accDetail.summary.commissionAmount)} €`, color:'#f59e0b' },
                               { label:'Net à reverser',   value:`${fmt(accDetail.summary.netAmount)} €`,           color:'#10b981' },
                             ].map((s, i) => (
@@ -1121,14 +1121,14 @@ export default function AdminDashboard() {
                                 <tbody>
                                   {accDetail.rides.map(r => (
                                     <tr key={r.id}>
-                                      <td style={{ color:'#D4AF37', fontWeight:700, fontSize:'0.78rem' }}>{r.reservationNumber}</td>
+                                      <td style={{ color:'#267253', fontWeight:700, fontSize:'0.78rem' }}>{r.reservationNumber}</td>
                                       <td style={{ color:'rgba(255,255,255,0.55)', whiteSpace:'nowrap' }}>{fmtDate(r.date)}</td>
                                       <td style={{ maxWidth:220 }}>
                                         <div style={{ overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap', color:'rgba(255,255,255,0.7)' }}>{r.departureAddress}</div>
                                         <div style={{ overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap', color:'rgba(255,255,255,0.38)', fontSize:'0.76rem' }}>→ {r.arrivalAddress}</div>
                                       </td>
                                       <td style={{ color:'rgba(255,255,255,0.45)', fontSize:'0.78rem', whiteSpace:'nowrap' }}>{r.distance ? `${parseFloat(r.distance).toFixed(1)} km` : '—'}</td>
-                                      <td style={{ textAlign:'right', color:'#D4AF37', fontWeight:700 }}>{fmt(r.price)} €</td>
+                                      <td style={{ textAlign:'right', color:'#267253', fontWeight:700 }}>{fmt(r.price)} €</td>
                                     </tr>
                                   ))}
                                 </tbody>
@@ -1166,7 +1166,7 @@ export default function AdminDashboard() {
                 {/* Formulaire */}
                 <div className="adm-pricing-card">
                   <div className="adm-pricing-card-title">
-                    <SlidersHorizontal size={16} strokeWidth={1.75} style={{ color:'#D4AF37' }} />
+                    <SlidersHorizontal size={16} strokeWidth={1.75} style={{ color:'#267253' }} />
                     Paramètres tarifaires
                   </div>
 
@@ -1264,7 +1264,7 @@ export default function AdminDashboard() {
                         return (
                           <tr key={km}>
                             <td style={{ color:'rgba(255,255,255,0.65)', fontWeight:500 }}>{km} km</td>
-                            <td style={{ textAlign:'right', color: isMin ? '#f59e0b' : '#D4AF37', fontWeight:700 }}>
+                            <td style={{ textAlign:'right', color: isMin ? '#f59e0b' : '#267253', fontWeight:700 }}>
                               {fmt(price)} €
                               {isMin && <span style={{ fontSize:'0.7rem', color:'#f59e0b', marginLeft:6, fontWeight:400 }}>min.</span>}
                             </td>
@@ -1273,7 +1273,7 @@ export default function AdminDashboard() {
                       })}
                     </tbody>
                   </table>
-                  <div style={{ marginTop:16, padding:'10px 14px', background:'rgba(212,175,55,0.06)', borderRadius:8, border:'1px solid rgba(212,175,55,0.15)', fontSize:'0.78rem', color:'rgba(255,255,255,0.45)', lineHeight:1.6 }}>
+                  <div style={{ marginTop:16, padding:'10px 14px', background:'rgba(38,114,83,0.06)', borderRadius:8, border:'1px solid rgba(38,114,83,0.15)', fontSize:'0.78rem', color:'rgba(255,255,255,0.45)', lineHeight:1.6 }}>
                     <strong style={{ color:'rgba(255,255,255,0.65)' }}>Formule :</strong><br/>
                     Prix = max(minimum, frais_base + distance × prix_km)
                   </div>
