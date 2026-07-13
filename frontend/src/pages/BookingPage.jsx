@@ -370,34 +370,22 @@ export default function BookingPage() {
       {seo}
       <div className="container">
 
-        {/* Bandeau identité chauffeur */}
-        <div style={{
-          display: 'flex', alignItems: 'center', justifyContent: 'center',
-          gap: '14px', marginBottom: '40px',
-          padding: '18px 28px',
-          background: 'rgba(212,175,55,0.07)',
-          border: '1px solid rgba(212,175,55,0.25)',
-          borderRadius: '16px',
-          backdropFilter: 'blur(12px)',
-        }}>
-          <div style={{
-            width: '44px', height: '44px', borderRadius: '50%',
-            background: 'rgba(212,175,55,0.15)', border: '1px solid rgba(212,175,55,0.3)',
-            display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
-          }}>
-            <Car size={20} strokeWidth={1.5} style={{ color: 'var(--color-accent)' }} />
+        {/* Carte profil chauffeur */}
+        <div className="driver-profile-card">
+          <div className="driver-profile-banner">
+            <span className="driver-profile-seal"><Star size={11} strokeWidth={2} /> Vérifié</span>
           </div>
-          <div>
-            <div style={{ fontSize: '0.75rem', color: 'var(--color-accent)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '2px' }}>
-              Vous réservez avec
+          <div className="driver-profile-body">
+            <div className="driver-profile-avatar">
+              {(driver.businessName || driver.name)
+                .split(' ')
+                .map((w) => w[0])
+                .slice(0, 2)
+                .join('')
+                .toUpperCase()}
             </div>
-            <div style={{ fontFamily: 'var(--font-heading)', fontWeight: '700', fontSize: '1.1rem', color: 'var(--color-white)' }}>
-              {driver.businessName || driver.name}
-            </div>
-          </div>
-          <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.8rem', color: 'rgba(255,255,255,0.5)' }}>
-            <Star size={12} strokeWidth={1.5} style={{ color: 'var(--color-accent)' }} />
-            Chauffeur VTC certifié
+            <div className="driver-profile-name">{driver.businessName || driver.name}</div>
+            <div className="driver-profile-role"><Car size={13} strokeWidth={1.5} /> Chauffeur VTC certifié</div>
           </div>
         </div>
 

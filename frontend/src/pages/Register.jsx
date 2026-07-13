@@ -170,7 +170,7 @@ export default function Register() {
             <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '20px' }}>
               <div style={{
                 width: '72px', height: '72px', borderRadius: '50%',
-                background: 'rgba(212,175,55,0.15)', border: '2px solid var(--color-accent)',
+                background: 'rgba(38,114,83,0.15)', border: '2px solid var(--color-accent)',
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
               }}>
                 <Clock size={32} strokeWidth={1.5} style={{ color: 'var(--color-accent)' }} />
@@ -219,8 +219,8 @@ export default function Register() {
         <div style={{
           margin: '0 0 20px',
           padding: '14px 20px',
-          background: 'rgba(212,175,55,0.07)',
-          border: '1px solid rgba(212,175,55,0.2)',
+          background: 'rgba(38,114,83,0.07)',
+          border: '1px solid rgba(38,114,83,0.2)',
           borderRadius: '12px',
           display: 'flex', flexDirection: 'column', gap: '8px',
         }}>

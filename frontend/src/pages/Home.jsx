@@ -455,6 +455,7 @@ export default function Home() {
           <div className="features-grid">
             {features.map((f, i) => (
               <div key={i} className="feature-card">
+                <span className="feature-num">{String(i + 1).padStart(2, '0')}</span>
                 <div className="feature-icon"><f.Icon size={22} strokeWidth={1.5} /></div>
                 <h3>{f.title}</h3>
                 <p>{f.desc}</p>
@@ -473,9 +474,12 @@ export default function Home() {
           <div className="destinations-grid-wrap">
             <div className="destinations-grid">
               {destinations.map((d, i) => (
-                <div key={i} className="destination-card">
-                  <div className="destination-icon"><d.Icon size={20} strokeWidth={1.5} /></div>
-                  <div><h3>{d.title}</h3><p>{d.desc}</p></div>
+                <div key={i} className="destination-card" onClick={scrollToSimulator} role="button" tabIndex={0} onKeyDown={(e) => e.key === 'Enter' && scrollToSimulator(e)}>
+                  <div className="destination-card-top">
+                    <div className="destination-icon"><d.Icon size={20} strokeWidth={1.5} /></div>
+                    <div><h3>{d.title}</h3><p>{d.desc}</p></div>
+                  </div>
+                  <div className="destination-cta">Estimer ce trajet <ArrowRight size={13} strokeWidth={2} /></div>
                 </div>
               ))}
             </div>
