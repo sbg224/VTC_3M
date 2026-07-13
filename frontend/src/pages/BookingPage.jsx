@@ -52,7 +52,7 @@ function SimulationWidget({ onReserve }) {
       <form onSubmit={handleSimulate} className="simulation-form">
         <div className="simulation-fields">
           <div className="form-group">
-            <label className="form-label flex items-center gap-1">
+            <label className="form-label form-label-dot">
               <span style={{ width: 8, height: 8, borderRadius: '50%', background: 'var(--color-success)', display: 'inline-block' }}></span>
               Adresse de départ
             </label>
@@ -64,7 +64,7 @@ function SimulationWidget({ onReserve }) {
           </div>
           <div className="simulation-arrow">→</div>
           <div className="form-group">
-            <label className="form-label flex items-center gap-1">
+            <label className="form-label form-label-dot">
               <span style={{ width: 8, height: 8, borderRadius: '50%', background: 'var(--color-error)', display: 'inline-block' }}></span>
               Adresse d'arrivée
             </label>
@@ -418,7 +418,7 @@ export default function BookingPage() {
         {/* Formulaire */}
         <div className="reservation-form-card" ref={formRef} style={{ marginTop: '32px' }}>
           <div className="reservation-form-header">
-            <h2 className="flex items-center gap-2"><ClipboardList size={20} strokeWidth={1.5} /> Formulaire de réservation</h2>
+            <h2 className="icon-heading"><ClipboardList size={20} strokeWidth={1.5} /> Formulaire de réservation</h2>
             <p>Tous les champs marqués d'un * sont obligatoires</p>
           </div>
 
@@ -493,7 +493,7 @@ export default function BookingPage() {
             {simData && (
               <div className="price-locked-banner">
                 <div className="price-locked-info">
-                  <span className="price-locked-badge flex items-center gap-1">
+                  <span className="price-locked-badge">
                     <Lock size={12} strokeWidth={1.5} /> Prix calculé
                   </span>
                   <div className="price-locked-details">

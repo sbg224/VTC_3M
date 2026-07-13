@@ -59,7 +59,7 @@ function CompleteModal({ reservation, onClose, onSuccess }) {
     <div className="modal-overlay" onClick={onClose}>
       <div className="modal" onClick={e => e.stopPropagation()}>
         <div className="modal-header">
-          <h3 className="flex items-center gap-2"><Flag size={16} strokeWidth={1.5} /> Valider la course – {reservation.reservationNumber}</h3>
+          <h3 className="icon-heading"><Flag size={16} strokeWidth={1.5} /> Valider la course – {reservation.reservationNumber}</h3>
           <button className="modal-close" onClick={onClose}>×</button>
         </div>
         <form onSubmit={handleSubmit}>
@@ -148,7 +148,7 @@ function ReservationDetail({ reservation, onClose, onUpdate, showToast }) {
     <div className="modal-overlay" onClick={onClose}>
       <div className="modal" style={{ maxWidth: '620px' }} onClick={e => e.stopPropagation()}>
         <div className="modal-header">
-          <h3 className="flex items-center gap-2"><ClipboardList size={16} strokeWidth={1.5} /> {reservation.reservationNumber}</h3>
+          <h3 className="icon-heading"><ClipboardList size={16} strokeWidth={1.5} /> {reservation.reservationNumber}</h3>
           <button className="modal-close" onClick={onClose}>×</button>
         </div>
         <div className="modal-body">
@@ -1117,7 +1117,7 @@ export default function Dashboard() {
     <div className="dashboard">
       {/* Toast */}
       {toast.msg && (
-        <div className="fixed top-6 right-6 z-[9999] flex items-center gap-3 max-w-[360px] px-5 py-3.5 rounded-lg shadow-lg text-sm font-medium"
+        <div className="toast-notification"
           style={{
             background: 'var(--color-secondary)',
             color: 'var(--color-white)',
@@ -1327,7 +1327,7 @@ export default function Dashboard() {
         {view === 'reservations' && (
           <>
             <div className="dashboard-header">
-              <h1 className="flex items-center gap-2"><ClipboardList size={22} strokeWidth={1.5} /> Réservations</h1>
+              <h1 className="icon-heading"><ClipboardList size={22} strokeWidth={1.5} /> Réservations</h1>
               <p>Gérez toutes vos courses ({total} au total)</p>
             </div>
 
@@ -1461,7 +1461,7 @@ export default function Dashboard() {
             <>
               <div className="dashboard-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', flexWrap: 'wrap', gap: 12 }}>
                 <div>
-                  <h1 className="flex items-center gap-2"><Calendar size={22} strokeWidth={1.5} /> Planning hebdomadaire</h1>
+                  <h1 className="icon-heading"><Calendar size={22} strokeWidth={1.5} /> Planning hebdomadaire</h1>
                   <p style={{ color: 'rgba(255,255,255,0.45)', fontSize: '0.88rem', marginTop: 4 }}>{weekLabel}</p>
                 </div>
                 <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
@@ -1545,7 +1545,7 @@ export default function Dashboard() {
         {view === 'avis' && (
           <>
             <div className="dashboard-header">
-              <h1 className="flex items-center gap-2"><Star size={22} strokeWidth={1.5} /> Avis clients</h1>
+              <h1 className="icon-heading"><Star size={22} strokeWidth={1.5} /> Avis clients</h1>
               <p>Ce que vos clients disent de vous</p>
             </div>
 
@@ -1637,7 +1637,7 @@ export default function Dashboard() {
         {view === 'stats' && (
           <>
             <div className="dashboard-header">
-              <h1 className="flex items-center gap-2"><TrendingUp size={22} strokeWidth={1.5} /> Statistiques</h1>
+              <h1 className="icon-heading"><TrendingUp size={22} strokeWidth={1.5} /> Statistiques</h1>
               <p>Vue d'ensemble de votre activité</p>
             </div>
             {stats ? (
@@ -1692,7 +1692,7 @@ export default function Dashboard() {
         {view === 'calculateur' && (
           <>
             <div className="dashboard-header">
-              <h1 className="flex items-center gap-2"><Calculator size={22} strokeWidth={1.5} /> Calculateur de prix</h1>
+              <h1 className="icon-heading"><Calculator size={22} strokeWidth={1.5} /> Calculateur de prix</h1>
               <p>Estimez le tarif d'une course en fonction de vos charges réelles et de la marge souhaitée</p>
             </div>
             <PrixCalculateur />
@@ -1703,7 +1703,7 @@ export default function Dashboard() {
         {view === 'clients' && (
           <>
             <div className="dashboard-header">
-              <h1 className="flex items-center gap-2"><Users2 size={22} strokeWidth={1.5} /> Clients (CRM)</h1>
+              <h1 className="icon-heading"><Users2 size={22} strokeWidth={1.5} /> Clients (CRM)</h1>
               <p>Historique et fidélisation de votre clientèle</p>
             </div>
             <CrmView showToast={showToast} />
@@ -1714,7 +1714,7 @@ export default function Dashboard() {
         {view === 'admin' && driver?.role === 'admin' && (
           <>
             <div className="dashboard-header">
-              <h1 className="flex items-center gap-2"><Users size={22} strokeWidth={1.5} /> Administration</h1>
+              <h1 className="icon-heading"><Users size={22} strokeWidth={1.5} /> Administration</h1>
               <p>Vue globale de la plateforme 3M Drive</p>
             </div>
             <AdminView showToast={showToast} />
@@ -1725,7 +1725,7 @@ export default function Dashboard() {
         {view === 'abonnement' && (
           <>
             <div className="dashboard-header">
-              <h1 className="flex items-center gap-2"><CreditCard size={22} strokeWidth={1.5} /> Abonnement</h1>
+              <h1 className="icon-heading"><CreditCard size={22} strokeWidth={1.5} /> Abonnement</h1>
               <p>Gérez votre plan et vos informations de facturation</p>
             </div>
             <SubscriptionView showToast={showToast} driver={driver} />
@@ -1736,7 +1736,7 @@ export default function Dashboard() {
         {view === 'settings' && (
           <>
             <div className="dashboard-header">
-              <h1 className="flex items-center gap-2"><Settings size={22} strokeWidth={1.5} /> Paramètres</h1>
+              <h1 className="icon-heading"><Settings size={22} strokeWidth={1.5} /> Paramètres</h1>
               <p>Gérez votre compte</p>
             </div>
 
@@ -1899,7 +1899,7 @@ function PrixCalculateur() {
       <div>
         <div className="card calc-card">
           <div className="card-header calc-card-header">
-            <h3 className="flex items-center gap-2"><Settings size={15} strokeWidth={1.5} /> Paramètres de tarification</h3>
+            <h3 className="icon-heading"><Settings size={15} strokeWidth={1.5} /> Paramètres de tarification</h3>
             <span className="calc-hint">Sauvegardés localement</span>
           </div>
           <div className="card-body">
@@ -1980,7 +1980,7 @@ function PrixCalculateur() {
         {/* Simulation */}
         <div className="card calc-card">
           <div className="card-header calc-card-header">
-            <h3 className="flex items-center gap-2"><Calculator size={15} strokeWidth={1.5} /> Simulation de course</h3>
+            <h3 className="icon-heading"><Calculator size={15} strokeWidth={1.5} /> Simulation de course</h3>
             <button className="calc-link" onClick={resetSim}>Réinitialiser</button>
           </div>
           <div className="card-body">
@@ -2035,7 +2035,7 @@ function PrixCalculateur() {
         {result ? (
           <div className="card calc-card calc-results-card">
             <div className="card-header calc-card-header">
-              <h3 className="flex items-center gap-2"><TrendingUp size={15} strokeWidth={1.5} /> Résultats</h3>
+              <h3 className="icon-heading"><TrendingUp size={15} strokeWidth={1.5} /> Résultats</h3>
               <span className="calc-hint">Calcul en temps réel</span>
             </div>
             <div className="card-body">
