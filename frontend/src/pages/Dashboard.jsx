@@ -1,13 +1,13 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
-  Car, LayoutDashboard, ClipboardList, TrendingUp, Calculator,
+  LayoutDashboard, ClipboardList, TrendingUp, Calculator,
   Settings, LogOut, Clock, CheckCircle, Flag, XCircle, Euro,
   Inbox, Search, MessageSquare, FileText, Receipt, AlertTriangle,
   MapPin, Calendar, ChevronLeft, ChevronRight,
   CreditCard, Zap, Shield, RefreshCw, ExternalLink,
   Users, BarChart3, Ban, UserCheck, Copy, Link,
-  Users2, Download, Phone, Mail, Star, ArrowUp, ArrowDown, Minus,
+  Users2, Download, Phone, Mail, Star, ArrowUp, ArrowDown, Minus, MoreHorizontal,
 } from 'lucide-react';
 import { useAuth } from '../services/auth';
 import { reservationAPI, statsAPI, billingAPI, adminAPI, crmAPI, authAPI, downloadBlob, reviewAPI } from '../services/api';
@@ -956,6 +956,7 @@ export default function Dashboard() {
   const [toast, setToast] = useState({ msg: '', type: 'success' });
   const [unreadCount, setUnreadCount] = useState(0);
   const [pendingDriversCount, setPendingDriversCount] = useState(0);
+  const [moreOpen, setMoreOpen] = useState(false);
 
   // ── Planning hebdomadaire ──────────────────────────────────────────────────
   const [planningWeekOffset, setPlanningWeekOffset] = useState(0); // 0=semaine courante
@@ -1130,70 +1131,76 @@ export default function Dashboard() {
         </div>
       )}
 
-      {/* Sidebar */}
-      <aside className="sidebar">
-        <div className="sidebar-logo flex items-center gap-2">
-          <Car size={20} strokeWidth={1.5} /> VTC 3M
-        </div>
-        <nav className="sidebar-nav">
-          {[
-            { id: 'dashboard',    Icon: LayoutDashboard, label: 'Tableau de bord' },
-            { id: 'planning',     Icon: Calendar,        label: 'Planning' },
-            { id: 'reservations', Icon: ClipboardList,   label: 'Réservations' },
-            { id: 'avis',         Icon: Star,            label: 'Avis clients' },
-            { id: 'stats',        Icon: TrendingUp,      label: 'Statistiques' },
-            { id: 'calculateur',  Icon: Calculator,      label: 'Calculateur prix' },
-            { id: 'clients',      Icon: Users2,          label: 'Clients (CRM)' },
-            { id: 'abonnement',   Icon: CreditCard,      label: 'Abonnement' },
-            { id: 'settings',     Icon: Settings,        label: 'Paramètres' },
-            ...(driver?.role === 'admin' ? [{ id: 'admin', Icon: Users, label: 'Administration', badge: pendingDriversCount }] : []),
-          ].map(item => (
-            <button
-              key={item.id}
-              className={`sidebar-nav-item ${view === item.id ? 'active' : ''}`}
-              onClick={() => {
-                setView(item.id);
-                if (item.id === 'reservations') setUnreadCount(0);
-              }}
-            >
-              <span className="icon"><item.Icon size={17} strokeWidth={1.5} /></span>
-              {item.label}
-              {item.id === 'reservations' && unreadCount > 0 && (
-                <span style={{
-                  marginLeft: 'auto', minWidth: '20px', height: '20px',
-                  background: 'var(--color-accent)', color: '#000',
-                  borderRadius: '999px', fontSize: '0.7rem', fontWeight: '800',
-                  display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  padding: '0 5px',
-                }}>
-                  {unreadCount > 9 ? '9+' : unreadCount}
-                </span>
-              )}
-              {item.id === 'admin' && item.badge > 0 && (
-                <span style={{
-                  marginLeft: 'auto', minWidth: '20px', height: '20px',
-                  background: '#ef4444', color: '#fff',
-                  borderRadius: '999px', fontSize: '0.7rem', fontWeight: '800',
-                  display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  padding: '0 5px',
-                }}>
-                  {item.badge > 9 ? '9+' : item.badge}
-                </span>
-              )}
-            </button>
-          ))}
-        </nav>
-        <div className="sidebar-footer">
-          <div style={{ fontSize: '0.85rem', color: 'rgba(255,255,255,0.5)', marginBottom: '12px' }}>
-            Connecté en tant que<br />
-            <strong style={{ color: 'var(--color-accent)' }}>{driver?.name}</strong>
-          </div>
-          <button className="sidebar-nav-item" onClick={handleLogout} style={{ color: '#ef4444', width: '100%' }}>
-            <span className="icon"><LogOut size={17} strokeWidth={1.5} /></span>
-            Déconnexion
+      {/* Navigation flottante */}
+      {moreOpen && <div className="bottom-nav-backdrop" onClick={() => setMoreOpen(false)} />}
+      <nav className="bottom-nav" aria-label="Navigation du tableau de bord">
+        {[
+          { id: 'dashboard',    Icon: LayoutDashboard, label: 'Tableau de bord' },
+          { id: 'reservations', Icon: ClipboardList,   label: 'Réservations' },
+          { id: 'calculateur',  Icon: Calculator,      label: 'Calculateur' },
+          { id: 'stats',        Icon: TrendingUp,      label: 'Statistiques' },
+        ].map(item => (
+          <button
+            key={item.id}
+            className={`bottom-nav-item ${view === item.id ? 'active' : ''}`}
+            onClick={() => {
+              setView(item.id);
+              setMoreOpen(false);
+              if (item.id === 'reservations') setUnreadCount(0);
+            }}
+          >
+            <item.Icon size={18} strokeWidth={1.75} />
+            <span className="bottom-nav-label">{item.label}</span>
+            {item.id === 'reservations' && unreadCount > 0 && (
+              <span className="bottom-nav-badge">{unreadCount > 9 ? '9+' : unreadCount}</span>
+            )}
           </button>
+        ))}
+
+        <div className="bottom-nav-divider" />
+
+        <div style={{ position: 'relative' }}>
+          <button
+            className={`bottom-nav-icon-btn ${moreOpen ? 'active' : ''}`}
+            onClick={() => setMoreOpen(o => !o)}
+            aria-label="Plus d'options"
+          >
+            <MoreHorizontal size={18} strokeWidth={1.75} />
+            {(pendingDriversCount > 0 && driver?.role === 'admin') && <span className="bottom-nav-dot" />}
+          </button>
+
+          {moreOpen && (
+            <div className="bottom-nav-more-panel">
+              {[
+                { id: 'planning',    Icon: Calendar,   label: 'Planning' },
+                { id: 'avis',        Icon: Star,       label: 'Avis clients' },
+                { id: 'clients',     Icon: Users2,     label: 'Clients (CRM)' },
+                { id: 'abonnement',  Icon: CreditCard, label: 'Abonnement' },
+                { id: 'settings',    Icon: Settings,   label: 'Paramètres' },
+                ...(driver?.role === 'admin' ? [{ id: 'admin', Icon: Users, label: 'Administration', badge: pendingDriversCount }] : []),
+              ].map(item => (
+                <button
+                  key={item.id}
+                  className={`bottom-nav-more-item ${view === item.id ? 'active' : ''}`}
+                  onClick={() => { setView(item.id); setMoreOpen(false); }}
+                >
+                  <item.Icon size={16} strokeWidth={1.5} />
+                  {item.label}
+                  {item.badge > 0 && <span className="bottom-nav-more-badge">{item.badge > 9 ? '9+' : item.badge}</span>}
+                </button>
+              ))}
+              <div className="bottom-nav-more-divider" />
+              <div className="bottom-nav-more-driver">
+                Connecté en tant que <strong>{driver?.name}</strong>
+              </div>
+              <button className="bottom-nav-more-item logout" onClick={handleLogout}>
+                <LogOut size={16} strokeWidth={1.5} />
+                Déconnexion
+              </button>
+            </div>
+          )}
         </div>
-      </aside>
+      </nav>
 
       {/* Main */}
       <main className="dashboard-main">
