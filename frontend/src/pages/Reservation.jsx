@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, isValidElement, cloneElement } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import {
   Calculator, Loader2, AlertTriangle, MapPin, Clock, Euro, Car,
@@ -21,15 +21,15 @@ const fadeSlide = {
 };
 
 // ── Composant champ de formulaire ─────────────────────────────────────────────
-function Field({ label, required, error, icon: Icon, children }) {
+function Field({ id, label, required, error, icon: Icon, children }) {
   return (
     <div className="resv-field">
-      <label className="resv-label">
+      <label className="resv-label" htmlFor={id}>
         {Icon && <Icon size={13} strokeWidth={1.75} />}
         {label}{required && <span className="resv-required">*</span>}
       </label>
       <div className={`resv-input-wrap ${error ? 'has-error' : ''}`}>
-        {children}
+        {isValidElement(children) ? cloneElement(children, { id }) : children}
       </div>
       <AnimatePresence>
         {error && (
@@ -352,7 +352,7 @@ export default function Reservation() {
               <div className="resv-section-head">
                 <div className="resv-section-icon"><Navigation size={16} strokeWidth={1.75} /></div>
                 <div>
-                  <h3>Itinéraire</h3>
+                  <h2>Itinéraire</h2>
                   <p>
                     {serviceType === 'transfert'
                       ? 'Renseignez votre point de départ et d\'arrivée'
@@ -362,7 +362,7 @@ export default function Reservation() {
               </div>
 
               <div className="resv-fields">
-                <Field label="Adresse de départ" required error={errors.departureAddress} icon={MapPin}>
+                <Field id="departureAddress" label="Adresse de départ" required error={errors.departureAddress} icon={MapPin}>
                   <input
                     type="text" name="departureAddress"
                     className="resv-input"
@@ -374,7 +374,7 @@ export default function Reservation() {
                 <AnimatePresence mode="wait">
                   {serviceType === 'transfert' ? (
                     <motion.div key="arrival" {...fadeSlide}>
-                      <Field label="Adresse d'arrivée" required error={errors.arrivalAddress} icon={MapPin}>
+                      <Field id="arrivalAddress" label="Adresse d'arrivée" required error={errors.arrivalAddress} icon={MapPin}>
                         <input
                           type="text" name="arrivalAddress"
                           className="resv-input"
@@ -385,7 +385,7 @@ export default function Reservation() {
                     </motion.div>
                   ) : (
                     <motion.div key="duration" {...fadeSlide}>
-                      <Field label="Durée de mise à disposition" required icon={Timer}>
+                      <Field id="duration" label="Durée de mise à disposition" required icon={Timer}>
                         <select
                           className="resv-input resv-select"
                           value={duration}
@@ -433,21 +433,21 @@ export default function Reservation() {
               <div className="resv-section-head">
                 <div className="resv-section-icon"><Clock size={16} strokeWidth={1.75} /></div>
                 <div>
-                  <h3>Date &amp; Passagers</h3>
+                  <h2>Date &amp; Passagers</h2>
                   <p>Quand souhaitez-vous être pris en charge ?</p>
                 </div>
               </div>
 
               <div className="resv-fields">
                 <div className="resv-row">
-                  <Field label="Date de prise en charge" required error={errors.date} icon={Clock}>
+                  <Field id="date" label="Date de prise en charge" required error={errors.date} icon={Clock}>
                     <input
                       type="date" name="date"
                       className="resv-input"
                       value={form.date} onChange={handleChange} min={today}
                     />
                   </Field>
-                  <Field label="Heure de prise en charge" required error={errors.time} icon={Clock}>
+                  <Field id="time" label="Heure de prise en charge" required error={errors.time} icon={Clock}>
                     <input
                       type="time" name="time"
                       className="resv-input"
@@ -457,14 +457,14 @@ export default function Reservation() {
                 </div>
 
                 <div className="resv-row">
-                  <Field label="Passagers" icon={Users}>
+                  <Field id="passengers" label="Passagers" icon={Users}>
                     <select name="passengers" className="resv-input resv-select" value={form.passengers} onChange={handleChange}>
                       {[1,2,3,4,5,6,7].map(n => (
                         <option key={n} value={n}>{n} passager{n > 1 ? 's' : ''}</option>
                       ))}
                     </select>
                   </Field>
-                  <Field label="Bagages" icon={Briefcase}>
+                  <Field id="luggage" label="Bagages" icon={Briefcase}>
                     <select name="luggage" className="resv-input resv-select" value={form.luggage} onChange={handleChange}>
                       {[0,1,2,3,4,5,6].map(n => (
                         <option key={n} value={n}>{n} bagage{n > 1 ? 's' : ''}</option>
@@ -473,7 +473,7 @@ export default function Reservation() {
                   </Field>
                 </div>
 
-                <Field label="Instructions particulières" icon={MessageSquare}>
+                <Field id="comments" label="Instructions particulières" icon={MessageSquare}>
                   <textarea
                     name="comments"
                     className="resv-input resv-textarea"
@@ -490,14 +490,14 @@ export default function Reservation() {
               <div className="resv-section-head">
                 <div className="resv-section-icon"><User size={16} strokeWidth={1.75} /></div>
                 <div>
-                  <h3>Vos coordonnées</h3>
+                  <h2>Vos coordonnées</h2>
                   <p>Pour vous envoyer la confirmation et le bon de réservation</p>
                 </div>
               </div>
 
               <div className="resv-fields">
                 <div className="resv-row">
-                  <Field label="Prénom" required error={errors.firstName} icon={User}>
+                  <Field id="firstName" label="Prénom" required error={errors.firstName} icon={User}>
                     <input
                       type="text" name="firstName"
                       className="resv-input"
@@ -505,7 +505,7 @@ export default function Reservation() {
                       placeholder="Jean" autoComplete="given-name"
                     />
                   </Field>
-                  <Field label="Nom" required error={errors.lastName} icon={User}>
+                  <Field id="lastName" label="Nom" required error={errors.lastName} icon={User}>
                     <input
                       type="text" name="lastName"
                       className="resv-input"
@@ -516,7 +516,7 @@ export default function Reservation() {
                 </div>
 
                 <div className="resv-row">
-                  <Field label="Email" required error={errors.email} icon={Mail}>
+                  <Field id="email" label="Email" required error={errors.email} icon={Mail}>
                     <input
                       type="email" name="email"
                       className="resv-input"
@@ -524,7 +524,7 @@ export default function Reservation() {
                       placeholder="jean.dupont@email.fr" autoComplete="email"
                     />
                   </Field>
-                  <Field label="Téléphone" required error={errors.phone} icon={Phone}>
+                  <Field id="phone" label="Téléphone" required error={errors.phone} icon={Phone}>
                     <input
                       type="tel" name="phone"
                       className="resv-input"
@@ -543,7 +543,7 @@ export default function Reservation() {
                   <label htmlFor="gdpr">
                     J'accepte que mes données personnelles soient utilisées pour le traitement
                     de ma réservation, conformément à la{' '}
-                    <Link to="/politique-rgpd" style={{ color: 'var(--color-accent)' }}>
+                    <Link to="/politique-rgpd" style={{ color: 'var(--color-accent-text)', textDecoration: 'underline' }}>
                       politique de confidentialité
                     </Link>.
                     Ces données ne seront pas transmises à des tiers. <strong>*</strong>
@@ -564,7 +564,7 @@ export default function Reservation() {
                   />
                   <label htmlFor="termsAccepted">
                     J'ai lu et j'accepte les{' '}
-                    <Link to="/cgu" style={{ color: 'var(--color-accent)' }}>
+                    <Link to="/cgu" style={{ color: 'var(--color-accent-text)', textDecoration: 'underline' }}>
                       conditions générales d'utilisation
                     </Link>. <strong>*</strong>
                   </label>
