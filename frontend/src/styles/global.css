@@ -336,6 +336,13 @@ input, select, textarea { font-family: var(--font-body); }
   height: 68px;
   object-fit: contain;
 }
+.hero-greeting {
+  display: none;
+  font-family: var(--font-body);
+  font-size: 0.9rem;
+  color: rgba(255,255,255,0.6);
+  margin: 0 0 -4px;
+}
 .hero-title-new {
   font-family: var(--font-heading);
   font-size: clamp(2.2rem, 5vw, 3.8rem);
@@ -767,14 +774,6 @@ input, select, textarea { font-family: var(--font-body); }
   border-radius: var(--radius-xl);
   box-shadow: 0 24px 80px rgba(0,0,0,0.6), 0 0 0 1px rgba(38,114,83,0.15);
   object-fit: cover;
-}
-
-/* Driver logo */
-.driver-logo-img {
-  width: 64px;
-  height: 64px;
-  object-fit: cover;
-  border-radius: 16px;
 }
 
 /* Vehicle photo */
@@ -3368,23 +3367,60 @@ textarea.form-control { resize: vertical; min-height: 88px; }
   /* Sections espacement réduit */
   .section { padding: 48px 0; }
 
-  /* Hero plein écran — empiler gauche/droite */
+  /* Navbar mobile — menu déroulant */
+  .navbar-nav {
+    display: none;
+    flex-direction: column;
+    position: absolute;
+    top: 68px;
+    left: 0;
+    right: 0;
+    background: var(--color-slate);
+    padding: 10px;
+    gap: 2px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+    z-index: 999;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.3);
+  }
+  .navbar-nav.open { display: flex; }
+  .navbar-hamburger { display: flex; }
+  .navbar-nav a, .navbar-nav button {
+    padding: 12px 16px;
+    border-radius: var(--radius-md);
+    font-size: 0.95rem;
+  }
+  [data-theme="light"] .navbar-nav {
+    background: #ffffff;
+    border-bottom-color: rgba(0,0,0,0.08);
+    box-shadow: 0 8px 24px rgba(0,0,0,0.1);
+  }
+
+  /* Hero plein écran — empiler gauche/droite, hauteur réduite (carte visible sans scroller) */
+  .hero-full { min-height: auto; }
   .hero-full-inner {
     grid-template-columns: 1fr;
-    gap: 28px;
-    padding-top: 24px;
-    padding-bottom: 72px;
+    gap: 24px;
+    padding-top: 28px;
+    padding-bottom: 40px;
   }
   .hero-full-overlay {
     background:
       linear-gradient(0deg, rgba(28,43,53,0.80) 0%, rgba(28,43,53,0.52) 55%, rgba(28,43,53,0.20) 100%);
   }
+  .hero-scroll-hint { display: none; }
+  .hero-greeting { display: block; }
   .hero-title-new { font-size: clamp(1.85rem, 7vw, 2.8rem); }
   .hero-desc-new { font-size: 0.97rem; max-width: 100%; }
   .hero-quick-stats { gap: 16px; }
   .hero-right-content { width: 100%; max-width: 500px; margin: 0 auto; }
   .hero-logo-wrap { width: 72px; height: 72px; }
   .hero-logo-img { width: 54px; height: 54px; }
+
+  /* Carte de réservation — espacement resserré */
+  .hero-booking-card { padding: 22px 18px 16px; }
+  .hb-tabs { margin-bottom: 14px; }
+  .hb-form { gap: 10px; }
+  .hb-field-group { gap: 6px; }
 
   /* Stats grid — 2 colonnes */
   .stats-grid {
