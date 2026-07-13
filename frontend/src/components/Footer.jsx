@@ -10,7 +10,7 @@ export default function Footer() {
       <div className="container" style={{ paddingTop: '3rem' }}>
         <div className="footer-grid">
           <div className="footer-brand">
-            <div className="flex items-center gap-3 mb-3">
+            <div className="footer-brand-header">
               <img src="/images/logo-3m-new.svg" alt="Logo 3M Drive" style={{ width: 44, height: 44, objectFit: 'contain' }} />
               <h3 style={{ margin: 0, color: 'var(--color-accent)' }}>3M Drive</h3>
             </div>
@@ -60,7 +60,7 @@ export default function Footer() {
                   <Mail size={13} strokeWidth={1.5} /> 3m.services31@gmail.com
                 </a>
               </li>
-              <li className="flex items-center gap-2" style={{ color: 'rgba(255,255,255,0.5)' }}>
+              <li className="footer-contact-row" style={{ color: 'rgba(255,255,255,0.5)' }}>
                 <MapPin size={13} strokeWidth={1.5} /> Toulouse, Haute-Garonne (31)
               </li>
               <li style={{ color: 'rgba(255,255,255,0.4)', fontSize: '0.85rem', marginTop: '8px' }}>
@@ -74,10 +74,10 @@ export default function Footer() {
 
         <div className="footer-bottom">
           <span>© {year} 3M Drive – Toulouse. Tous droits réservés.</span>
-          <span className="flex gap-5">
-            <Link to="/mentions-legales" className="text-white/40 text-[0.82rem]">Mentions légales</Link>
-            <Link to="/cgu" className="text-white/40 text-[0.82rem]">CGU</Link>
-            <Link to="/politique-rgpd" className="text-white/40 text-[0.82rem]">Politique de confidentialité</Link>
+          <span className="footer-legal-links">
+            <Link to="/mentions-legales">Mentions légales</Link>
+            <Link to="/cgu">CGU</Link>
+            <Link to="/politique-rgpd">Politique de confidentialité</Link>
           </span>
         </div>
       </div>

@@ -102,7 +102,7 @@ export default function Login() {
             </button>
           </form>
 
-          <div className="flex items-center justify-center gap-2"
+          <div className="login-info-box"
             style={{
               marginTop: '24px', padding: '12px 16px',
               background: 'var(--color-light)', borderRadius: 'var(--radius)',

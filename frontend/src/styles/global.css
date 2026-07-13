@@ -131,6 +131,7 @@ input, select, textarea { font-family: var(--font-body); }
 /* ── Layout ─────────────────────────────────────────────────────────────────── */
 .app-layout { display: flex; flex-direction: column; min-height: 100vh; }
 .main-content { flex: 1; }
+.route-fallback { min-height: 100vh; display: flex; align-items: center; justify-content: center; }
 .container { max-width: 1200px; margin: 0 auto; padding: 0 24px; }
 .section { padding: var(--space-20) 0; }
 .section-title {
@@ -257,6 +258,19 @@ input, select, textarea { font-family: var(--font-body); }
   background: var(--color-accent-light) !important;
   box-shadow: var(--shadow-gold) !important;
   transform: translateY(-1px);
+}
+.navbar-logout-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  border: 2px solid rgba(255,255,255,0.3);
+  color: rgba(255,255,255,0.8);
+  padding: 8px 16px;
+  border-radius: var(--radius);
+  font-weight: 500;
+  font-size: 0.9rem;
+  background: none;
+  transition: color var(--transition), border-color var(--transition);
 }
 .navbar-hamburger {
   display: none;
@@ -1161,6 +1175,7 @@ input, select, textarea { font-family: var(--font-body); }
   letter-spacing: 0.1px;
 }
 .form-label span { color: var(--color-error); margin-left: 2px; }
+.form-label-dot { display: inline-flex; align-items: center; gap: 6px; }
 .form-control {
   width: 100%;
   padding: 11px 14px;
@@ -1351,6 +1366,22 @@ textarea.form-control { resize: vertical; min-height: 88px; }
   font-family: var(--font-body);
   font-size: 0.88rem;
   font-weight: 400;
+}
+.icon-heading { display: flex; align-items: center; gap: 8px; }
+.toast-notification {
+  position: fixed;
+  top: 24px;
+  right: 24px;
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  max-width: 360px;
+  padding: 14px 20px;
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-lg);
+  font-size: 0.9rem;
+  font-weight: 500;
 }
 
 /* Stat cards */
@@ -1610,12 +1641,17 @@ textarea.form-control { resize: vertical; min-height: 88px; }
   gap: 48px;
   margin-bottom: 44px;
 }
+.footer-brand-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 12px;
+}
 .footer-brand h3 {
   font-family: var(--font-heading);
   font-size: 1.3rem;
   font-weight: 800;
   color: var(--color-accent);
-  margin-bottom: 12px;
   letter-spacing: -0.02em;
 }
 .footer-brand p { font-family: var(--font-body); font-size: 0.87rem; line-height: 1.75; max-width: 280px; color: rgba(255,255,255,0.45); }
@@ -1627,9 +1663,9 @@ textarea.form-control { resize: vertical; min-height: 88px; }
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: background-color 0.25s, color 0.25s;
+  transition: background var(--transition), color var(--transition);
 }
-.footer-social-link:hover { background: rgba(212,175,55,0.28) !important; }
+.footer-social-link:hover { background: rgba(212,175,55,0.28) !important; color: var(--color-accent) !important; }
 .footer-col h4 {
   font-family: var(--font-heading);
   color: rgba(255,255,255,0.85);
@@ -1643,6 +1679,7 @@ textarea.form-control { resize: vertical; min-height: 88px; }
 .footer-col ul li { margin-bottom: 10px; }
 .footer-col ul li a { color: rgba(255,255,255,0.5); font-size: 0.88rem; transition: color var(--transition); display: flex; align-items: center; gap: 6px; }
 .footer-col ul li a:hover { color: var(--color-accent); }
+.footer-contact-row { display: flex; align-items: center; gap: 6px; }
 .footer-divider { border: none; border-top: 1px solid rgba(255,255,255,0.07); margin-bottom: 22px; }
 .footer-bottom {
   display: flex;
@@ -1653,6 +1690,9 @@ textarea.form-control { resize: vertical; min-height: 88px; }
   flex-wrap: wrap;
   color: rgba(255,255,255,0.35);
 }
+.footer-legal-links { display: flex; gap: 20px; flex-wrap: wrap; }
+.footer-legal-links a { color: rgba(255,255,255,0.4); font-size: 0.82rem; transition: color var(--transition); }
+.footer-legal-links a:hover { color: var(--color-accent); }
 .footer-gold-bar { height: 3px; background: linear-gradient(90deg, var(--color-accent-dark), var(--color-accent), var(--color-accent-dark)); }
 
 /* ══════════════════════════════════════════════════════════════════════════════
@@ -2271,6 +2311,7 @@ textarea.form-control { resize: vertical; min-height: 88px; }
   border-color: var(--color-accent);
   box-shadow: 0 0 0 3px rgba(212,175,55,0.15);
 }
+.login-info-box { display: flex; align-items: center; justify-content: center; gap: 8px; }
 
 /* ── Chauffeur & Véhicule ────────────────────────────────────────────────────── */
 .driver-vehicle-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin-top: 40px; }
@@ -2537,6 +2578,9 @@ textarea.form-control { resize: vertical; min-height: 88px; }
   padding: 3px 10px;
   border-radius: var(--radius-full);
   white-space: nowrap;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
 }
 .price-locked-details { display: flex; align-items: baseline; gap: 8px; }
 .price-locked-amount { font-size: 1.2rem; font-weight: 700; color: #065f46; }

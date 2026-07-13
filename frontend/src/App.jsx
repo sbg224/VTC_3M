@@ -47,9 +47,9 @@ function DriverRoute({ children }) {
 
 function AppLayout({ children }) {
   return (
-    <div className="flex flex-col min-h-screen">
+    <div className="app-layout">
       <Navbar />
-      <main className="flex-1">{children}</main>
+      <main className="main-content">{children}</main>
       <Footer />
     </div>
   );
@@ -57,7 +57,7 @@ function AppLayout({ children }) {
 
 function RouteFallback() {
   return (
-    <div className="min-h-screen flex items-center justify-center" style={{ background: 'linear-gradient(135deg, #050508 0%, #111118 60%, #1a1a2e 100%)' }}>
+    <div className="route-fallback" style={{ background: 'linear-gradient(135deg, #050508 0%, #111118 60%, #1a1a2e 100%)' }}>
       <div style={{ color: 'rgba(255,255,255,0.78)', fontSize: '0.95rem' }}>Chargement…</div>
     </div>
   );

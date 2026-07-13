@@ -80,7 +80,7 @@ export default function Navbar() {
               <li>
                 <motion.button
                   onClick={handleLogout}
-                  className="flex items-center gap-2 border-2 border-white/30 text-white/80 px-4 py-2 rounded-lg font-medium text-[0.9rem] transition-colors duration-200"
+                  className="navbar-logout-btn"
                   whileHover={{ borderColor: '#ef4444', color: '#ef4444' }}
                   whileTap={{ scale: 0.97 }}
                 >
