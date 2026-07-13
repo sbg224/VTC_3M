@@ -29,7 +29,7 @@ export default function Footer() {
                   href={item.href}
                   aria-label={item.label}
                   className="footer-social-link"
-                  style={{ background: 'rgba(212,175,55,0.15)', color: 'rgba(255,255,255,0.7)' }}
+                  style={{ background: 'rgba(38,114,83,0.18)', color: 'rgba(255,255,255,0.7)' }}
                 >
                   <item.Icon size={16} strokeWidth={1.5} />
                 </a>
