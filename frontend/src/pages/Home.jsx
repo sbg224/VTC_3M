@@ -9,7 +9,7 @@ import {
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { gsap, ScrollTrigger } from '../animations/gsap';
-import { simulateAPI, publicStatsAPI } from '../services/api';
+import { simulateAPI, publicStatsAPI, driverPublicAPI } from '../services/api';
 import Seo from '../components/Seo';
 
 // ── Données ───────────────────────────────────────────────────────────────────
@@ -257,6 +257,7 @@ function scrollToSimulator(e) {
 export default function Home() {
   const pageRef   = useRef(null);
   const [liveStats, setLiveStats] = useState(null); // null = chargement
+  const [drivers,   setDrivers]   = useState([]);
 
   // ── Chargement stats publiques depuis la DB ──────────────────────────────────
   useEffect(() => {
@@ -266,6 +267,13 @@ export default function Home() {
         // Fallback si l'API échoue : valeurs neutres non-mensongères
         setLiveStats({ totalCompleted: null, uniqueClients: null, yearsActive: null, availability: '24/7' });
       });
+  }, []);
+
+  // ── Chargement des vrais chauffeurs actifs depuis la DB ──────────────────────
+  useEffect(() => {
+    driverPublicAPI.getPublicList()
+      .then(({ data }) => setDrivers(data.drivers || []))
+      .catch(() => setDrivers([]));
   }, []);
 
   // Construit le tableau affiché depuis les stats live
@@ -357,14 +365,14 @@ export default function Home() {
               Calculez votre prix en temps réel, réservez en 60 secondes.
             </p>
 
-            <div className="hero-quick-stats">
+            {/* <div className="hero-quick-stats">
               {displayStats.map((s, i) => (
                 <div key={i} className="hero-quick-stat">
                   <span className="stat-number">{s.number}</span>
                   <span>{s.label}</span>
                 </div>
               ))}
-            </div>
+            </div> */}
 
             <a href="tel:+33751044407" className="hero-phone-link">
               <Phone size={15} strokeWidth={1.5} /> +33 7 51 04 44 07
@@ -407,22 +415,32 @@ export default function Home() {
             Un service individuel, une relation de confiance directe
           </p>
           <div className="driver-vehicle-grid">
-            <div className="driver-card">
-              <div className="driver-avatar">
-                <img src="/images/logo-3m-new.svg" alt="Logo 3M Drive" className="driver-logo-img" width="64" height="64" loading="lazy" />
-              </div>
-              <div className="driver-info">
-                <div className="driver-badge">Chauffeur VTC Agréé · Toulouse (31)</div>
-                <h3>3M Drive</h3>
-                <p>Chauffeur privé indépendant basé à Toulouse, je mets tout en œuvre pour vous offrir un déplacement confortable, ponctuel et discret.</p>
-                <p>Que ce soit pour un transfert aéroport, une réunion d'affaires ou un événement privé, vous bénéficiez d'une attention personnalisée à chaque course.</p>
-                <div className="driver-badges">
-                  <span><ShieldCheck size={13} strokeWidth={1.5} style={{ display: 'inline', marginRight: 4 }} /> Carte VTC officielle</span>
-                  <span><ShieldCheck size={13} strokeWidth={1.5} style={{ display: 'inline', marginRight: 4 }} /> Assurance professionnelle</span>
-                  <span><ShieldCheck size={13} strokeWidth={1.5} style={{ display: 'inline', marginRight: 4 }} /> Tenue professionnelle</span>
+            {drivers.map((d) => {
+              const displayName = d.businessName || d.name;
+              const initials = displayName.split(' ').map((w) => w[0]).slice(0, 2).join('').toUpperCase();
+              return (
+                <div className="driver-card" key={d.id}>
+                  <div className="driver-avatar">{initials}</div>
+                  <div className="driver-info">
+                    <div className="driver-badge">Chauffeur VTC Agréé · Toulouse (31)</div>
+                    <h3>{displayName}</h3>
+                    {d.rating != null && (
+                      <p style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                        <Star size={13} strokeWidth={1.5} style={{ color: 'var(--color-accent)' }} />
+                        {d.rating.toFixed(1)}/5 · {d.reviewCount} avis client{d.reviewCount > 1 ? 's' : ''}
+                      </p>
+                    )}
+                    <p>Chauffeur privé indépendant basé à Toulouse, engagé à offrir un déplacement confortable, ponctuel et discret.</p>
+                    <p>Que ce soit pour un transfert aéroport, une réunion d'affaires ou un événement privé, vous bénéficiez d'une attention personnalisée à chaque course.</p>
+                    <div className="driver-badges">
+                      <span><ShieldCheck size={13} strokeWidth={1.5} style={{ display: 'inline', marginRight: 4 }} /> Carte VTC officielle</span>
+                      <span><ShieldCheck size={13} strokeWidth={1.5} style={{ display: 'inline', marginRight: 4 }} /> Assurance professionnelle</span>
+                      <span><ShieldCheck size={13} strokeWidth={1.5} style={{ display: 'inline', marginRight: 4 }} /> Tenue professionnelle</span>
+                    </div>
+                  </div>
                 </div>
-              </div>
-            </div>
+              );
+            })}
             <div className="vehicle-card">
               <div className="vehicle-icon-block">
                 <img src="/images/car-door.jpeg" alt="Portière berline premium VTC 3M Drive" className="vehicle-photo" width="600" height="180" loading="lazy" />
@@ -510,14 +528,6 @@ export default function Home() {
                   <Star size={11} strokeWidth={2} /> Service 5 étoiles
                 </div>
                 <div className="exp-mini-stats">
-                  <div className="exp-mini-stat">
-                    <span>4.9</span><small>/5 client</small>
-                  </div>
-                  <div className="exp-mini-divider" />
-                  <div className="exp-mini-stat">
-                    <span>100%</span><small>ponctualité</small>
-                  </div>
-                  <div className="exp-mini-divider" />
                   <div className="exp-mini-stat">
                     <span>24/7</span><small>disponible</small>
                   </div>

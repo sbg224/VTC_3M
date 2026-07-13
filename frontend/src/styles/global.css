@@ -800,14 +800,6 @@ input, select, textarea { font-family: var(--font-body); }
   object-fit: cover;
 }
 
-/* Driver logo */
-.driver-logo-img {
-  width: 64px;
-  height: 64px;
-  object-fit: cover;
-  border-radius: 16px;
-}
-
 /* Vehicle photo */
 .vehicle-photo {
   width: 100%;

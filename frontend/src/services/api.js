@@ -79,7 +79,8 @@ export const billingAPI = {
 };
 
 export const driverPublicAPI = {
-  getBySlug: (slug) => api.get(`/drivers/public/${slug}`),
+  getBySlug:    (slug) => api.get(`/drivers/public/${slug}`),
+  getPublicList: ()    => api.get('/drivers/public'),
 };
 
 export const adminAPI = {
