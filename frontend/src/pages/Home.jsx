@@ -355,6 +355,7 @@ export default function Home() {
               <span>VTC Premium – Toulouse &amp; Haute-Garonne (31)</span>
             </div>
 
+            <p className="hero-greeting">Bonjour 👋</p>
             <h1 className="hero-title-new">
               Votre chauffeur<br />
               <span className="gold-accent">privé à Toulouse</span>
@@ -365,14 +366,7 @@ export default function Home() {
               Calculez votre prix en temps réel, réservez en 60 secondes.
             </p>
 
-            {/* <div className="hero-quick-stats">
-              {displayStats.map((s, i) => (
-                <div key={i} className="hero-quick-stat">
-                  <span className="stat-number">{s.number}</span>
-                  <span>{s.label}</span>
-                </div>
-              ))}
-            </div> */}
+
 
             <a href="tel:+33751044407" className="hero-phone-link">
               <Phone size={15} strokeWidth={1.5} /> +33 7 51 04 44 07
