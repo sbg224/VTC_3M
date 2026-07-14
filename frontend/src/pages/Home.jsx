@@ -4,23 +4,24 @@ import {
   Users, Clock, ShieldCheck, EyeOff, Receipt, Smartphone,
   Armchair, Wind, VolumeX, Droplets, Zap, Sparkles, Star,
   Plane, Train, Building2, Landmark,
-  Phone, Mail, MapPin, Car, Calculator,
+  Phone, MapPin, Car, Calculator,
   Loader2, AlertTriangle, Euro, ArrowRight, ChevronDown,
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { gsap, ScrollTrigger } from '../animations/gsap';
 import { simulateAPI, publicStatsAPI, driverPublicAPI } from '../services/api';
 import Seo from '../components/Seo';
+import FeatureSteps from '../components/FeatureSteps';
 
 // ── Données ───────────────────────────────────────────────────────────────────
 
 const features = [
-  { Icon: Users,       title: 'Service Personnalisé',    desc: 'Un chauffeur dédié, toujours le même. Une relation directe, sans intermédiaire.' },
-  { Icon: Clock,       title: 'Ponctualité Garantie',    desc: 'Suivi du trafic en temps réel. Présent à l\'heure, à chaque course, sans exception.' },
-  { Icon: ShieldCheck, title: 'Sécurité & Sérénité',     desc: 'Chauffeur VTC agréé, véhicule assuré et entretenu. Vous êtes entre de bonnes mains.' },
-  { Icon: EyeOff,      title: 'Discrétion Absolue',      desc: 'Confidentialité totale. Idéal pour vos déplacements professionnels ou personnels.' },
-  { Icon: Receipt,     title: 'Facturation Automatique', desc: 'Facture PDF envoyée immédiatement après la course. Parfait pour les notes de frais.' },
-  { Icon: Smartphone,  title: 'Réservation Simple',      desc: 'Réservez en ligne en moins d\'une minute, de jour comme de nuit.' },
+  { Icon: Users,       title: 'Service Personnalisé',    desc: 'Un chauffeur dédié, toujours le même. Une relation directe, sans intermédiaire.', image: '/images/passenger.jpeg' },
+  { Icon: Clock,       title: 'Ponctualité Garantie',    desc: 'Suivi du trafic en temps réel. Présent à l\'heure, à chaque course, sans exception.', image: '/images/car-hero.jpeg' },
+  { Icon: ShieldCheck, title: 'Sécurité & Sérénité',     desc: 'Chauffeur VTC agréé, véhicule assuré et entretenu. Vous êtes entre de bonnes mains.', image: '/images/car-door.jpeg' },
+  { Icon: EyeOff,      title: 'Discrétion Absolue',      desc: 'Confidentialité totale. Idéal pour vos déplacements professionnels ou personnels.', image: '/images/airport.jpeg' },
+  { Icon: Receipt,     title: 'Facturation Automatique', desc: 'Facture PDF envoyée immédiatement après la course. Parfait pour les notes de frais.', image: '/images/passenger.jpeg' },
+  { Icon: Smartphone,  title: 'Réservation Simple',      desc: 'Réservez en ligne en moins d\'une minute, de jour comme de nuit.', image: '/images/car-hero.jpeg' },
 ];
 
 // Stats par défaut pendant le chargement
@@ -302,7 +303,7 @@ export default function Home() {
         if (title) gsap.from(title, { y: 28, opacity: 0, duration: 0.6, scrollTrigger: { trigger: title, start: 'top 88%', once: true } });
         const sub = section.querySelector('.section-subtitle');
         if (sub) gsap.from(sub, { y: 16, opacity: 0, duration: 0.5, delay: 0.08, scrollTrigger: { trigger: sub, start: 'top 88%', once: true } });
-        const cards = section.querySelectorAll('.feature-card,.destination-card,.testimonial-card,.howto-step,.driver-card,.vehicle-card');
+        const cards = section.querySelectorAll('.destination-card,.testimonial-card,.howto-step,.driver-card,.vehicle-card');
         if (cards.length) gsap.from(cards, { y: 20, opacity: 0, stagger: 0.08, duration: 0.55, ease: 'power3.out', clearProps: 'transform,opacity', scrollTrigger: { trigger: section, start: 'top 80%', once: true } });
       });
 
@@ -346,10 +347,6 @@ export default function Home() {
         <div className="container hero-full-inner">
           {/* Gauche : branding */}
           <div className="hero-left-content">
-            <div className="hero-logo-wrap">
-              <img src="/images/logo-3m-new.svg" alt="Logo 3M Drive" className="hero-logo-img" />
-            </div>
-
             <div className="hero-badge">
               <Star size={11} strokeWidth={2} />
               <span>VTC Premium – Toulouse &amp; Haute-Garonne (31)</span>
@@ -464,16 +461,7 @@ export default function Home() {
           <p className="section-subtitle" style={{ textAlign: 'center', margin: '0 auto var(--space-12)' }}>
             Un chauffeur privé qui fait vraiment la différence
           </p>
-          <div className="features-grid">
-            {features.map((f, i) => (
-              <div key={i} className="feature-card">
-                <span className="feature-num">{String(i + 1).padStart(2, '0')}</span>
-                <div className="feature-icon"><f.Icon size={22} strokeWidth={1.5} /></div>
-                <h3>{f.title}</h3>
-                <p>{f.desc}</p>
-              </div>
-            ))}
-          </div>
+          <FeatureSteps features={features} />
         </div>
       </section>
 
@@ -623,8 +611,6 @@ export default function Home() {
           <div className="contact-grid">
             <div>
               {[
-                { Icon: Phone,  title: 'Téléphone',             info: '+33 7 51 04 44 07',              sub: 'Disponible 7j/7 – 24h/24' },
-                { Icon: Mail,   title: 'Email',                 info: '3m.services31@gmail.com',        sub: 'Réponse rapide garantie' },
                 { Icon: MapPin, title: 'Zone d\'intervention',  info: 'Toulouse & Haute-Garonne (31)',  sub: 'Longues distances sur demande' },
                 { Icon: Clock,  title: 'Horaires',              info: '24h/24 – 7j/7',                  sub: 'Jours fériés inclus' },
               ].map((item, i) => (
