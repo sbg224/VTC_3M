@@ -1,7 +1,7 @@
 import { useEffect } from 'react';
 
 const SITE_URL = 'https://3mdrive.fr';
-const DEFAULT_IMAGE = `${SITE_URL}/images/car-hero.jpeg`;
+const DEFAULT_IMAGE = `${SITE_URL}/images/car-hero-toulouse.jpg`;
 const DEFAULT_ROBOTS = 'index, follow, max-snippet:-1, max-image-preview:large, max-video-preview:-1';
 
 function upsertMeta(key, value, content) {

@@ -42,10 +42,10 @@ const vehicleHighlights = [
 ];
 
 const destinations = [
-  { Icon: Plane,     title: 'Aéroport Toulouse-Blagnac', desc: 'Transfert avec suivi des vols en temps réel. Prise en charge à l\'arrivée.' },
-  { Icon: Train,     title: 'Gare Matabiau',              desc: 'Dépose et prise en charge directe sur le parvis, sans stress.' },
-  { Icon: Building2, title: 'Déplacements professionnels', desc: 'Réunions, séminaires, événements d\'entreprise sur Toulouse et sa région.' },
-  { Icon: Landmark,  title: 'Sorties & événements',       desc: 'Restaurants, spectacles, mariages — arrivez en style et repartez l\'esprit léger.' },
+  { Icon: Plane,     title: 'Aéroport Toulouse-Blagnac', desc: 'Transfert avec suivi des vols en temps réel. Prise en charge à l\'arrivée.', image: '/images/Aereport.jpg' },
+  { Icon: Train,     title: 'Gare Matabiau',              desc: 'Dépose et prise en charge directe sur le parvis, sans stress.', image: '/images/gare-2.jpg' },
+  { Icon: Building2, title: 'Déplacements professionnels', desc: 'Réunions, séminaires, événements d\'entreprise sur Toulouse et sa région.', image: '/images/professionnel.jpg' },
+  { Icon: Landmark,  title: 'Sorties & événements',       desc: 'Restaurants, spectacles, mariages — arrivez en style et repartez l\'esprit léger.', image: '/images/evenement.jpg' },
 ];
 
 const testimonials = [
@@ -478,6 +478,9 @@ export default function Home() {
             <div className="destinations-grid">
               {destinations.map((d, i) => (
                 <div key={i} className="destination-card" onClick={scrollToSimulator} role="button" tabIndex={0} onKeyDown={(e) => e.key === 'Enter' && scrollToSimulator(e)}>
+                  <div className="destination-card-photo">
+                    <img src={d.image} alt={d.title} loading="lazy" />
+                  </div>
                   <div className="destination-card-top">
                     <div className="destination-icon"><d.Icon size={20} strokeWidth={1.5} /></div>
                     <div><h3>{d.title}</h3><p>{d.desc}</p></div>
@@ -522,7 +525,7 @@ export default function Home() {
 
             {/* ── Image secondaire aéroport ── */}
             <div className="exp-card exp-card--secondary">
-              <img src="/images/airport.jpeg" alt="Accueil personnalisé aéroport Toulouse-Blagnac" className="exp-img" loading="lazy" />
+              <img src="/images/Aereport.jpg" alt="Accueil personnalisé aéroport Toulouse-Blagnac" className="exp-img" loading="lazy" />
               <div className="exp-overlay exp-overlay--strong" />
               <div className="exp-secondary-label">
                 <Plane size={13} strokeWidth={1.75} /> Toulouse-Blagnac
