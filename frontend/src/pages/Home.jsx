@@ -303,9 +303,62 @@ export default function Home() {
         if (title) gsap.from(title, { y: 28, opacity: 0, duration: 0.6, scrollTrigger: { trigger: title, start: 'top 88%', once: true } });
         const sub = section.querySelector('.section-subtitle');
         if (sub) gsap.from(sub, { y: 16, opacity: 0, duration: 0.5, delay: 0.08, scrollTrigger: { trigger: sub, start: 'top 88%', once: true } });
-        const cards = section.querySelectorAll('.destination-card,.testimonial-card,.howto-step,.driver-card,.vehicle-card');
+        const cards = section.querySelectorAll('.testimonial-card,.howto-step,.driver-card,.vehicle-card');
         if (cards.length) gsap.from(cards, { y: 20, opacity: 0, stagger: 0.08, duration: 0.55, ease: 'power3.out', clearProps: 'transform,opacity', scrollTrigger: { trigger: section, start: 'top 80%', once: true } });
       });
+
+      // Destinations — galerie dispersée type "Shadway" : plusieurs photos visibles
+      // simultanément à des tailles/positions différentes, celle du premier plan
+      // nette et centrée, les autres décalées en coin et floutées. Chaque carte
+      // parcourt en boucle ce cycle (loin → premier plan → loin) au fil du scroll.
+      const destWrap = page.querySelector('.destinations-grid-wrap');
+      const destCards = destWrap ? Array.from(destWrap.querySelectorAll('.destination-card--photo')) : [];
+      if (destWrap && destCards.length > 1) {
+        const stack = destWrap.querySelector('.destinations-stack');
+        stack.classList.add('destinations-stack--pinned');
+
+        const n = destCards.length;
+        gsap.set(destCards, { xPercent: -50, yPercent: -50, transformOrigin: '50% 50%' });
+
+        const render = (progress) => {
+          const wrapRect = destWrap.getBoundingClientRect();
+          destCards.forEach((card, i) => {
+            const phase = (((i / n) + progress) % 1 + 1) % 1;
+            const nearness = 1 - Math.abs(phase - 0.5) * 2; // 0 = loin, 1 = premier plan
+            const eased = nearness * nearness * (3 - 2 * nearness); // smoothstep — pilote la taille/position
+            // Le flou et le fondu ne s'appliquent que tout près de l'entrée/sortie
+            // (comme dans la galerie de référence) : le reste du temps, y compris
+            // en position secondaire décalée, la photo reste nette et opaque.
+            const edge = Math.min(nearness / 0.2, 1);
+            const edgeEased = edge * edge * (3 - 2 * edge);
+            // Traversée continue : entre depuis la droite, passe au centre (premier
+            // plan) à mi-cycle, ressort par la gauche — jamais deux cartes du même
+            // côté en même temps. Léger biais vers le bas pour dégager le titre.
+            const baseX = phase <= 0.5 ? (0.5 - phase) * 2 : -(phase - 0.5) * 2;
+            gsap.set(card, {
+              x: baseX * 0.55 * wrapRect.width * (1 - eased),
+              y: 0.5 * wrapRect.height * (1 - eased),
+              scale: 0.5 + eased * 0.5,
+              opacity: edgeEased,
+              filter: `blur(${(1 - edgeEased) * 16}px)`,
+              zIndex: Math.round(eased * 100),
+            });
+            const content = card.querySelector('.destination-card-content');
+            if (content) gsap.set(content, { opacity: eased > 0.72 ? (eased - 0.72) / 0.28 : 0 });
+          });
+        };
+        render(0);
+
+        const segment = 480;
+        ScrollTrigger.create({
+          trigger: destWrap,
+          start: 'top top+=80',
+          end: `+=${segment * n}`,
+          scrub: 0.5,
+          pin: true,
+          onUpdate: (self) => render(self.progress),
+        });
+      }
 
       // Compteurs animés — sur les valeurs numériques uniquement
       page.querySelectorAll('.stat-number').forEach((el) => {
@@ -325,7 +378,35 @@ export default function Home() {
     }, page);
 
     ScrollTrigger.refresh();
-    return () => ctx.revert();
+
+    // Les grandes photos (destinations, hero…) se chargent après ce premier
+    // refresh : tant que ScrollTrigger ne recalcule pas une fois la mise en
+    // page définitive connue, ses positions de pin restent basées sur une
+    // page plus courte et le bloc épinglé se déclenche trop tôt, recouvrant
+    // les sections précédentes (observé sur mobile). On reprogramme un
+    // refresh dès que chaque image a fini de charger.
+    const images = Array.from(page.querySelectorAll('img'));
+    const pending = images.filter((img) => !img.complete);
+    let refreshTimeout;
+    const scheduleRefresh = () => {
+      clearTimeout(refreshTimeout);
+      refreshTimeout = setTimeout(() => ScrollTrigger.refresh(), 60);
+    };
+    pending.forEach((img) => {
+      img.addEventListener('load', scheduleRefresh);
+      img.addEventListener('error', scheduleRefresh);
+    });
+    window.addEventListener('load', scheduleRefresh);
+
+    return () => {
+      clearTimeout(refreshTimeout);
+      pending.forEach((img) => {
+        img.removeEventListener('load', scheduleRefresh);
+        img.removeEventListener('error', scheduleRefresh);
+      });
+      window.removeEventListener('load', scheduleRefresh);
+      ctx.revert();
+    };
   }, []);
 
   return (
@@ -475,17 +556,24 @@ export default function Home() {
           <h2 className="section-title" style={{ textAlign: 'center' }}>Vos <span className="gold-accent">destinations</span></h2>
           <p className="section-subtitle" style={{ textAlign: 'center', margin: '0 auto var(--space-12)' }}>Toulouse et toute la Haute-Garonne (31)</p>
           <div className="destinations-grid-wrap">
-            <div className="destinations-grid">
+            <div className="destinations-stack">
               {destinations.map((d, i) => (
-                <div key={i} className="destination-card" onClick={scrollToSimulator} role="button" tabIndex={0} onKeyDown={(e) => e.key === 'Enter' && scrollToSimulator(e)}>
-                  <div className="destination-card-photo">
-                    <img src={d.image} alt={d.title} loading="lazy" />
-                  </div>
-                  <div className="destination-card-top">
+                <div
+                  key={i}
+                  className="destination-card destination-card--photo"
+                  onClick={scrollToSimulator}
+                  role="button"
+                  tabIndex={0}
+                  onKeyDown={(e) => e.key === 'Enter' && scrollToSimulator(e)}
+                >
+                  <img src={d.image} alt={d.title} className="destination-card-photo-img" loading="lazy" />
+                  <div className="destination-card-scrim" />
+                  <div className="destination-card-content">
                     <div className="destination-icon"><d.Icon size={20} strokeWidth={1.5} /></div>
-                    <div><h3>{d.title}</h3><p>{d.desc}</p></div>
+                    <h3>{d.title}</h3>
+                    <p>{d.desc}</p>
+                    <div className="destination-cta">Estimer ce trajet <ArrowRight size={13} strokeWidth={2} /></div>
                   </div>
-                  <div className="destination-cta">Estimer ce trajet <ArrowRight size={13} strokeWidth={2} /></div>
                 </div>
               ))}
             </div>
