@@ -48,7 +48,7 @@ export default function CursorEffect() {
     };
 
     // ── Hover : classes CSS uniquement (aucun tween GSAP sur dot/follower) ───
-    const HOVER_SEL = 'a, button, .btn, .feature-card, .gallery-item, .destination-card';
+    const HOVER_SEL = 'a, button, .btn, .feature-steps-item, .gallery-item, .destination-card';
 
     const onOver = (e) => {
       if (e.target.closest(HOVER_SEL)) {
