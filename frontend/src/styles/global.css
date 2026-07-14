@@ -2456,6 +2456,19 @@ textarea.form-control { resize: vertical; min-height: 88px; }
   overflow: hidden;
 }
 .destination-card:hover { box-shadow: var(--shadow-md); transform: translateY(-3px); border-color: var(--color-brand-border); }
+.destination-card-photo {
+  margin: -20px -20px 0;
+  height: 130px;
+  overflow: hidden;
+}
+.destination-card-photo img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  transition: transform var(--transition-slow);
+}
+.destination-card:hover .destination-card-photo img { transform: scale(1.05); }
 .destination-card-top { display: flex; gap: 14px; align-items: flex-start; }
 .destination-icon {
   line-height: 1;
