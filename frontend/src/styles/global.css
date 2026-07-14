@@ -296,7 +296,9 @@ input, select, textarea { font-family: var(--font-body); }
   width: 100%;
   height: 100%;
   object-fit: cover;
-  object-position: center 52%;
+  /* Photo large (voiture décalée à gauche) : on garde la calandre et la
+     plaque "3M Drive" dans le cadre plutôt que de centrer bêtement. */
+  object-position: 42% 55%;
   display: block;
   filter: brightness(1.08) saturate(1.05);
 }
@@ -3477,6 +3479,9 @@ textarea.form-control { resize: vertical; min-height: 88px; }
     padding-bottom: 110px; /* respire avant la section suivante — carte "flottante", pas collée */
   }
   .hero-left-content { gap: 12px; }
+  /* Sert le recadrage portrait dédié (car-hero-toulouse-mobile.jpg, voir
+     <picture> dans Home.jsx) — centré, la calandre/plaque y est déjà cadrée. */
+  .hero-full-img { object-position: center center; }
   .hero-full-overlay {
     background:
       linear-gradient(0deg, rgba(28,43,53,0.80) 0%, rgba(28,43,53,0.52) 55%, rgba(28,43,53,0.20) 100%);

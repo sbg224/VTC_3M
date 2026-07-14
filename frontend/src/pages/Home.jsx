@@ -340,7 +340,10 @@ export default function Home() {
       {/* ── HERO PLEIN ÉCRAN ──────────────────────────────────────────────────── */}
       <section className="hero-full">
         <div className="hero-full-bg">
-          <img src="/images/car-hero.jpeg" alt="VTC premium 3M Drive Toulouse" className="hero-full-img" fetchpriority="high" />
+          <picture>
+            <source media="(max-width: 768px)" srcSet="/images/car-hero-toulouse-mobile.jpg" />
+            <img src="/images/car-hero-toulouse.jpg" alt="Berline 3M Drive au bord de la Garonne à Toulouse, coucher de soleil" className="hero-full-img" fetchpriority="high" />
+          </picture>
           <div className="hero-full-overlay" />
         </div>
 
