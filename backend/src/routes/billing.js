@@ -4,13 +4,10 @@ const ctrl    = require('../controllers/billingController');
 const auth    = require('../middleware/auth');
 const checkSubscription = require('../middleware/checkSubscription');
 
-// ── Webhook Stripe : body RAW obligatoire (avant le parser JSON global) ───────
-// Cette route est publique (Stripe signe la requête avec STRIPE_WEBHOOK_SECRET)
-router.post(
-  '/webhook',
-  express.raw({ type: 'application/json' }),
-  ctrl.handleWebhook
-);
+// ── Webhook Stripe : monté directement dans index.js (app.post), pas ici ──────
+// Voir le commentaire dans backend/src/index.js : un routeur ne peut pas
+// exposer '/webhook' à la fois pour le montage brut '/api/billing/webhook'
+// (avant express.json()) et pour le montage standard '/api/billing' (après).
 
 // ── Routes protégées (JWT requis) ─────────────────────────────────────────────
 // Note : checkSubscription n'est PAS appliqué ici pour permettre l'accès

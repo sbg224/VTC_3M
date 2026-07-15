@@ -1,7 +1,9 @@
 /**
  * Service de géocodage et calcul d'itinéraire
- * Utilise Nominatim (OpenStreetMap) + OSRM (routing open source)
- * Aucune clé API requise
+ * Géocodage : API Adresse (Base Adresse Nationale, api-adresse.data.gouv.fr)
+ *   — service public français, gratuit et sans clé, adapté aux adresses FR.
+ * Itinéraire : OSRM (routing open source, serveur de démo public — dette
+ *   connue, à auto-héberger avant la mise en production, voir AUDIT_COMPLET).
  */
 const https = require('https');
 const logger = require('../middleware/logger');
@@ -39,17 +41,19 @@ function httpGet(url) {
   });
 }
 
-/** Convertit une adresse en coordonnées { lat, lon } via Nominatim */
+/** Convertit une adresse française en coordonnées { lat, lon } via l'API Adresse (BAN) */
 async function geocode(address) {
   const query = encodeURIComponent(address);
-  const url = `https://nominatim.openstreetmap.org/search?q=${query}&format=json&limit=1&addressdetails=0`;
+  const url = `https://api-adresse.data.gouv.fr/search/?q=${query}&limit=1`;
 
   const data = await httpGet(url);
+  const feature = data && Array.isArray(data.features) ? data.features[0] : null;
 
-  if (!Array.isArray(data) || data.length === 0) {
+  if (!feature || !Array.isArray(feature.geometry?.coordinates)) {
     throw new Error(`Adresse introuvable : "${address}". Vérifiez l'orthographe ou soyez plus précis.`);
   }
-  return { lat: parseFloat(data[0].lat), lon: parseFloat(data[0].lon) };
+  const [lon, lat] = feature.geometry.coordinates; // GeoJSON : [longitude, latitude]
+  return { lat: parseFloat(lat), lon: parseFloat(lon) };
 }
 
 /**
