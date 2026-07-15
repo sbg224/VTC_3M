@@ -38,6 +38,20 @@ const allowedOrigins = (process.env.FRONTEND_URL || 'http://localhost:3000')
   .map(normalizeOrigin)
   .filter(Boolean);
 const isProd = process.env.NODE_ENV === 'production';
+
+// ── Confiance envers le reverse proxy (Nginx/Traefik en prod, cf.
+//    PLAN_DEPLOIEMENT_PROXMOX_POSTGRES.md) ──────────────────────────────────
+// Sans ce réglage, req.ip vaut l'IP du proxy pour toutes les requêtes qui
+// passent par lui : le rate limiting par IP (login, réservation, etc.)
+// devient inopérant, tous les visiteurs partageant le même compteur.
+// Actif uniquement en production par défaut (aucun proxy de confiance en
+// dev local) ; ajustable via TRUST_PROXY_HOPS si la topologie réseau change
+// (ex. CDN devant le reverse proxy = 2 sauts).
+const trustProxyHops = process.env.TRUST_PROXY_HOPS !== undefined
+  ? parseInt(process.env.TRUST_PROXY_HOPS, 10)
+  : (isProd ? 1 : 0);
+app.set('trust proxy', trustProxyHops);
+
 const privateDevOriginRegex = /^https?:\/\/(localhost|127\.0\.0\.1|10\.\d+\.\d+\.\d+|192\.168\.\d+\.\d+|172\.(1[6-9]|2\d|3[0-1])\.\d+\.\d+|100\.\d+\.\d+\.\d+)(:\d+)?$/i;
 app.use(cors({
   origin: (origin, cb) => {
@@ -70,8 +84,16 @@ app.use(morgan('combined', {
 }));
 
 // ── Webhook Stripe : body RAW — DOIT être monté AVANT le parser JSON global ───
-// Le handler interne de la route gère son propre express.raw()
-app.use('/api/billing/webhook', require('./routes/billing'));
+// Montée directement ici (pas via le routeur billing) : app.use() retire le
+// préfixe de montage avant de tester les routes internes, donc un routeur
+// monté sur '/api/billing/webhook' ne matche jamais sa propre route interne
+// '/webhook' (qui n'existe qu'en le montant sur '/api/billing'). Résultat
+// avant ce correctif : la requête retombait sur express.json() puis sur le
+// second montage du routeur (ligne ci-dessous), avec un body déjà parsé en
+// JSON — stripe.webhooks.constructEvent() exige le Buffer brut et échouait
+// systématiquement, donc aucun webhook Stripe n'était jamais traité.
+const billingController = require('./controllers/billingController');
+app.post('/api/billing/webhook', express.raw({ type: 'application/json' }), billingController.handleWebhook);
 
 // ── Body parsing (limité à 10kb) ──────────────────────────────────────────────
 app.use(express.json({ limit: '10kb' }));
@@ -159,6 +181,18 @@ async function start() {
     const adminName  = process.env.ADMIN_NAME        || '3M Services';
     const adminPass  = process.env.ADMIN_PASSWORD    || 'Admin2024!';
     const adminPhone = process.env.ADMIN_PHONE       || '+33600000000';
+
+    // Les identifiants par défaut sont documentés publiquement (README) : les
+    // laisser actifs en production permettrait une prise de contrôle admin
+    // triviale. On refuse de démarrer plutôt que de créer un compte avec un
+    // mot de passe connu de tous.
+    if (isProd && (adminEmail === 'admin@vtc3m.fr' || adminPass === 'Admin2024!')) {
+      throw new Error(
+        "ADMIN_LOGIN_EMAIL et ADMIN_PASSWORD doivent être définis dans l'environnement de production " +
+        "avec des valeurs différentes des identifiants par défaut (admin@vtc3m.fr / Admin2024!), " +
+        "documentés publiquement dans le README."
+      );
+    }
 
     let admin = await Driver.findOne({ where: { email: adminEmail } });
     if (!admin) {

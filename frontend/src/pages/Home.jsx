@@ -242,7 +242,11 @@ const JSON_LD_LOCAL_BUSINESS = JSON.stringify({
       'logo': 'https://3mdrive.fr/images/logo-3m-new.svg', 'priceRange': '€€',
       'currenciesAccepted': 'EUR', 'openingHours': 'Mo-Su 00:00-24:00',
       'address': { '@type': 'PostalAddress', 'streetAddress': '1 rue Virginia Woolf', 'addressLocality': 'Toulouse', 'postalCode': '31000', 'addressRegion': 'Haute-Garonne', 'addressCountry': 'FR' },
-      'aggregateRating': { '@type': 'AggregateRating', 'ratingValue': '4.9', 'bestRating': '5', 'ratingCount': '47' },
+      // Pas d'aggregateRating tant qu'il n'y a pas de vrais avis clients en base
+      // (voir modèle Review) — une note statique non connectée aux données
+      // réelles est un risque de non-conformité aux consignes Google sur les
+      // avis structurés. À réintroduire dynamiquement quand le volume d'avis
+      // réels sera suffisant.
     },
   ],
 });
@@ -320,15 +324,24 @@ export default function Home() {
         const n = destCards.length;
         gsap.set(destCards, { xPercent: -50, yPercent: -50, transformOrigin: '50% 50%' });
 
+        // wrapRect n'est mesuré (getBoundingClientRect, un reflow) qu'au
+        // (re)calage de ScrollTrigger, jamais à chaque frame de scroll — le
+        // lire dans render() forçait un reflow synchrone à chaque tick de
+        // scrub, coûteux et source de saccades/écran blanc pendant le défilement.
+        let wrapRect = destWrap.getBoundingClientRect();
+
         const render = (progress) => {
-          const wrapRect = destWrap.getBoundingClientRect();
           destCards.forEach((card, i) => {
             const phase = (((i / n) + progress) % 1 + 1) % 1;
             const nearness = 1 - Math.abs(phase - 0.5) * 2; // 0 = loin, 1 = premier plan
             const eased = nearness * nearness * (3 - 2 * nearness); // smoothstep — pilote la taille/position
-            // Le flou et le fondu ne s'appliquent que tout près de l'entrée/sortie
-            // (comme dans la galerie de référence) : le reste du temps, y compris
-            // en position secondaire décalée, la photo reste nette et opaque.
+            // Le fondu ne s'applique que tout près de l'entrée/sortie (comme
+            // dans la galerie de référence) : le reste du temps, y compris en
+            // position secondaire décalée, la photo reste nette et opaque.
+            // (Le flou gaussien par frame a été retiré : `filter: blur()`
+            // recalculé en continu pendant le scroll force un repaint complet
+            // de chaque carte à chaque tick — coûteux avec plusieurs cartes en
+            // même temps, cause de saccades/écran blanc pendant le défilement.)
             const edge = Math.min(nearness / 0.2, 1);
             const edgeEased = edge * edge * (3 - 2 * edge);
             // Traversée continue : entre depuis la droite, passe au centre (premier
@@ -340,7 +353,6 @@ export default function Home() {
               y: 0.5 * wrapRect.height * (1 - eased),
               scale: 0.5 + eased * 0.5,
               opacity: edgeEased,
-              filter: `blur(${(1 - edgeEased) * 16}px)`,
               zIndex: Math.round(eased * 100),
             });
             const content = card.querySelector('.destination-card-content');
@@ -356,6 +368,7 @@ export default function Home() {
           end: `+=${segment * n}`,
           scrub: 0.5,
           pin: true,
+          onRefresh: () => { wrapRect = destWrap.getBoundingClientRect(); },
           onUpdate: (self) => render(self.progress),
         });
       }
@@ -397,6 +410,11 @@ export default function Home() {
       img.addEventListener('error', scheduleRefresh);
     });
     window.addEventListener('load', scheduleRefresh);
+    // Les polices web chargées après ce premier refresh peuvent aussi décaler
+    // la hauteur du texte (donc la position du bloc épinglé) sans qu'aucun
+    // événement de chargement d'image ne le signale — recaler une dernière
+    // fois une fois les polices prêtes.
+    if (document.fonts?.ready) document.fonts.ready.then(scheduleRefresh);
 
     return () => {
       clearTimeout(refreshTimeout);
