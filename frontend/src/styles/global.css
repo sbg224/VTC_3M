@@ -3510,6 +3510,10 @@ textarea.form-control { resize: vertical; min-height: 88px; }
 
   /* Navbar mobile — barre compacte logo + burger, remplace la pill flottante */
   .bottom-nav { display: none; }
+  /* Le dashboard chauffeur réutilise la même classe .bottom-nav pour sa propre
+     navigation mais n'a pas de barre burger de remplacement — sans cette
+     règle, il perd toute navigation sur mobile. */
+  .dashboard .bottom-nav { display: flex; }
   /* Fixe (pas sticky) : flotte par-dessus l'image du hero au lieu d'être un
      bloc séparé dans le flux normal — l'image continue derrière elle. */
   .mobile-top-bar {
@@ -4065,13 +4069,17 @@ textarea.form-control { resize: vertical; min-height: 88px; }
   border-bottom: 1px solid rgba(255, 255, 255, 0.06);
 }
 
-.adm-brand-name {
-  font-family: var(--font-heading);
-  font-size: 1rem;
-  font-weight: 800;
-  color: #267253;
-  letter-spacing: -0.3px;
-  line-height: 1.1;
+.adm-brand-logo-btn {
+  padding: 0;
+  line-height: 0;
+  flex-shrink: 0;
+}
+
+.adm-brand-logo {
+  display: block;
+  width: 44px;
+  height: 44px;
+  object-fit: contain;
 }
 
 .adm-brand-role {
@@ -4079,7 +4087,6 @@ textarea.form-control { resize: vertical; min-height: 88px; }
   color: rgba(255, 255, 255, 0.35);
   text-transform: uppercase;
   letter-spacing: 0.8px;
-  margin-top: 2px;
 }
 
 /* ── Navigation ───────────────────────────────────────────────────────── */
@@ -4907,6 +4914,15 @@ textarea.form-control { resize: vertical; min-height: 88px; }
   gap: 20px;
 }
 
+.adm-cardform-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+@media (max-width: 480px) {
+  .adm-cardform-grid { grid-template-columns: 1fr; }
+}
+
 /* ── Fiche chauffeur (dans modal) ─────────────────────────────────────── */
 .adm-driver-identity {
   display: flex;
@@ -5022,6 +5038,13 @@ textarea.form-control { resize: vertical; min-height: 88px; }
   color: #267253;
 }
 
+.adm-pricing-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 24px;
+  max-width: 900px;
+}
+
 /* ── Responsive admin ─────────────────────────────────────────────────── */
 @media (max-width: 900px) {
   .adm-sidebar {
@@ -5029,7 +5052,6 @@ textarea.form-control { resize: vertical; min-height: 88px; }
     overflow: visible;
   }
   .adm-brand-role,
-  .adm-brand-name,
   .adm-nav-item span,
   .adm-admin-info span,
   .adm-logout span {
@@ -5038,6 +5060,10 @@ textarea.form-control { resize: vertical; min-height: 88px; }
   .adm-sidebar-brand {
     justify-content: center;
     padding: 20px 10px;
+  }
+  .adm-brand-logo {
+    width: 36px;
+    height: 36px;
   }
   .adm-nav {
     padding: 12px 6px;
@@ -5093,8 +5119,7 @@ textarea.form-control { resize: vertical; min-height: 88px; }
     padding: 14px 16px;
     flex-shrink: 0;
   }
-  .adm-brand-role,
-  .adm-brand-name { display: none; }
+  .adm-brand-role { display: none; }
   .adm-nav {
     flex-direction: row;
     padding: 8px;
@@ -5111,7 +5136,13 @@ textarea.form-control { resize: vertical; min-height: 88px; }
     white-space: nowrap;
   }
   .adm-nav-item span { display: block; }
-  .adm-sidebar-footer { display: none; }
+  .adm-sidebar-footer {
+    flex-direction: row;
+    border-top: none;
+    border-left: 1px solid rgba(255, 255, 255, 0.06);
+    padding: 8px;
+    flex-shrink: 0;
+  }
   .adm-main { padding: 20px 16px; }
   .adm-kpi-grid { grid-template-columns: repeat(2, 1fr); }
   .adm-driver-stats { grid-template-columns: repeat(2, 1fr); }
@@ -5132,6 +5163,7 @@ textarea.form-control { resize: vertical; min-height: 88px; }
   border: 1px solid rgba(255, 255, 255, 0.08);
   border-radius: 16px;
   padding: 28px;
+  min-width: 0;
 }
 
 .adm-pricing-card-title {
@@ -5283,6 +5315,9 @@ textarea.form-control { resize: vertical; min-height: 88px; }
 @media (max-width: 900px) {
   .adm-acc-recap { grid-template-columns: repeat(2, 1fr); }
   .adm-acc-period-bar { flex-direction: column; align-items: flex-start; }
+}
+@media (max-width: 480px) {
+  .adm-acc-recap { grid-template-columns: 1fr; }
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════
@@ -5483,7 +5518,12 @@ textarea.form-control { resize: vertical; min-height: 88px; }
   .planning-grid { grid-template-columns: repeat(4, 1fr); }
 }
 @media (max-width: 640px) {
-  .planning-grid { grid-template-columns: repeat(2, 1fr); }
+  .planning-grid {
+    grid-template-columns: repeat(7, minmax(130px, 1fr));
+    overflow-x: auto;
+    padding-bottom: 4px;
+    -webkit-overflow-scrolling: touch;
+  }
   .perf-cards    { flex-direction: column; }
 }
 

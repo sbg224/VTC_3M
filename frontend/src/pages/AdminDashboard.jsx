@@ -355,7 +355,7 @@ function ContactModal({ contactId, onClose, onSaved }) {
               </div>
             )}
 
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+            <div className="adm-cardform-grid">
               <input type="text" className="adm-input" placeholder="Prénom *" value={form.firstName} onChange={handleChange('firstName')} />
               <input type="text" className="adm-input" placeholder="Nom *" value={form.lastName} onChange={handleChange('lastName')} />
               <input type="text" className="adm-input" placeholder="Société" value={form.company} onChange={handleChange('company')} />
@@ -365,7 +365,7 @@ function ContactModal({ contactId, onClose, onSaved }) {
               className="adm-input" rows={2} placeholder="Description courte" style={{ resize: 'vertical', marginTop: 10 }}
               value={form.shortDescription} onChange={handleChange('shortDescription')}
             />
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginTop: 10 }}>
+            <div className="adm-cardform-grid" style={{ marginTop: 10 }}>
               <input type="text" className="adm-input" placeholder="Téléphone" value={form.phone} onChange={handleChange('phone')} />
               <input type="email" className="adm-input" placeholder="Email" value={form.email} onChange={handleChange('email')} />
               <input type="text" className="adm-input" placeholder="Site web (https://…)" value={form.website} onChange={handleChange('website')} />
@@ -716,11 +716,15 @@ export default function AdminDashboard() {
       {/* ── Sidebar ─────────────────────────────────────────────────────────── */}
       <aside className="adm-sidebar">
         <div className="adm-sidebar-brand">
-          <img src="/images/logo-3m-new.svg" alt="3M Drive" style={{ width:32, height:32, objectFit:'contain' }} />
-          <div>
-            <div className="adm-brand-name">3M Drive</div>
-            <div className="adm-brand-role">Administration</div>
-          </div>
+          <button
+            className="adm-brand-logo-btn"
+            onClick={() => navigate('/')}
+            title="Retour à l'accueil"
+            aria-label="Retour à l'accueil"
+          >
+            <img src="/images/nav-logo-dark.webp" alt="3M Drive" className="adm-brand-logo" />
+          </button>
+          <div className="adm-brand-role">Administration</div>
         </div>
 
         <nav className="adm-nav">
@@ -742,8 +746,8 @@ export default function AdminDashboard() {
             <Shield size={14} strokeWidth={1.75} style={{ color:'#6366f1' }} />
             <span>{adminUser?.name || 'Admin'}</span>
           </div>
-          <button className="adm-logout" onClick={() => { logout(); navigate('/login'); }}>
-            <LogOut size={15} strokeWidth={1.75} /> Déconnexion
+          <button className="adm-logout" onClick={() => { logout(); navigate('/'); }}>
+            <LogOut size={15} strokeWidth={1.75} /> <span>Déconnexion</span>
           </button>
         </div>
       </aside>
@@ -1221,10 +1225,10 @@ export default function AdminDashboard() {
               </div>
               {accPeriod === 'custom' && (
                 <div className="adm-acc-custom-range">
-                  <input type="date" className="adm-input" style={{ width:155, marginBottom:0 }}
+                  <input type="date" className="adm-input" style={{ maxWidth:155, width:'100%', minWidth:130, marginBottom:0 }}
                     value={accStart} onChange={e => setAccStart(e.target.value)} />
                   <span style={{ color:'rgba(255,255,255,0.3)', padding:'0 4px' }}>→</span>
-                  <input type="date" className="adm-input" style={{ width:155, marginBottom:0 }}
+                  <input type="date" className="adm-input" style={{ maxWidth:155, width:'100%', minWidth:130, marginBottom:0 }}
                     value={accEnd} onChange={e => setAccEnd(e.target.value)} />
                   <button
                     className="adm-btn-primary" style={{ padding:'8px 18px' }}
@@ -1459,7 +1463,7 @@ export default function AdminDashboard() {
             {pricingLoading ? (
               <div className="adm-loader"><Loader2 size={28} className="animate-spin" /></div>
             ) : (
-              <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:24, maxWidth:900 }}>
+              <div className="adm-pricing-grid">
 
                 {/* Formulaire */}
                 <div className="adm-pricing-card">
