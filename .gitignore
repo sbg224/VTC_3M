@@ -17,6 +17,9 @@ backend/database.sqlite
 # ── PDFs générés (données clients) ───────────────────────────────────────────
 backend/pdfs/
 
+# ── Photos de cartes de visite (module Contact) ───────────────────────────────
+backend/uploads/
+
 # ── Build frontend ────────────────────────────────────────────────────────────
 frontend/dist/
 frontend/dist-ssr/

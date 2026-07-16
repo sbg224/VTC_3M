@@ -100,6 +100,29 @@ export const crmAPI = {
   exportCsv:  (params) => api.get('/crm/clients/export', { params, responseType: 'blob' }),
 };
 
+// ── Module Carte de visite numérique (Contact) ────────────────────────────────
+export const contactPublicAPI = {
+  getBySlug:  (slug) => api.get(`/contacts/public/${slug}`),
+  vcardUrl:   (slug) => `/api/contacts/vcard/${slug}`,
+  trackEvent: (slug, type) => api.post(`/contacts/events/${slug}`, { type }),
+};
+
+export const contactAdminAPI = {
+  getAll:    (params) => api.get('/contacts', { params }),
+  getOne:    (id)     => api.get(`/contacts/${id}`),
+  create:    (data)   => api.post('/contacts', data),
+  update:    (id, data) => api.put(`/contacts/${id}`, data),
+  remove:    (id)     => api.delete(`/contacts/${id}`),
+  uploadPhoto: (id, file) => {
+    const formData = new FormData();
+    formData.append('photo', file);
+    // Retire le Content-Type JSON par défaut de l'instance : le navigateur
+    // doit générer lui-même le boundary multipart, un header manuel casserait
+    // le parsing côté serveur (multer).
+    return api.post(`/contacts/${id}/photo`, formData, { headers: { 'Content-Type': undefined } });
+  },
+};
+
 export function downloadBlob(blob, filename) {
   const url = window.URL.createObjectURL(blob);
   const a = document.createElement('a');

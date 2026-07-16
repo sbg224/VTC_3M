@@ -27,6 +27,8 @@ const Reservation  = require('./Reservation')(sequelize);
 const PricingConfig= require('./PricingConfig')(sequelize);
 const Review       = require('./Review')(sequelize);
 const RevokedToken = require('./RevokedToken')(sequelize);
+const Contact      = require('./Contact')(sequelize);
+const ContactEvent = require('./ContactEvent')(sequelize);
 
 // ── Associations ──────────────────────────────────────────────────────────────
 // Un chauffeur possède plusieurs réservations
@@ -48,4 +50,13 @@ Reservation.hasOne(Review,    { foreignKey: 'reservationId', as: 'review' });
 Review.belongsTo(Driver, { foreignKey: 'chauffeurId', as: 'chauffeur' });
 Driver.hasMany(Review,   { foreignKey: 'chauffeurId', as: 'reviews' });
 
-module.exports = { sequelize, Driver, Reservation, PricingConfig, Review, RevokedToken };
+// Contact ↔ Driver (N:1, optionnelle) — seul point de contact entre le
+// module carte de visite et le reste de l'app. Driver.js n'est pas modifié.
+Contact.belongsTo(Driver, { foreignKey: 'driverId', as: 'driver' });
+Driver.hasMany(Contact,   { foreignKey: 'driverId', as: 'contacts' });
+
+// ContactEvent ↔ Contact (N:1)
+ContactEvent.belongsTo(Contact, { foreignKey: 'contactId', as: 'contact' });
+Contact.hasMany(ContactEvent,   { foreignKey: 'contactId', as: 'events' });
+
+module.exports = { sequelize, Driver, Reservation, PricingConfig, Review, RevokedToken, Contact, ContactEvent };
