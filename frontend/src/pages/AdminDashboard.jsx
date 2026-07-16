@@ -746,7 +746,7 @@ export default function AdminDashboard() {
             <Shield size={14} strokeWidth={1.75} style={{ color:'#6366f1' }} />
             <span>{adminUser?.name || 'Admin'}</span>
           </div>
-          <button className="adm-logout" onClick={() => { logout(); navigate('/'); }}>
+          <button className="adm-logout" onClick={() => { logout(); navigate('/login'); }}>
             <LogOut size={15} strokeWidth={1.75} /> <span>Déconnexion</span>
           </button>
         </div>
