@@ -1,0 +1,16 @@
+{
+  "name": "3M Drive – Chauffeur VTC Premium à Toulouse",
+  "short_name": "3M Drive",
+  "description": "Chauffeur VTC privé à Toulouse. Réservation en ligne, transfert aéroport et gare, service premium.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#1C2B35",
+  "theme_color": "#1C2B35",
+  "lang": "fr",
+  "icons": [
+    { "src": "/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" }
+  ]
+}
