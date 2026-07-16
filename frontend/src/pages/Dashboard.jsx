@@ -1066,11 +1066,10 @@ export default function Dashboard() {
   }, []);
 
   // ── Notifications SSE temps réel ────────────────────────────────────────────
+  // Le cookie de session httpOnly est envoyé automatiquement par EventSource
+  // pour une requête même origine — plus besoin de token dans l'URL.
   useEffect(() => {
-    const token = localStorage.getItem('vtc_token');
-    if (!token) return;
-
-    const es = new EventSource(`/api/notifications/stream?token=${encodeURIComponent(token)}`);
+    const es = new EventSource('/api/notifications/stream');
 
     es.addEventListener('new_reservation', (e) => {
       try {

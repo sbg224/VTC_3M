@@ -9,6 +9,7 @@ import {
 import { motion, AnimatePresence } from 'framer-motion';
 import { reservationAPI, simulateAPI } from '../services/api';
 import Seo from '../components/Seo';
+import { emptyReservationForm, validateReservationForm } from '../utils/reservationForm';
 
 // ── Constantes ────────────────────────────────────────────────────────────────
 const DURATIONS = ['1h','2h','3h','4h','5h','6h','8h','10h','12h'];
@@ -104,39 +105,8 @@ function SimWidget({ departure, arrival, onResult, simData, onClear }) {
   );
 }
 
-// ── Validation ────────────────────────────────────────────────────────────────
-function validate(form, serviceType) {
-  const errors = {};
-  if (!form.firstName.trim()) errors.firstName = 'Le prénom est requis.';
-  if (!form.lastName.trim())  errors.lastName  = 'Le nom est requis.';
-  if (!form.email.trim() || !/\S+@\S+\.\S+/.test(form.email))
-    errors.email = 'Adresse email invalide.';
-  if (!form.phone.trim() || !/^(\+33|0)[1-9](\d{8})$/.test(form.phone.replace(/\s/g, '')))
-    errors.phone = 'Numéro invalide (format français).';
-  if (!form.departureAddress.trim())
-    errors.departureAddress = 'L\'adresse de départ est requise.';
-  if (serviceType === 'transfert' && !form.arrivalAddress.trim())
-    errors.arrivalAddress = 'L\'adresse d\'arrivée est requise.';
-  if (!form.date) {
-    errors.date = 'La date est requise.';
-  } else {
-    const sel = new Date(form.date);
-    const now = new Date(); now.setHours(0,0,0,0);
-    if (sel < now) errors.date = 'La date doit être dans le futur.';
-  }
-  if (!form.time) errors.time = 'L\'heure est requise.';
-  if (!form.gdprConsent) errors.gdprConsent = 'Vous devez accepter la politique de confidentialité.';
-  if (!form.termsAccepted) errors.termsAccepted = 'Vous devez accepter les CGU.';
-  return errors;
-}
-
 // ── Formulaire principal ──────────────────────────────────────────────────────
-const emptyForm = {
-  firstName: '', lastName: '', email: '', phone: '',
-  departureAddress: '', arrivalAddress: '',
-  date: '', time: '', passengers: '1', luggage: '0',
-  comments: '', gdprConsent: false, termsAccepted: false,
-};
+const emptyForm = emptyReservationForm;
 
 export default function Reservation() {
   const location = useLocation();
@@ -190,7 +160,7 @@ export default function Reservation() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setServerError('');
-    const errs = validate(form, serviceType);
+    const errs = validateReservationForm(form, { requireArrival: serviceType === 'transfert' });
     if (Object.keys(errs).length > 0) {
       setErrors(errs);
       document.querySelector('.has-error')?.scrollIntoView({ behavior: 'smooth', block: 'center' });

@@ -4,7 +4,12 @@ import Navbar from './components/Navbar';
 import Footer from './components/Footer';
 import Home from './pages/Home';
 import { AuthProvider, useAuth } from './services/auth';
-import CursorEffect from './animations/CursorEffect';
+
+// Purement décoratif (curseur personnalisé), sans rien de critique au premier
+// rendu (voir CursorEffect.jsx) : chargé en différé pour ne pas forcer gsap
+// dans le bundle initial de TOUTES les pages (login, dashboard, admin…) qui
+// n'en ont pas besoin.
+const CursorEffect = lazy(() => import('./animations/CursorEffect'));
 
 const Reservation = lazy(() => import('./pages/Reservation'));
 const BookingPage = lazy(() => import('./pages/BookingPage'));
@@ -23,24 +28,39 @@ function ScrollToTop() {
   return null;
 }
 
+// Le token vit dans un cookie httpOnly (invisible au JS) : tant que la
+// vérification initiale de session (/api/auth/me) n'est pas terminée, on ne
+// sait pas encore si l'utilisateur est connecté — éviter de rediriger vers
+// /login par erreur pendant ce court instant.
+function RouteFallback() {
+  return (
+    <div className="route-fallback" style={{ background: 'linear-gradient(135deg, #050508 0%, #111118 60%, #1a1a2e 100%)' }}>
+      <div style={{ color: 'rgba(255,255,255,0.78)', fontSize: '0.95rem' }}>Chargement…</div>
+    </div>
+  );
+}
+
 // Route protégée — tout utilisateur authentifié
 function ProtectedRoute({ children }) {
-  const { token } = useAuth();
-  return token ? children : <Navigate to="/login" replace />;
+  const { isAuthenticated, loading } = useAuth();
+  if (loading) return <RouteFallback />;
+  return isAuthenticated ? children : <Navigate to="/login" replace />;
 }
 
 // Route protégée — admins uniquement
 function AdminRoute({ children }) {
-  const { token, driver } = useAuth();
-  if (!token) return <Navigate to="/login" replace />;
+  const { isAuthenticated, loading, driver } = useAuth();
+  if (loading) return <RouteFallback />;
+  if (!isAuthenticated) return <Navigate to="/login" replace />;
   if (driver?.role !== 'admin') return <Navigate to="/dashboard" replace />;
   return children;
 }
 
 // Route protégée — chauffeurs uniquement (non-admin)
 function DriverRoute({ children }) {
-  const { token, driver } = useAuth();
-  if (!token) return <Navigate to="/login" replace />;
+  const { isAuthenticated, loading, driver } = useAuth();
+  if (loading) return <RouteFallback />;
+  if (!isAuthenticated) return <Navigate to="/login" replace />;
   if (driver?.role === 'admin') return <Navigate to="/admin" replace />;
   return children;
 }
@@ -55,19 +75,13 @@ function AppLayout({ children }) {
   );
 }
 
-function RouteFallback() {
-  return (
-    <div className="route-fallback" style={{ background: 'linear-gradient(135deg, #050508 0%, #111118 60%, #1a1a2e 100%)' }}>
-      <div style={{ color: 'rgba(255,255,255,0.78)', fontSize: '0.95rem' }}>Chargement…</div>
-    </div>
-  );
-}
-
 export default function App() {
   return (
     <AuthProvider>
       <BrowserRouter>
-        <CursorEffect />
+        <Suspense fallback={null}>
+          <CursorEffect />
+        </Suspense>
         <ScrollToTop />
         <Suspense fallback={<RouteFallback />}>
           <Routes>

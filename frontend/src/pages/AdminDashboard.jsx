@@ -244,7 +244,7 @@ function DriverModal({ driverId, onClose, onStatusChange }) {
 
 // ── DASHBOARD ADMIN PRINCIPAL ─────────────────────────────────────────────────
 export default function AdminDashboard() {
-  const { logout, driver: adminUser, token } = useAuth();
+  const { logout, driver: adminUser } = useAuth();
   const navigate = useNavigate();
 
   // Sécurité : si pas admin, rediriger immédiatement

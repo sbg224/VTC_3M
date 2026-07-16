@@ -16,12 +16,12 @@ import FeatureSteps from '../components/FeatureSteps';
 // ── Données ───────────────────────────────────────────────────────────────────
 
 const features = [
-  { Icon: Users,       title: 'Service Personnalisé',    desc: 'Un chauffeur dédié, toujours le même. Une relation directe, sans intermédiaire.', image: '/images/passenger.jpeg' },
-  { Icon: Clock,       title: 'Ponctualité Garantie',    desc: 'Suivi du trafic en temps réel. Présent à l\'heure, à chaque course, sans exception.', image: '/images/car-hero.jpeg' },
-  { Icon: ShieldCheck, title: 'Sécurité & Sérénité',     desc: 'Chauffeur VTC agréé, véhicule assuré et entretenu. Vous êtes entre de bonnes mains.', image: '/images/car-door.jpeg' },
-  { Icon: EyeOff,      title: 'Discrétion Absolue',      desc: 'Confidentialité totale. Idéal pour vos déplacements professionnels ou personnels.', image: '/images/airport.jpeg' },
-  { Icon: Receipt,     title: 'Facturation Automatique', desc: 'Facture PDF envoyée immédiatement après la course. Parfait pour les notes de frais.', image: '/images/passenger.jpeg' },
-  { Icon: Smartphone,  title: 'Réservation Simple',      desc: 'Réservez en ligne en moins d\'une minute, de jour comme de nuit.', image: '/images/car-hero.jpeg' },
+  { Icon: Users,       title: 'Service Personnalisé',    desc: 'Un chauffeur dédié, toujours le même. Une relation directe, sans intermédiaire.', image: '/images/passenger.webp' },
+  { Icon: Clock,       title: 'Ponctualité Garantie',    desc: 'Suivi du trafic en temps réel. Présent à l\'heure, à chaque course, sans exception.', image: '/images/car-hero.webp' },
+  { Icon: ShieldCheck, title: 'Sécurité & Sérénité',     desc: 'Chauffeur VTC agréé, véhicule assuré et entretenu. Vous êtes entre de bonnes mains.', image: '/images/car-door.webp' },
+  { Icon: EyeOff,      title: 'Discrétion Absolue',      desc: 'Confidentialité totale. Idéal pour vos déplacements professionnels ou personnels.', image: '/images/airport.webp' },
+  { Icon: Receipt,     title: 'Facturation Automatique', desc: 'Facture PDF envoyée immédiatement après la course. Parfait pour les notes de frais.', image: '/images/passenger.webp' },
+  { Icon: Smartphone,  title: 'Réservation Simple',      desc: 'Réservez en ligne en moins d\'une minute, de jour comme de nuit.', image: '/images/car-hero.webp' },
 ];
 
 // Stats par défaut pendant le chargement
@@ -42,10 +42,10 @@ const vehicleHighlights = [
 ];
 
 const destinations = [
-  { Icon: Plane,     title: 'Aéroport Toulouse-Blagnac', desc: 'Transfert avec suivi des vols en temps réel. Prise en charge à l\'arrivée.', image: '/images/Aereport.jpg' },
-  { Icon: Train,     title: 'Gare Matabiau',              desc: 'Dépose et prise en charge directe sur le parvis, sans stress.', image: '/images/gare-2.jpg' },
-  { Icon: Building2, title: 'Déplacements professionnels', desc: 'Réunions, séminaires, événements d\'entreprise sur Toulouse et sa région.', image: '/images/professionnel.jpg' },
-  { Icon: Landmark,  title: 'Sorties & événements',       desc: 'Restaurants, spectacles, mariages — arrivez en style et repartez l\'esprit léger.', image: '/images/evenement.jpg' },
+  { Icon: Plane,     title: 'Aéroport Toulouse-Blagnac', desc: 'Transfert avec suivi des vols en temps réel. Prise en charge à l\'arrivée.', image: '/images/Aereport.webp' },
+  { Icon: Train,     title: 'Gare Matabiau',              desc: 'Dépose et prise en charge directe sur le parvis, sans stress.', image: '/images/gare-2.webp' },
+  { Icon: Building2, title: 'Déplacements professionnels', desc: 'Réunions, séminaires, événements d\'entreprise sur Toulouse et sa région.', image: '/images/professionnel.webp' },
+  { Icon: Landmark,  title: 'Sorties & événements',       desc: 'Restaurants, spectacles, mariages — arrivez en style et repartez l\'esprit léger.', image: '/images/evenement.webp' },
 ];
 
 const testimonials = [
@@ -440,8 +440,8 @@ export default function Home() {
       <section className="hero-full">
         <div className="hero-full-bg">
           <picture>
-            <source media="(max-width: 768px)" srcSet="/images/car-hero-toulouse-mobile.jpg" />
-            <img src="/images/car-hero-toulouse.jpg" alt="Berline 3M Drive au bord de la Garonne à Toulouse, coucher de soleil" className="hero-full-img" fetchpriority="high" />
+            <source media="(max-width: 768px)" srcSet="/images/car-hero-toulouse-mobile.webp" />
+            <img src="/images/car-hero-toulouse.webp" alt="Berline 3M Drive au bord de la Garonne à Toulouse, coucher de soleil" className="hero-full-img" fetchpriority="high" />
           </picture>
           <div className="hero-full-overlay" />
         </div>
@@ -536,7 +536,7 @@ export default function Home() {
             })}
             <div className="vehicle-card">
               <div className="vehicle-icon-block">
-                <img src="/images/car-door.jpeg" alt="Portière berline premium VTC 3M Drive" className="vehicle-photo" width="600" height="180" loading="lazy" />
+                <img src="/images/car-door.webp" alt="Portière berline premium VTC 3M Drive" className="vehicle-photo" width="600" height="180" loading="lazy" />
               </div>
               <h3>Berline premium</h3>
               <p style={{ color: 'rgba(255,255,255,0.6)', marginBottom: '24px', fontSize: '0.92rem' }}>Jusqu'à 4 passagers · Confort &amp; luxe à bord</p>
@@ -615,7 +615,7 @@ export default function Home() {
 
             {/* ── Grande image principale avec stats flottantes ── */}
             <div className="exp-card exp-card--main">
-              <img src="/images/passenger.jpeg" alt="Passager en berline premium – VTC Toulouse" className="exp-img" loading="lazy" />
+              <img src="/images/passenger.webp" alt="Passager en berline premium – VTC Toulouse" className="exp-img" loading="lazy" />
               <div className="exp-overlay" />
               <div className="exp-main-content">
                 <div className="exp-floating-tag">
@@ -631,7 +631,7 @@ export default function Home() {
 
             {/* ── Image secondaire aéroport ── */}
             <div className="exp-card exp-card--secondary">
-              <img src="/images/Aereport.jpg" alt="Accueil personnalisé aéroport Toulouse-Blagnac" className="exp-img" loading="lazy" />
+              <img src="/images/Aereport.webp" alt="Accueil personnalisé aéroport Toulouse-Blagnac" className="exp-img" loading="lazy" />
               <div className="exp-overlay exp-overlay--strong" />
               <div className="exp-secondary-label">
                 <Plane size={13} strokeWidth={1.75} /> Toulouse-Blagnac

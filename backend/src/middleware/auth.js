@@ -4,12 +4,17 @@ const logger = require('./logger');
 
 module.exports = async (req, res, next) => {
   try {
+    // Cookie httpOnly (frontend web) en priorité, header Bearer en repli
+    // (scripts, outils d'admin, tests API — n'affaiblit pas la protection
+    // CSRF du cookie : une requête cross-site ne peut pas fixer ce header).
     const authHeader = req.headers.authorization;
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    const token = req.cookies?.vtc_session
+      || (authHeader && authHeader.startsWith('Bearer ') ? authHeader.split(' ')[1] : null);
+
+    if (!token) {
       return res.status(401).json({ error: 'Accès refusé. Token manquant.' });
     }
 
-    const token = authHeader.split(' ')[1];
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
 
     // ── Vérifier la blacklist (token révoqué via logout ou compromission) ──────

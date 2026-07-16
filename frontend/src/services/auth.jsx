@@ -1,66 +1,45 @@
 import { createContext, useContext, useState, useEffect } from 'react';
-import axios from 'axios';
+import api from './api';
 
 const AuthContext = createContext(null);
 
 export function AuthProvider({ children }) {
-  const [token, setToken] = useState(() => localStorage.getItem('vtc_token'));
-  const [driver, setDriver] = useState(() => {
-    const d = localStorage.getItem('vtc_driver');
-    return d ? JSON.parse(d) : null;
-  });
+  const [driver, setDriver] = useState(null);
+  // true tant qu'on n'a pas confirmé l'état de la session auprès du serveur —
+  // le token vit dans un cookie httpOnly, invisible au JS, donc impossible
+  // de savoir "suis-je connecté ?" sans appeler l'API au moins une fois.
+  const [loading, setLoading] = useState(true);
 
-  // Rafraîchir le profil depuis /api/auth/me à chaque démarrage.
-  // Si le token est révoqué (blacklisté), le /me retourne 401 → déconnexion propre.
+  // Vérifie la session auprès du serveur à chaque démarrage de l'app (le
+  // cookie httpOnly, s'il existe, est envoyé automatiquement par le navigateur).
   useEffect(() => {
-    const storedToken = localStorage.getItem('vtc_token');
-    if (!storedToken) return;
-    axios
-      .get('/api/auth/me', { headers: { Authorization: `Bearer ${storedToken}` } })
-      .then(({ data }) => {
-        const fresh = data.driver;
-        setDriver(fresh);
-        localStorage.setItem('vtc_driver', JSON.stringify(fresh));
-      })
-      .catch(() => {
-        // Token invalide, expiré ou révoqué → déconnexion silencieuse
-        localStorage.removeItem('vtc_token');
-        localStorage.removeItem('vtc_driver');
-        setToken(null);
-        setDriver(null);
-      });
+    api
+      .get('/auth/me')
+      .then(({ data }) => setDriver(data.driver))
+      .catch(() => setDriver(null)) // pas de session valide → déconnecté
+      .finally(() => setLoading(false));
   }, []);
 
-  const login = (newToken, newDriver) => {
-    localStorage.setItem('vtc_token', newToken);
-    localStorage.setItem('vtc_driver', JSON.stringify(newDriver));
-    setToken(newToken);
+  const login = (newDriver) => {
     setDriver(newDriver);
   };
 
-  // Logout : révoque le token côté serveur (blacklist) AVANT de vider le localStorage.
-  // Même si l'appel API échoue (offline, token déjà expiré), la déconnexion locale s'effectue.
+  // Logout : révoque le token côté serveur (blacklist + efface le cookie).
+  // Même si l'appel API échoue (offline), la déconnexion locale s'effectue.
   const logout = async () => {
-    const storedToken = localStorage.getItem('vtc_token');
-    if (storedToken) {
-      try {
-        await axios.post(
-          '/api/auth/logout',
-          {},
-          { headers: { Authorization: `Bearer ${storedToken}` } }
-        );
-      } catch {
-        // Non-bloquant — on déconnecte quoi qu'il arrive côté client
-      }
+    try {
+      // Corps vide explicite : sans lui, axios n'envoie pas de Content-Type,
+      // et le middleware backend qui l'exige sur tout POST/PUT rejette la
+      // requête (415) — le cookie ne serait alors jamais effacé côté serveur.
+      await api.post('/auth/logout', {});
+    } catch {
+      // Non-bloquant — on déconnecte quoi qu'il arrive côté client
     }
-    localStorage.removeItem('vtc_token');
-    localStorage.removeItem('vtc_driver');
-    setToken(null);
     setDriver(null);
   };
 
   return (
-    <AuthContext.Provider value={{ token, driver, login, logout }}>
+    <AuthContext.Provider value={{ driver, loading, isAuthenticated: !!driver, login, logout }}>
       {children}
     </AuthContext.Provider>
   );

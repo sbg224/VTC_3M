@@ -9,6 +9,10 @@ const { Driver, Reservation } = require('../models');
 const logger = require('../middleware/logger');
 const { generateBordereauPdf } = require('../services/pdfService');
 
+// Ne jamais renvoyer un message d'erreur interne brut (structure de requête,
+// détails Sequelize/SMTP…) au client en production — seul le log en garde la trace.
+const safeMessage = (err) => (process.env.NODE_ENV === 'production' ? 'Erreur interne du serveur.' : err.message);
+
 // ── Helpers période ───────────────────────────────────────────────────────────
 
 function padDate(d) {
@@ -149,7 +153,8 @@ exports.getAccountingSummary = async (req, res) => {
     res.json({ period: periodData, summary, totals });
   } catch (err) {
     logger.error('Erreur accountingController.getAccountingSummary', { error: err.message });
-    res.status(err.message.includes('requis') ? 400 : 500).json({ error: err.message });
+    const isValidationError = err.message.includes('requis');
+    res.status(isValidationError ? 400 : 500).json({ error: isValidationError ? err.message : safeMessage(err) });
   }
 };
 
@@ -195,7 +200,7 @@ exports.getDriverStatement = async (req, res) => {
     });
   } catch (err) {
     logger.error('Erreur accountingController.getDriverStatement', { error: err.message });
-    res.status(500).json({ error: err.message });
+    res.status(500).json({ error: safeMessage(err) });
   }
 };
 
@@ -251,7 +256,7 @@ exports.generateStatementPdf = async (req, res) => {
     });
   } catch (err) {
     logger.error('Erreur accountingController.generateStatementPdf', { error: err.message });
-    res.status(500).json({ error: err.message });
+    res.status(500).json({ error: safeMessage(err) });
   }
 };
 
@@ -276,6 +281,6 @@ exports.updateDriverCommission = async (req, res) => {
     res.json({ message: `Taux de commission mis à jour : ${rate}%`, commissionRate: rate });
   } catch (err) {
     logger.error('Erreur accountingController.updateDriverCommission', { error: err.message });
-    res.status(500).json({ error: err.message });
+    res.status(500).json({ error: safeMessage(err) });
   }
 };

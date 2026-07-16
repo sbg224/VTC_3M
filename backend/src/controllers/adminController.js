@@ -3,6 +3,10 @@ const { Driver, Reservation, PricingConfig, sequelize } = require('../models');
 const logger = require('../middleware/logger');
 const { updatePricingCache, getPricingValues } = require('../services/priceService');
 
+// Ne jamais renvoyer un message d'erreur interne brut (détails SMTP, requête…)
+// au client en production — seul le log en garde la trace.
+const safeMessage = (err) => (process.env.NODE_ENV === 'production' ? 'Erreur interne du serveur.' : err.message);
+
 // ── Statistiques globales plateforme ─────────────────────────────────────────
 
 exports.getGlobalStats = async (req, res) => {
@@ -89,22 +93,32 @@ exports.getDrivers = async (req, res) => {
       offset,
     });
 
-    // Enrichir avec nb réservations + revenus par chauffeur
-    const enriched = await Promise.all(drivers.map(async (d) => {
-      const [reservationCount, revenueResult] = await Promise.all([
-        Reservation.count({ where: { chauffeur_id: d.id } }),
-        Reservation.findOne({
-          where: { chauffeur_id: d.id, status: 'completed', price: { [Op.not]: null } },
-          attributes: [[fn('SUM', col('price')), 'total']],
+    // Enrichir avec nb réservations + revenus par chauffeur — une seule
+    // requête groupée pour toute la page (jusqu'à 100 chauffeurs) plutôt que
+    // 2 requêtes par chauffeur (jusqu'à 200 requêtes SQL pour une page admin).
+    const driverIds = drivers.map((d) => d.id);
+    const statsRows = driverIds.length
+      ? await Reservation.findAll({
+          where: { chauffeur_id: { [Op.in]: driverIds } },
+          attributes: [
+            'chauffeur_id',
+            [fn('COUNT', col('id')), 'reservationCount'],
+            [fn('SUM', literal("CASE WHEN status = 'completed' AND price IS NOT NULL THEN price ELSE 0 END")), 'totalRevenue'],
+          ],
+          group: ['chauffeur_id'],
           raw: true,
-        }),
-      ]);
+        })
+      : [];
+    const statsByDriver = new Map(statsRows.map((r) => [r.chauffeur_id, r]));
+
+    const enriched = drivers.map((d) => {
+      const stats = statsByDriver.get(d.id);
       return {
         ...d.toJSON(),
-        reservationCount,
-        totalRevenue: parseFloat(revenueResult?.total || 0),
+        reservationCount: parseInt(stats?.reservationCount || 0, 10),
+        totalRevenue: parseFloat(stats?.totalRevenue || 0),
       };
-    }));
+    });
 
     res.json({
       drivers: enriched,
@@ -361,7 +375,7 @@ exports.notifyDriver = async (req, res) => {
     res.json({ message: `Email envoyé à ${driver.email}` });
   } catch (err) {
     logger.error('Erreur adminController.notifyDriver', { error: err.message });
-    res.status(500).json({ error: `Erreur lors de l'envoi : ${err.message}` });
+    res.status(500).json({ error: `Erreur lors de l'envoi : ${safeMessage(err)}` });
   }
 };
 

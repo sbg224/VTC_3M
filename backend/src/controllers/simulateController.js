@@ -1,6 +1,5 @@
 const { calculateRoute } = require('../services/geoService');
-const { calculatePrice } = require('../services/priceService');
-const pricing = require('../config/pricing');
+const { calculatePrice, getPricingValues } = require('../services/priceService');
 const logger = require('../middleware/logger');
 
 exports.simulate = async (req, res) => {
@@ -9,6 +8,10 @@ exports.simulate = async (req, res) => {
 
     const { distance_km, duration_min } = await calculateRoute(departureAddress, arrivalAddress);
     const estimatedPrice = calculatePrice(distance_km);
+    // Toujours lire le cache mémoire à jour (priceService), pas les valeurs
+    // figées au démarrage : sinon le détail affiché divergeait du prix réel
+    // après une modification tarifaire par l'admin (PUT /api/admin/pricing).
+    const pricing = getPricingValues();
 
     logger.info(`[SIMULATE] ${departureAddress} → ${arrivalAddress} : ${distance_km} km – ${estimatedPrice} €`);
 

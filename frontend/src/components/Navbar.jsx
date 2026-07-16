@@ -17,7 +17,7 @@ export default function Navbar() {
 
   const toggleTheme = () => setTheme(t => t === 'dark' ? 'light' : 'dark');
 
-  const { token, logout } = useAuth();
+  const { isAuthenticated, logout } = useAuth();
   const navigate = useNavigate();
   const [mobileOpen, setMobileOpen] = useState(false);
 
@@ -89,7 +89,7 @@ export default function Navbar() {
                   <CalendarDays size={19} strokeWidth={1.75} />
                 </NavLink>
               </motion.div>
-              {token ? (
+              {isAuthenticated ? (
                 <>
                   <motion.div {...mobileItemMotion(2)}>
                     <NavLink to="/dashboard" className={mobileItemClass} onClick={closeMobile} aria-label="Tableau de bord" title="Tableau de bord">
@@ -146,7 +146,7 @@ export default function Navbar() {
           <span className="bottom-nav-label">Réservation</span>
         </NavLink>
 
-        {token ? (
+        {isAuthenticated ? (
           <>
             <NavLink to="/dashboard" className={navItemClass}>
               <LayoutDashboard size={18} strokeWidth={1.75} />
