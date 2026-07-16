@@ -106,9 +106,13 @@ app.use(express.urlencoded({ extended: true, limit: '10kb' }));
 // ── Sanitisation XSS sur toutes les entrées ───────────────────────────────────
 app.use(sanitize);
 
-// ── Forcer Content-Type JSON sur les routes API POST/PUT ──────────────────────
+// ── Forcer Content-Type JSON (ou multipart pour les uploads) sur les routes
+//    API POST/PUT ────────────────────────────────────────────────────────────
 app.use('/api', (req, res, next) => {
-  if (['POST', 'PUT'].includes(req.method) && req.path !== '/' && !req.is('application/json')) {
+  if (
+    ['POST', 'PUT'].includes(req.method) && req.path !== '/'
+    && !req.is('application/json') && !req.is('multipart/form-data')
+  ) {
     return res.status(415).json({ error: 'Content-Type application/json requis.' });
   }
   next();
@@ -130,6 +134,12 @@ app.use('/api', rateLimit({
 //    qui sont protégés par JWT + isolation chauffeur_id.
 //    (route statique supprimée pour éviter l'accès public aux PDFs clients)
 
+// ── Photos de cartes de visite (module Contact) : servies en lecture seule.
+//    Contrairement aux PDFs, ce sont des assets publics par nature (une
+//    carte de visite n'est exposée que si isPublic=true) — noms de fichiers
+//    générés côté serveur (UUID), aucune donnée sensible dans ce dossier.
+app.use('/uploads/contacts', express.static(path.join(__dirname, '../uploads/contacts')));
+
 // ── Routes API ────────────────────────────────────────────────────────────────
 app.use('/api/auth',         require('./routes/auth'));
 app.use('/api/reservations', require('./routes/reservations'));
@@ -142,6 +152,7 @@ app.use('/api/admin/accounting', require('./routes/accounting'));
 app.use('/api/reviews',          require('./routes/reviews'));
 app.use('/api/notifications', require('./routes/notifications'));
 app.use('/api/crm',           require('./routes/crm'));
+app.use('/api/contacts',      require('./routes/contacts'));
 
 // ── Santé ─────────────────────────────────────────────────────────────────────
 app.get('/api/health', (req, res) => {

@@ -13,6 +13,7 @@ const CursorEffect = lazy(() => import('./animations/CursorEffect'));
 
 const Reservation = lazy(() => import('./pages/Reservation'));
 const BookingPage = lazy(() => import('./pages/BookingPage'));
+const ContactCard = lazy(() => import('./pages/ContactCard'));
 const Login = lazy(() => import('./pages/Login'));
 const Register = lazy(() => import('./pages/Register'));
 const Dashboard = lazy(() => import('./pages/Dashboard'));
@@ -89,6 +90,7 @@ export default function App() {
             <Route path="/" element={<AppLayout><Home /></AppLayout>} />
             <Route path="/reservation" element={<AppLayout><Reservation /></AppLayout>} />
             <Route path="/book/:slug" element={<AppLayout><BookingPage /></AppLayout>} />
+            <Route path="/contact/:slug" element={<AppLayout><ContactCard /></AppLayout>} />
             <Route path="/login" element={<AppLayout><Login /></AppLayout>} />
             <Route path="/register" element={<AppLayout><Register /></AppLayout>} />
             <Route path="/mentions-legales" element={<AppLayout><MentionsLegales /></AppLayout>} />

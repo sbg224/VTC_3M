@@ -146,7 +146,84 @@ const uuidRule = [
     .isUUID().withMessage('Identifiant de réservation invalide.'),
 ];
 
+// ── Règles module Contact (carte de visite) ───────────────────────────────────
+const contactSlugParamRule = [
+  param('slug')
+    .trim().notEmpty().withMessage('Slug requis.')
+    .isLength({ max: 80 }).withMessage('Slug invalide.')
+    .matches(/^[a-z0-9-]+$/).withMessage('Slug invalide.'),
+];
+
+// Champs communs à la création et à l'édition (l'édition peut être partielle,
+// ex. un simple toggle isPublic depuis la liste admin — firstName/lastName ne
+// sont donc requis qu'à la création).
+const contactOptionalFieldRules = [
+  body('company')
+    .optional({ checkFalsy: true }).trim().isLength({ max: 150 }).withMessage('Société invalide.'),
+
+  body('jobTitle')
+    .optional({ checkFalsy: true }).trim().isLength({ max: 150 }).withMessage('Fonction invalide.'),
+
+  body('shortDescription')
+    .optional({ checkFalsy: true }).trim().isLength({ max: 500 }).withMessage('Description trop longue (max 500 caractères).'),
+
+  body('phone')
+    .optional({ checkFalsy: true }).trim()
+    .matches(/^(\+33|0033|0)[1-9](\d{8})$/).withMessage('Numéro de téléphone invalide (format français requis).'),
+
+  body('email')
+    .optional({ checkFalsy: true }).trim().isEmail().withMessage('Adresse email invalide.').normalizeEmail(),
+
+  body('website')
+    .optional({ checkFalsy: true }).trim().isURL().withMessage('Site web invalide.'),
+
+  body('address')
+    .optional({ checkFalsy: true }).trim().isLength({ max: 300 }).withMessage('Adresse invalide.')
+    .not().matches(SQL_PATTERN).withMessage('Adresse : contenu invalide.'),
+
+  body('bookingUrl')
+    .optional({ checkFalsy: true }).trim().isLength({ max: 300 }).withMessage('URL de réservation invalide.'),
+
+  body('driverId')
+    .optional({ checkFalsy: true }).isUUID().withMessage('Identifiant chauffeur invalide.'),
+
+  body('isPublic')
+    .optional().isBoolean().withMessage('isPublic doit être un booléen.'),
+];
+
+const contactCreateRules = [
+  body('firstName')
+    .trim().notEmpty().withMessage('Le prénom est requis.')
+    .isLength({ min: 1, max: 100 }).withMessage('Prénom invalide (max 100 caractères).'),
+
+  body('lastName')
+    .trim().notEmpty().withMessage('Le nom est requis.')
+    .isLength({ min: 1, max: 100 }).withMessage('Nom invalide (max 100 caractères).'),
+
+  ...contactOptionalFieldRules,
+];
+
+const contactUpdateRules = [
+  body('firstName')
+    .optional({ checkFalsy: true }).trim().isLength({ min: 1, max: 100 }).withMessage('Prénom invalide (max 100 caractères).'),
+
+  body('lastName')
+    .optional({ checkFalsy: true }).trim().isLength({ min: 1, max: 100 }).withMessage('Nom invalide (max 100 caractères).'),
+
+  ...contactOptionalFieldRules,
+];
+
+const contactEventRules = [
+  body('type')
+    .trim().notEmpty().withMessage('Type d\'événement requis.')
+    .isIn(['click_phone', 'click_whatsapp', 'click_booking', 'click_email'])
+    .withMessage('Type d\'événement invalide.'),
+];
+
 // Alias pour la compatibilité avec les routes qui importent handleValidation
 const handleValidation = validate;
 
-module.exports = { validate, handleValidation, reservationRules, completeRules, loginRules, registerRules, uuidRule };
+module.exports = {
+  validate, handleValidation, reservationRules, completeRules, loginRules, registerRules, uuidRule,
+  contactSlugParamRule, contactCreateRules, contactUpdateRules, contactEventRules,
+};
