@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
-  LayoutDashboard, ClipboardList, TrendingUp, Calculator,
+  LayoutDashboard, ClipboardList, TrendingUp, Calculator, Home,
   Settings, LogOut, Clock, CheckCircle, Flag, XCircle, Euro,
   Inbox, Search, MessageSquare, FileText, Receipt, AlertTriangle,
   MapPin, Calendar, ChevronLeft, ChevronRight,
@@ -159,7 +159,7 @@ function ReservationDetail({ reservation, onClose, onUpdate, showToast }) {
             </span>
           </div>
 
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '20px' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: '12px', marginBottom: '20px' }}>
             {[
               { label: 'Client', value: `${reservation.firstName} ${reservation.lastName}` },
               { label: 'Téléphone', value: reservation.phone },
@@ -1170,6 +1170,15 @@ export default function Dashboard() {
 
           {moreOpen && (
             <div className="bottom-nav-more-panel">
+              <button
+                onClick={() => { navigate('/'); setMoreOpen(false); }}
+                title="Retour à l'accueil"
+                aria-label="Retour à l'accueil"
+                style={{ display:'flex', alignItems:'center', padding:'8px 12px 12px' }}
+              >
+                <img src="/images/nav-logo-dark.webp" alt="3M Drive" style={{ height:32, width:'auto', objectFit:'contain' }} />
+              </button>
+              <div className="bottom-nav-more-divider" />
               {[
                 { id: 'planning',    Icon: Calendar,   label: 'Planning' },
                 { id: 'avis',        Icon: Star,       label: 'Avis clients' },
@@ -1189,6 +1198,10 @@ export default function Dashboard() {
                 </button>
               ))}
               <div className="bottom-nav-more-divider" />
+              <button className="bottom-nav-more-item" onClick={() => { navigate('/'); setMoreOpen(false); }}>
+                <Home size={16} strokeWidth={1.5} />
+                Retour à l'accueil
+              </button>
               <div className="bottom-nav-more-driver">
                 Connecté en tant que <strong>{driver?.name}</strong>
               </div>
