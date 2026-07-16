@@ -4,6 +4,24 @@ const { v4: uuidv4 } = require('uuid');
 const { Driver, RevokedToken } = require('../models');
 const logger = require('../middleware/logger');
 
+// ── Session : cookie httpOnly plutôt que token exposé en JS (localStorage) ────
+// httpOnly empêche tout script (y compris via une faille XSS) de lire le
+// token. SameSite=strict suffit contre le CSRF ici : le frontend n'appelle
+// jamais que son propre backend (même origine en prod derrière le reverse
+// proxy, et via le proxy Vite en dev).
+const SESSION_COOKIE = 'vtc_session';
+const isProd = process.env.NODE_ENV === 'production';
+
+function cookieOptions(maxAge) {
+  return {
+    httpOnly: true,
+    secure: isProd,       // nécessite HTTPS — désactivé en dev (http://localhost)
+    sameSite: 'strict',
+    path: '/',
+    ...(maxAge !== undefined ? { maxAge } : {}),
+  };
+}
+
 // ── Helper : signe un JWT avec un JTI unique ──────────────────────────────────
 function signToken(driver) {
   const jti = uuidv4(); // Identifiant unique du token — permet la révocation
@@ -68,9 +86,11 @@ exports.login = async (req, res) => {
     }
 
     const { token } = signToken(driver);
-    logger.info(`Connexion réussie : ${driver.email}`);
+    const { exp } = jwt.decode(token);
+    res.cookie(SESSION_COOKIE, token, cookieOptions(exp * 1000 - Date.now()));
 
-    res.json({ token, driver: driverPayload(driver) });
+    logger.info(`Connexion réussie : ${driver.email}`);
+    res.json({ driver: driverPayload(driver) });
   } catch (err) {
     logger.error(`Erreur login : ${err.message}`);
     res.status(500).json({ error: 'Erreur lors de la connexion.' });
@@ -102,10 +122,12 @@ exports.logout = async (req, res) => {
       });
       logger.info(`[LOGOUT] Token révoqué : jti=${jti} – driver: ${req.driver.email}`);
     }
+    res.clearCookie(SESSION_COOKIE, cookieOptions());
     res.json({ message: 'Déconnexion réussie.' });
   } catch (err) {
     // Ne pas bloquer la déconnexion côté client si la DB échoue
     logger.error(`[LOGOUT] Erreur révocation token : ${err.message}`);
+    res.clearCookie(SESSION_COOKIE, cookieOptions());
     res.json({ message: 'Déconnexion réussie.' }); // On renvoie succès quand même
   }
 };
@@ -193,6 +215,7 @@ exports.changePassword = async (req, res) => {
       await RevokedToken.create({ jti, expiresAt: new Date((exp || 0) * 1000) })
         .catch(() => {}); // Non-bloquant
     }
+    res.clearCookie(SESSION_COOKIE, cookieOptions());
 
     logger.info(`Mot de passe modifié : ${driver.email}`);
     res.json({ message: 'Mot de passe modifié. Veuillez vous reconnecter.' });

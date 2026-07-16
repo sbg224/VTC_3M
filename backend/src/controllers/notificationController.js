@@ -2,28 +2,15 @@
  * notificationController.js
  * Gestion du flux SSE (Server-Sent Events) pour les notifications en temps réel.
  *
- * ⚠️  L'EventSource du navigateur ne supporte pas les headers personnalisés.
- *     Le JWT est donc passé en query param : /api/notifications/stream?token=xxx
- *     Cette pratique est acceptable pour du SSE (connexion READ-ONLY, token court-vécu).
+ * Authentification déléguée au middleware auth standard (cookie httpOnly,
+ * envoyé automatiquement par EventSource pour une requête même origine) —
+ * req.driver est déjà disponible ici.
  */
-const jwt    = require('jsonwebtoken');
 const sseService = require('../services/sseService');
 const logger = require('../middleware/logger');
 
 exports.stream = (req, res) => {
-  // ── Authentification via query param ────────────────────────────────────────
-  const token = req.query.token;
-  if (!token) {
-    return res.status(401).end();
-  }
-
-  let driver;
-  try {
-    driver = jwt.verify(token, process.env.JWT_SECRET);
-  } catch (err) {
-    logger.warn(`[SSE] Token invalide : ${err.message}`);
-    return res.status(401).end();
-  }
+  const driver = req.driver;
 
   // ── Headers SSE ─────────────────────────────────────────────────────────────
   res.setHeader('Content-Type',  'text/event-stream');

@@ -4,6 +4,7 @@ const cors    = require('cors');
 const helmet  = require('helmet');
 const morgan  = require('morgan');
 const hpp     = require('hpp');
+const cookieParser = require('cookie-parser');
 const rateLimit = require('express-rate-limit');
 const path    = require('path');
 const { sequelize } = require('./models');
@@ -77,6 +78,9 @@ app.use(cors({
 
 // ── Protection HTTP Parameter Pollution ──────────────────────────────────────
 app.use(hpp());
+
+// ── Cookies (session JWT httpOnly) ────────────────────────────────────────────
+app.use(cookieParser());
 
 // ── Logs HTTP ─────────────────────────────────────────────────────────────────
 app.use(morgan('combined', {
@@ -285,4 +289,12 @@ process.on('SIGINT', async () => {
   process.exit(0);
 });
 
-start();
+// Ne démarre le serveur (connexion DB, écoute du port…) que si ce fichier est
+// exécuté directement (`node src/index.js`) — pas quand il est importé par
+// les tests, qui n'ont besoin que de `app` déjà entièrement configurée
+// (routes/middlewares) pour tester via supertest sans base de données.
+if (require.main === module) {
+  start();
+}
+
+module.exports = app;

@@ -6,6 +6,7 @@ import {
 } from 'lucide-react';
 import { reservationAPI, simulateAPI, driverPublicAPI } from '../services/api';
 import Seo from '../components/Seo';
+import { emptyReservationForm, validateReservationForm } from '../utils/reservationForm';
 
 // ── Widget simulation (identique à Reservation.jsx) ──────────────────────────
 
@@ -145,36 +146,7 @@ function SimulationWidget({ onReserve }) {
 
 // ── Validation ────────────────────────────────────────────────────────────────
 
-const emptyForm = {
-  firstName: '', lastName: '', email: '', phone: '',
-  departureAddress: '', arrivalAddress: '',
-  date: '', time: '', passengers: '1', luggage: '0',
-  comments: '', gdprConsent: false, termsAccepted: false,
-};
-
-function validate(form) {
-  const errors = {};
-  if (!form.firstName.trim()) errors.firstName = 'Le prénom est requis.';
-  if (!form.lastName.trim())  errors.lastName  = 'Le nom est requis.';
-  if (!form.email.trim() || !/\S+@\S+\.\S+/.test(form.email)) errors.email = 'Email invalide.';
-  if (!form.phone.trim() || !/^(\+33|0)[1-9](\d{8})$/.test(form.phone.replace(/\s/g, ''))) {
-    errors.phone = 'Numéro de téléphone invalide (format français).';
-  }
-  if (!form.departureAddress.trim()) errors.departureAddress = 'L\'adresse de départ est requise.';
-  if (!form.arrivalAddress.trim())   errors.arrivalAddress   = 'L\'adresse d\'arrivée est requise.';
-  if (!form.date) {
-    errors.date = 'La date est requise.';
-  } else {
-    const selected = new Date(form.date);
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    if (selected < today) errors.date = 'La date doit être dans le futur.';
-  }
-  if (!form.time) errors.time = 'L\'heure est requise.';
-  if (!form.gdprConsent) errors.gdprConsent = 'Vous devez accepter la politique de confidentialité.';
-  if (!form.termsAccepted) errors.termsAccepted = 'Vous devez accepter les CGU.';
-  return errors;
-}
+const emptyForm = emptyReservationForm;
 
 function FormField({ label, required, error, children }) {
   return (
@@ -241,7 +213,7 @@ export default function BookingPage() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setServerError('');
-    const errs = validate(form);
+    const errs = validateReservationForm(form);
     if (Object.keys(errs).length > 0) {
       setErrors(errs);
       document.querySelector('.form-error')?.scrollIntoView({ behavior: 'smooth', block: 'center' });

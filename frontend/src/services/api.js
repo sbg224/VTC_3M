@@ -4,13 +4,7 @@ const api = axios.create({
   baseURL: '/api',
   timeout: 15000,
   headers: { 'Content-Type': 'application/json' },
-});
-
-// Injecter le token JWT automatiquement
-api.interceptors.request.use((config) => {
-  const token = localStorage.getItem('vtc_token');
-  if (token) config.headers.Authorization = `Bearer ${token}`;
-  return config;
+  withCredentials: true, // envoie/reçoit le cookie de session httpOnly
 });
 
 // Gérer les erreurs globales (401 session expirée, 402 abonnement requis)
@@ -19,15 +13,10 @@ api.interceptors.response.use(
   (error) => {
     if (error.response?.status === 401) {
       const requestUrl = error.config?.url || '';
-      const isAuthAttempt = requestUrl.includes('/auth/login') || requestUrl.includes('/auth/register');
-      const hadToken = Boolean(localStorage.getItem('vtc_token'));
+      const isAuthAttempt = requestUrl.includes('/auth/login') || requestUrl.includes('/auth/register')
+        || requestUrl.includes('/auth/me');
 
-      if (hadToken) {
-        localStorage.removeItem('vtc_token');
-        localStorage.removeItem('vtc_driver');
-      }
-
-      if (hadToken && !isAuthAttempt) {
+      if (!isAuthAttempt && window.location.pathname !== '/login') {
         window.location.href = '/login';
       }
     }
@@ -75,7 +64,7 @@ export const publicStatsAPI = {
 export const billingAPI = {
   getInfo: () => api.get('/billing/info'),
   createCheckout: (interval = 'month') => api.post('/billing/checkout', { interval }),
-  createPortal: () => api.post('/billing/portal'),
+  createPortal: () => api.post('/billing/portal', {}),
 };
 
 export const driverPublicAPI = {

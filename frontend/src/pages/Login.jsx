@@ -26,7 +26,7 @@ export default function Login() {
     setLoading(true);
     try {
       const { data } = await authAPI.login(form);
-      login(data.token, data.driver);
+      login(data.driver);
       navigate(data.driver?.role === 'admin' ? '/admin' : '/dashboard');
     } catch (err) {
       if (!err.response) {
