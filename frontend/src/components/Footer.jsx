@@ -10,9 +10,14 @@ export default function Footer() {
       <div className="container">
         <div className="footer-grid">
           <div className="footer-brand">
-            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '10px' }}>
-              <img src="/images/logo-3m-new.svg" alt="Logo 3M Drive" style={{ width: 36, height: 36, objectFit: 'contain' }} />
-              <h3 style={{ margin: 0 }}>3M Drive</h3>
+            <div style={{ marginBottom: '14px' }}>
+              {/* Le footer a toujours un fond sombre (pas de variante thème
+                  clair) : la version claire du logotype seule suffit ici. */}
+              <img
+                src="/images/nav-logo-dark.webp"
+                alt="3M Drive"
+                style={{ height: 28, width: 'auto', objectFit: 'contain' }}
+              />
             </div>
             <p>Votre chauffeur VTC privé à Toulouse — service premium, discret et ponctuel.</p>
             <div className="footer-contact-row">

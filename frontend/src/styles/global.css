@@ -1646,14 +1646,6 @@ textarea.form-control { resize: vertical; min-height: 88px; }
   gap: 12px;
   margin-bottom: 12px;
 }
-.footer-brand h3 {
-  font-family: var(--font-heading);
-  font-size: 1.2rem;
-  font-weight: 800;
-  color: var(--color-accent);
-  margin-bottom: 8px;
-  letter-spacing: -0.02em;
-}
 .footer-brand p { font-family: var(--font-body); font-size: 0.85rem; line-height: 1.6; max-width: 340px; color: rgba(255,255,255,0.45); margin-bottom: 14px; }
 .footer-contact-row { display: flex; flex-wrap: wrap; align-items: center; gap: 16px; }
 .footer-contact-row a, .footer-contact-row span {
@@ -3470,7 +3462,9 @@ textarea.form-control { resize: vertical; min-height: 88px; }
     font-weight: 800;
     font-size: 0.92rem;
   }
-  .mobile-top-bar-logo img { width: 28px; height: 28px; object-fit: contain; }
+  /* Seul élément de marque dans la barre mobile désormais (plus de symbole
+     à côté) : un peu plus grand pour bien occuper l'espace disponible. */
+  .mobile-top-bar-wordmark { height: 24px; width: auto; object-fit: contain; }
   .mobile-top-bar-burger {
     display: flex;
     align-items: center;

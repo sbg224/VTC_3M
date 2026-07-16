@@ -47,8 +47,16 @@ export default function Navbar() {
       {/* ── Barre mobile compacte : logo + burger ─────────────────────────────── */}
       <div className="mobile-top-bar">
         <NavLink to="/" end className="mobile-top-bar-logo" onClick={closeMobile}>
-          <img src="/images/logo-3m-new.svg" alt="Logo 3M Drive" />
-          <span>3M Drive</span>
+          {/* Logotype seul (pas le symbole à côté : les deux commencent par
+              "3", les combiner créait une répétition visuelle maladroite).
+              Le symbole est réservé aux contextes carrés (favicon, icône
+              d'app) où c'est lui qui est optimal. Variante claire/sombre
+              selon le thème pour rester lisible sur la barre translucide. */}
+          <img
+            src={theme === 'dark' ? '/images/nav-logo-dark.webp' : '/images/nav-logo-light.webp'}
+            alt="3M Drive"
+            className="mobile-top-bar-wordmark"
+          />
         </NavLink>
         <button
           className="mobile-top-bar-burger"
