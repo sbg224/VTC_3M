@@ -5,7 +5,7 @@ import {
   Armchair, Wind, VolumeX, Droplets, Zap, Sparkles, Star,
   Plane, Train, Building2, Landmark,
   Phone, MapPin, Car, Calculator,
-  Loader2, AlertTriangle, Euro, ArrowRight, ChevronDown,
+  Loader2, AlertTriangle, Euro, ArrowRight, ChevronDown, Check,
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { gsap, ScrollTrigger } from '../animations/gsap';
@@ -513,7 +513,10 @@ export default function Home() {
               const initials = displayName.split(' ').map((w) => w[0]).slice(0, 2).join('').toUpperCase();
               return (
                 <div className="driver-card" key={d.id}>
-                  <div className="driver-avatar">{initials}</div>
+                  <div className="driver-avatar-wrap">
+                    <div className="driver-avatar">{initials}</div>
+                    <span className="driver-verified-seal" title="Chauffeur vérifié"><Check size={11} strokeWidth={3} /></span>
+                  </div>
                   <div className="driver-info">
                     <div className="driver-badge">Chauffeur VTC Agréé · Toulouse (31)</div>
                     <h3>{displayName}</h3>

@@ -2443,9 +2443,10 @@ textarea.form-control { resize: vertical; min-height: 88px; }
   display: flex;
   gap: 20px;
   align-items: flex-start;
-  transition: box-shadow var(--transition);
+  transition: box-shadow var(--transition), transform var(--transition);
 }
-.driver-card:hover { box-shadow: var(--shadow-md); }
+.driver-card:hover { box-shadow: var(--shadow-md); transform: translateY(-3px); }
+.driver-avatar-wrap { position: relative; flex-shrink: 0; }
 .driver-avatar {
   width: 64px;
   height: 64px;
@@ -2461,6 +2462,22 @@ textarea.form-control { resize: vertical; min-height: 88px; }
   font-weight: 700;
   letter-spacing: 1px;
   box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+  transition: transform var(--transition);
+}
+.driver-card:hover .driver-avatar { transform: scale(1.05); }
+.driver-verified-seal {
+  position: absolute;
+  bottom: -4px;
+  right: -4px;
+  width: 18px;
+  height: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--color-accent);
+  color: var(--color-white);
+  border-radius: 50%;
+  border: 2px solid var(--color-white);
 }
 .driver-badge {
   display: inline-block;
