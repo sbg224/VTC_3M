@@ -249,6 +249,10 @@ export default function BookingPage() {
       title={`${driver?.businessName || driver?.name || 'Chauffeur VTC Toulouse'} | Réservation en ligne 3M Drive`}
       description={`Réservez votre trajet avec ${driver?.businessName || driver?.name || 'un chauffeur partenaire'} sur 3M Drive, estimation rapide et réservation VTC à Toulouse.`}
       canonicalPath={`/book/${slug}`}
+      // Pages générées depuis un même gabarit par chauffeur — contenu quasi
+      // dupliqué à grande échelle, on évite de diluer le référencement du
+      // domaine (le trafic organique passe par l'accueil et /reservation).
+      noindex
     />
   );
 
