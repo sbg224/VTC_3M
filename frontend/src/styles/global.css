@@ -2433,56 +2433,74 @@ textarea.form-control { resize: vertical; min-height: 88px; }
 .login-info-box { display: flex; align-items: center; justify-content: center; gap: 8px; }
 
 /* ── Chauffeur & Véhicule ────────────────────────────────────────────────────── */
-.driver-vehicle-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin-top: 40px; }
+.driver-vehicle-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin-top: 40px; align-items: start; }
+.driver-carousel { display: flex; flex-direction: column; gap: 12px; }
 .driver-card {
   background: var(--color-white);
-  border-radius: var(--radius-xl);
-  padding: 28px;
+  border-radius: var(--radius-lg);
+  padding: 16px;
   box-shadow: var(--shadow-sm);
   border: 1px solid var(--color-gray-200);
   display: flex;
-  gap: 20px;
+  gap: 12px;
   align-items: flex-start;
-  transition: box-shadow var(--transition);
+  transition: box-shadow var(--transition), transform var(--transition);
 }
-.driver-card:hover { box-shadow: var(--shadow-md); }
+.driver-card:hover { box-shadow: var(--shadow-md); transform: translateY(-3px); }
+.driver-avatar-wrap { position: relative; flex-shrink: 0; }
 .driver-avatar {
-  width: 64px;
-  height: 64px;
-  min-width: 64px;
+  width: 44px;
+  height: 44px;
+  min-width: 44px;
   background: linear-gradient(135deg, var(--color-slate), var(--color-slate-dark));
   color: var(--color-accent);
-  border-radius: 16px;
+  border-radius: 12px;
   display: flex;
   align-items: center;
   justify-content: center;
   font-family: var(--font-heading);
-  font-size: 1rem;
+  font-size: 0.82rem;
   font-weight: 700;
-  letter-spacing: 1px;
+  letter-spacing: 0.5px;
   box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+  transition: transform var(--transition);
+}
+.driver-card:hover .driver-avatar { transform: scale(1.05); }
+.driver-verified-seal {
+  position: absolute;
+  bottom: -3px;
+  right: -3px;
+  width: 15px;
+  height: 15px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--color-accent);
+  color: var(--color-white);
+  border-radius: 50%;
+  border: 2px solid var(--color-white);
 }
 .driver-badge {
   display: inline-block;
   background: rgba(38,114,83,0.1);
   color: var(--color-accent-dark);
   border: 1px solid rgba(38,114,83,0.25);
-  font-size: 0.72rem;
+  font-size: 0.66rem;
   font-weight: 600;
-  padding: 3px 10px;
+  padding: 2px 8px;
   border-radius: var(--radius-full);
-  margin-bottom: 10px;
+  margin-bottom: 6px;
   letter-spacing: 0.3px;
 }
-.driver-info h3 { font-family: var(--font-heading); font-size: 1.2rem; font-weight: 700; color: var(--color-primary); margin-bottom: 10px; letter-spacing: -0.01em; }
-.driver-info p { color: var(--color-gray); font-size: 0.88rem; line-height: 1.65; margin-bottom: 8px; }
-.driver-badges { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 14px; }
+.driver-info h3 { font-family: var(--font-heading); font-size: 0.98rem; font-weight: 700; color: var(--color-primary); margin-bottom: 4px; letter-spacing: -0.01em; }
+.driver-info p { color: var(--color-gray); font-size: 0.8rem; line-height: 1.5; margin-bottom: 4px; }
+.driver-badges { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 8px; }
 .driver-badges span {
   background: var(--color-success-bg);
   color: #065f46;
-  font-size: 0.74rem;
+  font-size: 0.68rem;
   font-weight: 600;
-  padding: 3px 10px;
+  padding: 2px 8px;
   border-radius: var(--radius-full);
   border: 1px solid var(--color-success-border);
 }

@@ -5,7 +5,7 @@ import {
   Armchair, Wind, VolumeX, Droplets, Zap, Sparkles, Star,
   Plane, Train, Building2, Landmark,
   Phone, MapPin, Car, Calculator,
-  Loader2, AlertTriangle, Euro, ArrowRight, ChevronDown,
+  Loader2, AlertTriangle, Euro, ArrowRight, ChevronDown, Check,
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { gsap, ScrollTrigger } from '../animations/gsap';
@@ -250,6 +250,63 @@ const JSON_LD_LOCAL_BUSINESS = JSON.stringify({
     },
   ],
 });
+
+// ── Carrousel chauffeurs : 3 cartes visibles, rotation automatique ────────────
+function DriverCarousel({ drivers }) {
+  const [offset, setOffset] = useState(0);
+  const visibleCount = Math.min(3, drivers.length);
+
+  useEffect(() => {
+    if (drivers.length <= 3) return;
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    const id = setInterval(() => setOffset((o) => (o + 1) % drivers.length), 1800);
+    return () => clearInterval(id);
+  }, [drivers.length]);
+
+  const slots = Array.from({ length: visibleCount }, (_, i) => drivers[(offset + i) % drivers.length]);
+
+  return (
+    <div className="driver-carousel">
+      <AnimatePresence mode="popLayout" initial={false}>
+        {slots.map((d) => {
+          const displayName = d.businessName || d.name;
+          const initials = displayName.split(' ').map((w) => w[0]).slice(0, 2).join('').toUpperCase();
+          return (
+            <motion.div
+              className="driver-card"
+              key={d.id}
+              layout
+              initial={{ opacity: 0, y: 12 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -12 }}
+              transition={{ duration: 0.35 }}
+            >
+              <div className="driver-avatar-wrap">
+                <div className="driver-avatar">{initials}</div>
+                <span className="driver-verified-seal" title="Chauffeur vérifié"><Check size={11} strokeWidth={3} /></span>
+              </div>
+              <div className="driver-info">
+                <div className="driver-badge">Chauffeur VTC Agréé · Toulouse (31)</div>
+                <h3>{displayName}</h3>
+                {d.rating != null && (
+                  <p style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                    <Star size={13} strokeWidth={1.5} style={{ color: 'var(--color-accent)' }} />
+                    {d.rating.toFixed(1)}/5 · {d.reviewCount} avis client{d.reviewCount > 1 ? 's' : ''}
+                  </p>
+                )}
+                <p>Chauffeur privé indépendant basé à Toulouse, engagé à offrir un déplacement confortable, ponctuel et discret.</p>
+                <div className="driver-badges">
+                  <span><ShieldCheck size={13} strokeWidth={1.5} style={{ display: 'inline', marginRight: 4 }} /> Carte VTC officielle</span>
+                  <span><ShieldCheck size={13} strokeWidth={1.5} style={{ display: 'inline', marginRight: 4 }} /> Assurance pro</span>
+                </div>
+              </div>
+            </motion.div>
+          );
+        })}
+      </AnimatePresence>
+    </div>
+  );
+}
 
 // ── Page principale ───────────────────────────────────────────────────────────
 // Scroll doux vers le simulateur hero
@@ -508,32 +565,7 @@ export default function Home() {
             Un service individuel, une relation de confiance directe
           </p>
           <div className="driver-vehicle-grid">
-            {drivers.map((d) => {
-              const displayName = d.businessName || d.name;
-              const initials = displayName.split(' ').map((w) => w[0]).slice(0, 2).join('').toUpperCase();
-              return (
-                <div className="driver-card" key={d.id}>
-                  <div className="driver-avatar">{initials}</div>
-                  <div className="driver-info">
-                    <div className="driver-badge">Chauffeur VTC Agréé · Toulouse (31)</div>
-                    <h3>{displayName}</h3>
-                    {d.rating != null && (
-                      <p style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-                        <Star size={13} strokeWidth={1.5} style={{ color: 'var(--color-accent)' }} />
-                        {d.rating.toFixed(1)}/5 · {d.reviewCount} avis client{d.reviewCount > 1 ? 's' : ''}
-                      </p>
-                    )}
-                    <p>Chauffeur privé indépendant basé à Toulouse, engagé à offrir un déplacement confortable, ponctuel et discret.</p>
-                    <p>Que ce soit pour un transfert aéroport, une réunion d'affaires ou un événement privé, vous bénéficiez d'une attention personnalisée à chaque course.</p>
-                    <div className="driver-badges">
-                      <span><ShieldCheck size={13} strokeWidth={1.5} style={{ display: 'inline', marginRight: 4 }} /> Carte VTC officielle</span>
-                      <span><ShieldCheck size={13} strokeWidth={1.5} style={{ display: 'inline', marginRight: 4 }} /> Assurance professionnelle</span>
-                      <span><ShieldCheck size={13} strokeWidth={1.5} style={{ display: 'inline', marginRight: 4 }} /> Tenue professionnelle</span>
-                    </div>
-                  </div>
-                </div>
-              );
-            })}
+            {drivers.length > 0 && <DriverCarousel drivers={drivers} />}
             <div className="vehicle-card">
               <div className="vehicle-icon-block">
                 <img src="/images/car-door.webp" alt="Portière berline premium VTC 3M Drive" className="vehicle-photo" width="600" height="180" loading="lazy" />
