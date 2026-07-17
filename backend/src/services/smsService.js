@@ -1,8 +1,5 @@
 const logger = require('../middleware/logger');
-
-function formatDate(dateStr) {
-  return new Date(dateStr).toLocaleDateString('fr-FR');
-}
+const { formatDateShort: formatDate } = require('../utils/dateFormat');
 
 async function sendAdminSms(reservation) {
   if (String(process.env.SMS_ENABLED || 'true').toLowerCase() === 'false') {

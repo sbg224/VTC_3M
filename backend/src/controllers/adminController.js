@@ -2,6 +2,8 @@ const { Op, fn, col, literal } = require('sequelize');
 const { Driver, Reservation, PricingConfig, sequelize } = require('../models');
 const logger = require('../middleware/logger');
 const { updatePricingCache, getPricingValues } = require('../services/priceService');
+const { emailsEnabled, createTransporter } = require('../services/emailService');
+const { TRIAL_DURATION_DAYS } = require('../utils/constants');
 
 // Ne jamais renvoyer un message d'erreur interne brut (détails SMTP, requête…)
 // au client en production — seul le log en garde la trace.
@@ -99,17 +101,17 @@ exports.getDrivers = async (req, res) => {
     const driverIds = drivers.map((d) => d.id);
     const statsRows = driverIds.length
       ? await Reservation.findAll({
-          where: { chauffeur_id: { [Op.in]: driverIds } },
+          where: { chauffeurId: { [Op.in]: driverIds } },
           attributes: [
-            'chauffeur_id',
+            'chauffeurId',
             [fn('COUNT', col('id')), 'reservationCount'],
             [fn('SUM', literal("CASE WHEN status = 'completed' AND price IS NOT NULL THEN price ELSE 0 END")), 'totalRevenue'],
           ],
-          group: ['chauffeur_id'],
+          group: ['chauffeurId'],
           raw: true,
         })
       : [];
-    const statsByDriver = new Map(statsRows.map((r) => [r.chauffeur_id, r]));
+    const statsByDriver = new Map(statsRows.map((r) => [r.chauffeurId, r]));
 
     const enriched = drivers.map((d) => {
       const stats = statsByDriver.get(d.id);
@@ -149,11 +151,11 @@ exports.updateDriverStatus = async (req, res) => {
       return res.status(404).json({ error: 'Chauffeur introuvable.' });
     }
 
-    // Quand l'admin valide (→ trial), on démarre le compte à rebours des 14 jours
+    // Quand l'admin valide (→ trial), on démarre le compte à rebours de l'essai
     const updateData = { status };
     if (status === 'trial' && !driver.trialEndDate) {
       const trialEnd = new Date();
-      trialEnd.setDate(trialEnd.getDate() + 14);
+      trialEnd.setDate(trialEnd.getDate() + TRIAL_DURATION_DAYS);
       updateData.trialEndDate = trialEnd;
       logger.info(`[Admin] Essai démarré pour ${driver.email} jusqu'au ${trialEnd.toISOString()}`);
     }
@@ -192,16 +194,16 @@ exports.getDriverDetail = async (req, res) => {
       revenueResult,
       recentRes,
     ] = await Promise.all([
-      Reservation.count({ where: { chauffeur_id: id } }),
-      Reservation.count({ where: { chauffeur_id: id, status: 'completed' } }),
-      Reservation.count({ where: { chauffeur_id: id, status: 'pending' } }),
+      Reservation.count({ where: { chauffeurId: id } }),
+      Reservation.count({ where: { chauffeurId: id, status: 'completed' } }),
+      Reservation.count({ where: { chauffeurId: id, status: 'pending' } }),
       Reservation.findOne({
-        where: { chauffeur_id: id, status: 'completed', price: { [Op.not]: null } },
+        where: { chauffeurId: id, status: 'completed', price: { [Op.not]: null } },
         attributes: [[fn('SUM', col('price')), 'total']],
         raw: true,
       }),
       Reservation.findAll({
-        where: { chauffeur_id: id },
+        where: { chauffeurId: id },
         order: [['createdAt', 'DESC']],
         limit: 10,
         attributes: ['id','reservationNumber','firstName','lastName','departureAddress','arrivalAddress','date','time','status','price','estimatedPrice','createdAt'],
@@ -239,7 +241,7 @@ exports.getAllReservations = async (req, res) => {
 
     const where = {};
     if (status   !== 'all') where.status = status;
-    if (driverId)            where.chauffeur_id = driverId;
+    if (driverId)            where.chauffeurId = driverId;
     if (dateFrom || dateTo) {
       where.date = {};
       if (dateFrom) where.date[Op.gte] = dateFrom;
@@ -340,14 +342,12 @@ exports.notifyDriver = async (req, res) => {
     const driver = await Driver.findOne({ where: { id, role: 'driver' } });
     if (!driver) return res.status(404).json({ error: 'Chauffeur introuvable.' });
 
-    const nodemailer = require('nodemailer');
-    const transporter = nodemailer.createTransport({
-      host:   process.env.EMAIL_HOST || 'smtp.gmail.com',
-      port:   parseInt(process.env.EMAIL_PORT || '587'),
-      secure: false,
-      auth:   { user: process.env.EMAIL_USER, pass: process.env.EMAIL_PASS },
-      tls:    { rejectUnauthorized: false },
-    });
+    if (!emailsEnabled()) {
+      logger.warn(`[EMAIL] Envoi désactivé par EMAIL_ENABLED=false (notification admin -> ${driver.email})`);
+      return res.json({ message: `Email non envoyé — EMAIL_ENABLED=false (mode développement).` });
+    }
+
+    const transporter = createTransporter();
 
     await transporter.sendMail({
       from:    `"3M Drive Admin" <${process.env.EMAIL_FROM || process.env.EMAIL_USER}>`,

@@ -8,6 +8,7 @@ const { Op, fn, col } = require('sequelize');
 const { Driver, Reservation } = require('../models');
 const logger = require('../middleware/logger');
 const { generateBordereauPdf } = require('../services/pdfService');
+const { DEFAULT_COMMISSION_RATE } = require('../utils/constants');
 
 // Ne jamais renvoyer un message d'erreur interne brut (structure de requête,
 // détails Sequelize/SMTP…) au client en production — seul le log en garde la trace.
@@ -78,7 +79,7 @@ function getPeriodDates(period, startDate, endDate) {
  */
 function computeAmounts(grossRevenue, commissionRate) {
   const gross      = parseFloat(grossRevenue || 0);
-  const rate       = parseFloat(commissionRate || 20);
+  const rate       = parseFloat(commissionRate || DEFAULT_COMMISSION_RATE);
   const commission = Math.round(gross * rate / 100 * 100) / 100;
   const net        = Math.round((gross - commission) * 100) / 100;
   return { gross, rate, commission, net };
@@ -106,17 +107,17 @@ exports.getAccountingSummary = async (req, res) => {
         date: { [Op.between]: [periodData.from, periodData.to] },
       },
       attributes: [
-        'chauffeur_id',
+        'chauffeurId',
         [fn('COUNT', col('id')),    'rideCount'],
         [fn('SUM',   col('price')), 'grossRevenue'],
       ],
-      group: ['chauffeur_id'],
+      group: ['chauffeurId'],
       raw: true,
     });
 
-    // Indexer par chauffeur_id
+    // Indexer par chauffeurId
     const ridesMap = {};
-    ridesRaw.forEach(r => { ridesMap[r.chauffeur_id] = r; });
+    ridesRaw.forEach(r => { ridesMap[r.chauffeurId] = r; });
 
     // Construire le résumé
     const summary = drivers.map(d => {
@@ -174,7 +175,7 @@ exports.getDriverStatement = async (req, res) => {
 
     const rides = await Reservation.findAll({
       where: {
-        chauffeur_id: driverId,
+        chauffeurId: driverId,
         status: 'completed',
         price: { [Op.not]: null },
         date: { [Op.between]: [periodData.from, periodData.to] },
@@ -220,7 +221,7 @@ exports.generateStatementPdf = async (req, res) => {
 
     const rides = await Reservation.findAll({
       where: {
-        chauffeur_id: driverId,
+        chauffeurId: driverId,
         status: 'completed',
         price: { [Op.not]: null },
         date: { [Op.between]: [periodData.from, periodData.to] },

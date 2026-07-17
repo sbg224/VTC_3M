@@ -36,7 +36,7 @@ function validateForm(form) {
     errors.confirmPassword = 'Les mots de passe ne correspondent pas.';
   }
 
-  if (form.phone && !/^(\+33|0)[1-9](\d{8})$/.test(form.phone.replace(/\s/g, ''))) {
+  if (form.phone && !/^(\+33|0033|0)[1-9](\d{8})$/.test(form.phone.replace(/\s/g, ''))) {
     errors.phone = 'Format invalide (ex: +33 6 12 34 56 78).';
   }
 

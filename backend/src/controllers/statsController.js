@@ -53,7 +53,7 @@ exports.getStats = async (req, res) => {
 
     // ── Isolation multi-tenant : toutes les requêtes filtrées par chauffeur ──
     const driverId = req.driver.id;
-    const baseWhere = { chauffeur_id: driverId };
+    const baseWhere = { chauffeurId: driverId };
 
     // Compteurs par statut
     const [total, pending, confirmed, completed, cancelled] = await Promise.all([
@@ -110,18 +110,23 @@ exports.getStats = async (req, res) => {
       reviewCount   = parseInt(reviewStats[0]?.total || 0, 10);
     } catch { /* table inexistante au premier démarrage */ }
 
-    // Réservations des 7 derniers jours (pour graphique)
-    const last7Days = [];
-    for (let i = 6; i >= 0; i--) {
+    // Réservations des 7 derniers jours (pour graphique) — bornes calculées
+    // d'abord, puis les 7 comptages lancés en parallèle (étaient séquentiels).
+    const dayRanges = Array.from({ length: 7 }, (_, idx) => {
+      const i = 6 - idx;
       const d = new Date();
       d.setDate(d.getDate() - i);
       const start = new Date(d.setHours(0, 0, 0, 0));
       const end   = new Date(d.setHours(23, 59, 59, 999));
-      const count = await Reservation.count({
-        where: { ...baseWhere, createdAt: { [Op.between]: [start, end] } },
-      });
-      last7Days.push({ date: start.toISOString().split('T')[0], count });
-    }
+      return { start, end };
+    });
+    const dayCounts = await Promise.all(dayRanges.map(({ start, end }) =>
+      Reservation.count({ where: { ...baseWhere, createdAt: { [Op.between]: [start, end] } } })
+    ));
+    const last7Days = dayRanges.map(({ start }, idx) => ({
+      date: start.toISOString().split('T')[0],
+      count: dayCounts[idx],
+    }));
 
     // Dernières réservations du chauffeur
     const latestReservations = await Reservation.findAll({

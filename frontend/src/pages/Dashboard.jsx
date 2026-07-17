@@ -19,6 +19,11 @@ const STATUS_LABELS = {
   cancelled: { label: 'Annulée',    badge: 'badge-cancelled', Icon: XCircle },
 };
 
+// Partagé entre CrmView et Dashboard — était dupliqué à l'identique dans les deux.
+const formatDate = (d) => d
+  ? new Date(d).toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit', year: 'numeric' })
+  : '—';
+
 function StatCard({ icon, value, label, colorClass }) {
   return (
     <div className="stat-card">
@@ -309,10 +314,6 @@ function CrmView({ showToast }) {
       setExporting(false);
     }
   };
-
-  const formatDate = (d) => d
-    ? new Date(d).toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit', year: 'numeric' })
-    : '—';
 
   return (
     <div>
@@ -1097,21 +1098,12 @@ export default function Dashboard() {
     navigate('/');
   };
 
-  const handleCompleteSuccess = (data) => {
+  const handleCompleteSuccess = () => {
     setCompleteReservation(null);
-    showToast(
-      data.invoicePdfUrl
-        ? 'Course validée ! Facture PDF générée et envoyée au client.'
-        : 'Course validée.',
-      'success'
-    );
+    showToast('Course validée ! Facture envoyée au client par email.', 'success');
     loadReservations();
     loadStats();
   };
-
-  const formatDate = (dateStr) => new Date(dateStr).toLocaleDateString('fr-FR', {
-    day: '2-digit', month: '2-digit', year: 'numeric',
-  });
 
   return (
     <div className="dashboard">

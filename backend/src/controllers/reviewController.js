@@ -16,7 +16,7 @@ exports.getByToken = async (req, res) => {
     const reservation = await Reservation.findOne({
       where: { reviewToken: token },
       attributes: ['id', 'reservationNumber', 'firstName', 'lastName', 'date', 'time',
-                   'departureAddress', 'arrivalAddress', 'chauffeur_id'],
+                   'departureAddress', 'arrivalAddress', 'chauffeurId'],
       include: [{
         model: Driver,
         as: 'chauffeur',
@@ -69,7 +69,7 @@ exports.submitReview = async (req, res) => {
     const reservation = await Reservation.findOne({
       where: { reviewToken: token },
       attributes: ['id', 'reservationNumber', 'firstName', 'lastName',
-                   'email', 'chauffeur_id', 'status'],
+                   'email', 'chauffeurId', 'status'],
     });
 
     if (!reservation) {
@@ -91,7 +91,7 @@ exports.submitReview = async (req, res) => {
 
     await Review.create({
       reservationId: reservation.id,
-      chauffeurId:   reservation.chauffeur_id,
+      chauffeurId:   reservation.chauffeurId,
       rating:        ratingInt,
       comment:       comment?.trim()?.substring(0, 1000) || null,
       clientName:    `${reservation.firstName} ${reservation.lastName}`,

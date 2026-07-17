@@ -18,14 +18,24 @@ exports.getPublicList = async (req, res) => {
       order: [['createdAt', 'ASC']],
     });
 
-    const enriched = await Promise.all(drivers.map(async (driver) => {
-      const stats = await Review.findAll({
-        where: { chauffeurId: driver.id },
-        attributes: [[fn('AVG', col('rating')), 'avg'], [fn('COUNT', col('id')), 'total']],
-        raw: true,
-      });
-      const total = parseInt(stats[0]?.total || 0, 10);
-      const avg   = total > 0 ? parseFloat(stats[0].avg) : null;
+    // Une seule requête agrégée pour tous les chauffeurs plutôt qu'une
+    // requête Review par chauffeur (évite le N+1).
+    const statsRows = await Review.findAll({
+      where: { chauffeurId: { [Op.in]: drivers.map((d) => d.id) } },
+      attributes: [
+        'chauffeurId',
+        [fn('AVG', col('rating')), 'avg'],
+        [fn('COUNT', col('id')), 'total'],
+      ],
+      group: ['chauffeurId'],
+      raw: true,
+    });
+    const statsByDriverId = new Map(statsRows.map((row) => [row.chauffeurId, row]));
+
+    const enriched = drivers.map((driver) => {
+      const stats = statsByDriverId.get(driver.id);
+      const total = parseInt(stats?.total || 0, 10);
+      const avg   = total > 0 ? parseFloat(stats.avg) : null;
 
       return {
         id:           driver.id,
@@ -35,7 +45,7 @@ exports.getPublicList = async (req, res) => {
         rating:       avg,
         reviewCount:  total,
       };
-    }));
+    });
 
     res.json({ drivers: enriched });
   } catch (err) {

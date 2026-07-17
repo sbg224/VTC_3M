@@ -2,6 +2,7 @@ const PDFDocument = require('pdfkit');
 const fs = require('fs');
 const path = require('path');
 const logger = require('../middleware/logger');
+const { formatDateLong: formatDate } = require('../utils/dateFormat');
 
 const PDFS_DIR = path.join(__dirname, '../../pdfs');
 
@@ -9,11 +10,6 @@ function ensurePdfsDir() {
   if (!fs.existsSync(PDFS_DIR)) {
     fs.mkdirSync(PDFS_DIR, { recursive: true });
   }
-}
-
-function formatDate(dateStr) {
-  const d = new Date(dateStr);
-  return d.toLocaleDateString('fr-FR', { year: 'numeric', month: 'long', day: 'numeric' });
 }
 
 function statusLabel(status) {

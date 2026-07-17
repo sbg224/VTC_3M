@@ -1,11 +1,12 @@
 const { fn, col, literal, Op } = require('sequelize');
 const { Reservation } = require('../models');
 const logger = require('../middleware/logger');
+const { formatDateShort: formatDate } = require('../utils/dateFormat');
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
 function buildWhere(driverId, search) {
-  const base = { chauffeur_id: driverId };
+  const base = { chauffeurId: driverId };
   if (!search) return base;
   return {
     ...base,
@@ -108,8 +109,7 @@ exports.exportCsv = async (req, res) => {
       'Total dépensé (€)', 'Première réservation', 'Dernière réservation',
     ];
 
-    const formatDate = (d) => d ? new Date(d).toLocaleDateString('fr-FR') : '';
-    const escape     = (v) => `"${String(v ?? '').replace(/"/g, '""')}"`;
+    const escape = (v) => `"${String(v ?? '').replace(/"/g, '""')}"`;
 
     const lines = [
       headers.map(escape).join(';'),

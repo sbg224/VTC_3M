@@ -1,5 +1,6 @@
 const nodemailer = require('nodemailer');
 const logger = require('../middleware/logger');
+const { formatDateFull: formatDate } = require('../utils/dateFormat');
 
 function emailsEnabled() {
   return String(process.env.EMAIL_ENABLED || 'true').toLowerCase() !== 'false';
@@ -15,12 +16,6 @@ function createTransporter() {
       pass: process.env.EMAIL_PASS,
     },
     tls: { rejectUnauthorized: false },
-  });
-}
-
-function formatDate(dateStr) {
-  return new Date(dateStr).toLocaleDateString('fr-FR', {
-    weekday: 'long', year: 'numeric', month: 'long', day: 'numeric',
   });
 }
 
@@ -308,4 +303,7 @@ async function sendInvoiceToDriver(reservation, pdfPath, driverEmail) {
   }
 }
 
-module.exports = { sendAdminNotification, sendClientConfirmation, sendInvoiceToClient, sendInvoiceToDriver };
+module.exports = {
+  sendAdminNotification, sendClientConfirmation, sendInvoiceToClient, sendInvoiceToDriver,
+  emailsEnabled, createTransporter,
+};

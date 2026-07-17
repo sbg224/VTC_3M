@@ -2,7 +2,7 @@ import { useState, useRef, useEffect, isValidElement, cloneElement } from 'react
 import { Link, useLocation } from 'react-router-dom';
 import {
   Calculator, Loader2, AlertTriangle, MapPin, Clock, Euro, Car,
-  CheckCircle, FileText, ClipboardList, User, Lock, ArrowRight,
+  CheckCircle, ClipboardList, User, Lock, ArrowRight,
   Phone, Mail, Users, Briefcase, MessageSquare, Navigation,
   Timer, ShieldCheck, Zap,
 } from 'lucide-react';
@@ -241,12 +241,6 @@ export default function Reservation() {
               Votre bon de réservation vous a été envoyé par email.
               Notre chauffeur vous contactera pour confirmer la prise en charge.
             </p>
-
-            {success.reservation?.pdfUrl && (
-              <a href={success.reservation.pdfUrl} download className="btn btn-primary resv-success-dl">
-                <FileText size={15} strokeWidth={1.5} /> Télécharger mon bon
-              </a>
-            )}
 
             <div className="resv-success-actions">
               <button

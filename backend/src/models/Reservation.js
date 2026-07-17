@@ -103,9 +103,13 @@ module.exports = (sequelize) => {
 
     // ── Multi-tenant : lien vers le chauffeur propriétaire ────────────────────
     // Nullable pour compatibilité avec les réservations antérieures
-    chauffeur_id: {
+    // Attribut JS unifié en camelCase (cohérent avec Review.chauffeurId) —
+    // la colonne SQL reste chauffeur_id (field:) pour ne pas nécessiter de
+    // migration de schéma sur les bases existantes.
+    chauffeurId: {
       type: DataTypes.UUID,
       allowNull: true,
+      field: 'chauffeur_id',
       references: { model: 'drivers', key: 'id' },
       onDelete: 'SET NULL',
     },
@@ -120,6 +124,28 @@ module.exports = (sequelize) => {
     const year = new Date().getFullYear();
     reservation.reservationNumber = `VTC-${year}-${String(count + 1).padStart(4, '0')}`;
   });
+
+  // Deux créations concurrentes peuvent lire le même COUNT() dans le hook
+  // ci-dessus avant que l'une des deux n'ait inséré sa ligne, et générer
+  // ainsi le même reservationNumber (contrainte unique en base) — la
+  // seconde création échoue alors avec SequelizeUniqueConstraintError.
+  // createUnique() retente la création (le hook relit un COUNT() à jour à
+  // chaque tentative) plutôt que de faire échouer la réservation du client.
+  // Un court backoff aléatoire évite que deux tentatives concurrentes ne se
+  // re-percutent immédiatement l'une l'autre en relisant le même COUNT().
+  Reservation.createUnique = async function createUnique(data, maxAttempts = 8) {
+    for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+      try {
+        return await Reservation.create(data);
+      } catch (err) {
+        const isDuplicateNumber = err.name === 'SequelizeUniqueConstraintError'
+          && err.errors?.some((e) => e.path === 'reservationNumber');
+        if (!isDuplicateNumber || attempt === maxAttempts) throw err;
+        const jitterMs = Math.floor(Math.random() * 40) + 10;
+        await new Promise((resolve) => setTimeout(resolve, jitterMs));
+      }
+    }
+  };
 
   return Reservation;
 };

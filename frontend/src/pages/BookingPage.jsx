@@ -2,7 +2,7 @@ import { useState, useRef, useEffect } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import {
   Calculator, Loader2, AlertTriangle, MapPin, Clock, Euro, Car,
-  CheckCircle, FileText, ClipboardList, User, Lock, Star, Shield,
+  CheckCircle, ClipboardList, User, Lock, Star, Shield,
 } from 'lucide-react';
 import { reservationAPI, simulateAPI, driverPublicAPI } from '../services/api';
 import Seo from '../components/Seo';
@@ -313,13 +313,6 @@ export default function BookingPage() {
               Vous recevrez une confirmation par email avec votre bon de réservation.
               Votre chauffeur vous contactera pour confirmer votre prise en charge.
             </p>
-            {success.reservation?.pdfUrl && (
-              <a href={success.reservation.pdfUrl} download
-                className="btn btn-primary flex items-center gap-2"
-                style={{ marginBottom: '16px', display: 'inline-flex' }}>
-                <FileText size={15} strokeWidth={1.5} /> Télécharger mon bon de réservation
-              </a>
-            )}
             <div style={{ display: 'flex', gap: '12px', justifyContent: 'center', flexWrap: 'wrap', marginTop: '16px' }}>
               <button
                 className="btn btn-outline"

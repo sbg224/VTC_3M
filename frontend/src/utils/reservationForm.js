@@ -22,7 +22,7 @@ export function validateReservationForm(form, { requireArrival = true } = {}) {
   if (!form.lastName.trim())  errors.lastName  = 'Le nom est requis.';
   if (!form.email.trim() || !/\S+@\S+\.\S+/.test(form.email))
     errors.email = 'Adresse email invalide.';
-  if (!form.phone.trim() || !/^(\+33|0)[1-9](\d{8})$/.test(form.phone.replace(/\s/g, '')))
+  if (!form.phone.trim() || !/^(\+33|0033|0)[1-9](\d{8})$/.test(form.phone.replace(/\s/g, '')))
     errors.phone = 'Numéro de téléphone invalide (format français).';
   if (!form.departureAddress.trim())
     errors.departureAddress = 'L\'adresse de départ est requise.';

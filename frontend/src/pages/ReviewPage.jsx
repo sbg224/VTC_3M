@@ -1,10 +1,8 @@
 import { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { Star, CheckCircle, AlertTriangle, Loader2, Car, MapPin, Calendar } from 'lucide-react';
-import axios from 'axios';
+import api from '../services/api';
 import Seo from '../components/Seo';
-
-const api = axios.create({ baseURL: '/api', timeout: 10000 });
 
 function StarRating({ value, onChange, readonly = false }) {
   const [hovered, setHovered] = useState(0);
