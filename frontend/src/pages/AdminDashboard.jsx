@@ -506,6 +506,8 @@ export default function AdminDashboard() {
     try {
       const { data } = await adminAPI.getGlobalStats();
       setStats(data);
+    } catch (err) {
+      if (import.meta.env.DEV) console.error('[Stats]', err);
     } finally {
       setStatsLoading(false);
     }
@@ -518,6 +520,8 @@ export default function AdminDashboard() {
       const { data } = await adminAPI.getDrivers({ page: driverPage, status: driverFilter, search: driverSearch, limit: 20 });
       setDrivers(data.drivers);
       setDriversTotal(data.total);
+    } catch (err) {
+      if (import.meta.env.DEV) console.error('[Drivers]', err);
     } finally {
       setDriversLoading(false);
     }
@@ -530,6 +534,8 @@ export default function AdminDashboard() {
       const { data } = await adminAPI.getAllReservations({ page: resPage, status: resFilter, search: resSearch, limit: 25 });
       setReservations(data.reservations);
       setResTotal(data.total);
+    } catch (err) {
+      if (import.meta.env.DEV) console.error('[Reservations]', err);
     } finally {
       setResLoading(false);
     }
@@ -542,6 +548,8 @@ export default function AdminDashboard() {
       const { data } = await adminAPI.getGlobalClients({ page: clientPage, search: clientSearch, limit: 25 });
       setClients(data.clients);
       setClientsTotal(data.total);
+    } catch (err) {
+      if (import.meta.env.DEV) console.error('[Clients]', err);
     } finally {
       setClientsLoading(false);
     }
@@ -554,6 +562,8 @@ export default function AdminDashboard() {
       const { data } = await contactAdminAPI.getAll({ page: contactPage, search: contactSearch, limit: 20 });
       setContactsList(data.contacts);
       setContactsTotal(data.total);
+    } catch (err) {
+      if (import.meta.env.DEV) console.error('[Contacts]', err);
     } finally {
       setContactsLoading(false);
     }
@@ -589,6 +599,8 @@ export default function AdminDashboard() {
         minimumPrice: String(data.minimumPrice),
         baseFee:      String(data.baseFee),
       });
+    } catch (err) {
+      if (import.meta.env.DEV) console.error('[Pricing]', err);
     } finally {
       setPricingLoading(false);
     }
