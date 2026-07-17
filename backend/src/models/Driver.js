@@ -1,4 +1,5 @@
 const { DataTypes } = require('sequelize');
+const { TRIAL_DURATION_DAYS, DEFAULT_COMMISSION_RATE } = require('../utils/constants');
 
 module.exports = (sequelize) => {
   const Driver = sequelize.define('Driver', {
@@ -107,7 +108,7 @@ module.exports = (sequelize) => {
     commissionRate: {
       type: DataTypes.FLOAT,
       allowNull: false,
-      defaultValue: 20.0,
+      defaultValue: DEFAULT_COMMISSION_RATE,
     },
   }, {
     tableName: 'drivers',
@@ -141,11 +142,11 @@ module.exports = (sequelize) => {
       driver.slug = slug;
     }
 
-    // Essai gratuit de 14 jours — uniquement si le compte n'est pas en attente de validation
+    // Essai gratuit — uniquement si le compte n'est pas en attente de validation
     // (le trial commence quand l'admin valide le chauffeur, pas à l'inscription)
     if (!driver.trialEndDate && driver.status !== 'pending') {
       const d = new Date();
-      d.setDate(d.getDate() + 14);
+      d.setDate(d.getDate() + TRIAL_DURATION_DAYS);
       driver.trialEndDate = d;
     }
   });

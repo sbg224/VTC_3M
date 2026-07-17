@@ -33,12 +33,12 @@ const ContactEvent = require('./ContactEvent')(sequelize);
 // ── Associations ──────────────────────────────────────────────────────────────
 // Un chauffeur possède plusieurs réservations
 Driver.hasMany(Reservation, {
-  foreignKey: 'chauffeur_id',
+  foreignKey: 'chauffeurId',
   as: 'reservations',
 });
 // Une réservation appartient à un chauffeur
 Reservation.belongsTo(Driver, {
-  foreignKey: 'chauffeur_id',
+  foreignKey: 'chauffeurId',
   as: 'chauffeur',
 });
 

@@ -131,7 +131,7 @@ app.use('/api', rateLimit({
 
 // ── PDFs : NE PAS servir en statique — les téléchargements passent par
 //    /api/reservations/:id/pdf-reservation et /api/reservations/:id/pdf-invoice
-//    qui sont protégés par JWT + isolation chauffeur_id.
+//    qui sont protégés par JWT + isolation chauffeurId.
 //    (route statique supprimée pour éviter l'accès public aux PDFs clients)
 
 // ── Photos de cartes de visite (module Contact) : servies en lecture seule.
@@ -300,11 +300,30 @@ process.on('SIGINT', async () => {
   process.exit(0);
 });
 
+// ── Erreurs non rattrapées ────────────────────────────────────────────────────
+// Sans ces handlers, Node journalise sur stderr brut (uncaughtException fait
+// aussi planter le process par défaut, unhandledRejection se contente d'un
+// warning) — invisible dans les logs structurés Winston consultés en prod.
+// Comportement de crash inchangé : uncaughtException termine toujours le
+// process (obligatoire, l'état interne n'est plus fiable après ce point —
+// cf. doc Node), unhandledRejection ne fait que journaliser comme aujourd'hui.
+function registerProcessErrorHandlers() {
+  process.on('uncaughtException', (err) => {
+    logger.error(`[FATAL] uncaughtException : ${err.message}`, { stack: err.stack });
+    process.exit(1);
+  });
+  process.on('unhandledRejection', (reason) => {
+    const err = reason instanceof Error ? reason : new Error(String(reason));
+    logger.error(`[FATAL] unhandledRejection : ${err.message}`, { stack: err.stack });
+  });
+}
+
 // Ne démarre le serveur (connexion DB, écoute du port…) que si ce fichier est
 // exécuté directement (`node src/index.js`) — pas quand il est importé par
 // les tests, qui n'ont besoin que de `app` déjà entièrement configurée
 // (routes/middlewares) pour tester via supertest sans base de données.
 if (require.main === module) {
+  registerProcessErrorHandlers();
   start();
 }
 

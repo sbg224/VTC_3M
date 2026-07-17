@@ -76,7 +76,7 @@ exports.createReservation = async (req, res) => {
       return res.status(503).json({ error: 'Le service de réservation est temporairement indisponible.' });
     }
 
-    const reservation = await Reservation.create({
+    const reservation = await Reservation.createUnique({
       firstName, lastName, email, phone,
       departureAddress, arrivalAddress,
       date, time,
@@ -88,7 +88,7 @@ exports.createReservation = async (req, res) => {
       gdprConsent,
       termsAccepted,
       status:         'pending',
-      chauffeur_id:   targetDriver.id,  // ── Isolation multi-tenant
+      chauffeurId:   targetDriver.id,  // ── Isolation multi-tenant
     });
 
     logger.info(`[RESERVATION] Créée : ${reservation.reservationNumber} – ${email} – IP: ${req.ip}`);
@@ -111,24 +111,35 @@ exports.createReservation = async (req, res) => {
       logger.info(`[SSE] Notification envoyée à ${targetDriver.email} (${sseCount} onglet(s))`);
     }
 
-    // Génération PDF réservation
-    let pdfPath = null;
-    try {
-      const { filepath } = await generateReservationPdf(reservation);
-      pdfPath = filepath;
-      reservation.pdfReservationPath = filepath;
-      await reservation.save();
-      logger.info(`[PDF] Bon de réservation généré : ${reservation.reservationNumber}`);
-    } catch (pdfErr) {
-      logger.error(`[PDF] Erreur génération bon réservation ${reservation.reservationNumber} : ${pdfErr.message}`);
-    }
+    // Répond tout de suite — la génération du PDF (PDFKit) et les
+    // notifications (email/SMS) ne bloquent plus la réponse au client.
+    res.status(201).json({
+      message: 'Réservation enregistrée avec succès !',
+      reservation: {
+        id: reservation.id,
+        reservationNumber: reservation.reservationNumber,
+        status: reservation.status,
+      },
+    });
 
-    // Notifications asynchrones – ne bloquent pas la réponse
-    Promise.allSettled([
-      sendAdminNotification(reservation, pdfPath, targetDriver.email),
-      sendClientConfirmation(reservation, pdfPath),
-      sendAdminSms(reservation),
-    ]).then((results) => {
+    // Génération PDF réservation + notifications — après la réponse HTTP.
+    (async () => {
+      let pdfPath = null;
+      try {
+        const { filepath } = await generateReservationPdf(reservation);
+        pdfPath = filepath;
+        reservation.pdfReservationPath = filepath;
+        await reservation.save();
+        logger.info(`[PDF] Bon de réservation généré : ${reservation.reservationNumber}`);
+      } catch (pdfErr) {
+        logger.error(`[PDF] Erreur génération bon réservation ${reservation.reservationNumber} : ${pdfErr.message}`);
+      }
+
+      const results = await Promise.allSettled([
+        sendAdminNotification(reservation, pdfPath, targetDriver.email),
+        sendClientConfirmation(reservation, pdfPath),
+        sendAdminSms(reservation),
+      ]);
       const labels = ['email-admin', 'email-client', 'sms-admin'];
       results.forEach((r, i) => {
         if (r.status === 'fulfilled') {
@@ -141,17 +152,7 @@ exports.createReservation = async (req, res) => {
           logger.error(`[NOTIF] ${labels[i]} échoué – ${reservation.reservationNumber} : ${r.reason?.message}`);
         }
       });
-    });
-
-    res.status(201).json({
-      message: 'Réservation enregistrée avec succès !',
-      reservation: {
-        id: reservation.id,
-        reservationNumber: reservation.reservationNumber,
-        status: reservation.status,
-        pdfUrl: pdfPath ? `/pdfs/reservation-${reservation.reservationNumber}.pdf` : null,
-      },
-    });
+    })();
   } catch (err) {
     logger.error(`[RESERVATION] Erreur création : ${err.message}`);
     res.status(500).json({ error: 'Erreur lors de la création de la réservation.' });
@@ -168,7 +169,7 @@ exports.getAllReservations = async (req, res) => {
     const safeLimit = Math.min(100, Math.max(1, parseInt(limit) || 20));
 
     // ── Isolation multi-tenant : OBLIGATOIRE ─────────────────────────────────
-    const where = { chauffeur_id: req.driver.id };
+    const where = { chauffeurId: req.driver.id };
 
     // Filtre date pour le planning hebdomadaire
     const dateFrom = req.query.dateFrom;
@@ -220,7 +221,7 @@ exports.getAllReservations = async (req, res) => {
 exports.getReservation = async (req, res) => {
   try {
     const reservation = await Reservation.findOne({
-      where: { id: req.params.id, chauffeur_id: req.driver.id },
+      where: { id: req.params.id, chauffeurId: req.driver.id },
     });
     if (!reservation) {
       return res.status(404).json({ error: 'Réservation introuvable.' });
@@ -244,7 +245,7 @@ exports.updateStatus = async (req, res) => {
 
     // ── Isolation multi-tenant ───────────────────────────────────────────────
     const reservation = await Reservation.findOne({
-      where: { id: req.params.id, chauffeur_id: req.driver.id },
+      where: { id: req.params.id, chauffeurId: req.driver.id },
     });
     if (!reservation) {
       return res.status(404).json({ error: 'Réservation introuvable.' });
@@ -273,7 +274,7 @@ exports.completeReservation = async (req, res) => {
 
     // ── Isolation multi-tenant ───────────────────────────────────────────────
     const reservation = await Reservation.findOne({
-      where: { id: req.params.id, chauffeur_id: req.driver.id },
+      where: { id: req.params.id, chauffeurId: req.driver.id },
     });
     if (!reservation) {
       return res.status(404).json({ error: 'Réservation introuvable.' });
@@ -283,7 +284,6 @@ exports.completeReservation = async (req, res) => {
     if (reservation.status === 'completed' && reservation.pdfInvoicePath) {
       return res.status(409).json({
         error: 'Cette course a déjà été validée et la facture a été générée.',
-        invoicePdfUrl: `/pdfs/facture-${reservation.reservationNumber}.pdf`,
       });
     }
 
@@ -302,46 +302,47 @@ exports.completeReservation = async (req, res) => {
 
     logger.info(`[COURSE] Validée : ${reservation.reservationNumber} – ${price}€ (par ${req.driver.email})`);
 
-    // Génération facture PDF
-    let invoicePdfUrl = null;
-    let invoiceFilePath = null;
-    try {
-      const { filepath } = await generateInvoicePdf(reservation);
-      invoiceFilePath = filepath;
-      reservation.pdfInvoicePath = filepath;
-      await reservation.save();
-      invoicePdfUrl = `/pdfs/facture-${reservation.reservationNumber}.pdf`;
-      logger.info(`[PDF] Facture générée : ${reservation.reservationNumber}`);
-    } catch (pdfErr) {
-      logger.error(`[PDF] Erreur génération facture ${reservation.reservationNumber} : ${pdfErr.message}`);
-    }
+    // Répond tout de suite — la génération du PDF (PDFKit) et l'envoi des
+    // emails (SMTP) ne bloquent plus la réponse au chauffeur. Rien dans la
+    // réponse ne dépend plus de leur résultat (l'ancien champ invoicePdfUrl
+    // pointait vers une route /pdfs publique retirée pour raison de sécurité
+    // — le client reçoit déjà sa facture en pièce jointe email).
+    res.json({
+      message: 'Course validée avec succès.',
+      reservation,
+    });
 
-    // Envoi email facture — client ET chauffeur (non-bloquant)
-    if (invoiceFilePath) {
-      Promise.allSettled([
+    // Génération facture PDF + envoi email — après la réponse HTTP.
+    (async () => {
+      let invoiceFilePath = null;
+      try {
+        const { filepath } = await generateInvoicePdf(reservation);
+        invoiceFilePath = filepath;
+        reservation.pdfInvoicePath = filepath;
+        await reservation.save();
+        logger.info(`[PDF] Facture générée : ${reservation.reservationNumber}`);
+      } catch (pdfErr) {
+        logger.error(`[PDF] Erreur génération facture ${reservation.reservationNumber} : ${pdfErr.message}`);
+        return;
+      }
+
+      const results = await Promise.allSettled([
         sendInvoiceToClient(reservation, invoiceFilePath, reservation.reviewToken),
         sendInvoiceToDriver(reservation, invoiceFilePath, req.driver.email),
-      ]).then((results) => {
-        const labels = ['facture-client', 'facture-chauffeur'];
-        results.forEach((r, i) => {
-          if (r.status === 'fulfilled') {
-            if (r.value?.skipped) {
-              logger.warn(`[NOTIF] ${labels[i]} ignorée – ${reservation.reservationNumber} : ${r.value.reason}`);
-            } else {
-              logger.info(`[NOTIF] ${labels[i]} envoyée – ${reservation.reservationNumber}`);
-            }
+      ]);
+      const labels = ['facture-client', 'facture-chauffeur'];
+      results.forEach((r, i) => {
+        if (r.status === 'fulfilled') {
+          if (r.value?.skipped) {
+            logger.warn(`[NOTIF] ${labels[i]} ignorée – ${reservation.reservationNumber} : ${r.value.reason}`);
           } else {
-            logger.error(`[NOTIF] ${labels[i]} échouée – ${reservation.reservationNumber} : ${r.reason?.message}`);
+            logger.info(`[NOTIF] ${labels[i]} envoyée – ${reservation.reservationNumber}`);
           }
-        });
+        } else {
+          logger.error(`[NOTIF] ${labels[i]} échouée – ${reservation.reservationNumber} : ${r.reason?.message}`);
+        }
       });
-    }
-
-    res.json({
-      message: 'Course validée et facture générée avec succès.',
-      reservation,
-      invoicePdfUrl,
-    });
+    })();
   } catch (err) {
     logger.error(`[COURSE] Erreur validation : ${err.message}`);
     res.status(500).json({ error: 'Erreur lors de la validation de la course.' });
@@ -352,7 +353,7 @@ exports.completeReservation = async (req, res) => {
 exports.downloadReservationPdf = async (req, res) => {
   try {
     const reservation = await Reservation.findOne({
-      where: { id: req.params.id, chauffeur_id: req.driver.id },
+      where: { id: req.params.id, chauffeurId: req.driver.id },
     });
     if (!reservation) return res.status(404).json({ error: 'Réservation introuvable.' });
 
@@ -377,7 +378,7 @@ exports.downloadReservationPdf = async (req, res) => {
 exports.downloadInvoicePdf = async (req, res) => {
   try {
     const reservation = await Reservation.findOne({
-      where: { id: req.params.id, chauffeur_id: req.driver.id },
+      where: { id: req.params.id, chauffeurId: req.driver.id },
     });
     if (!reservation) return res.status(404).json({ error: 'Réservation introuvable.' });
 
