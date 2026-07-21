@@ -2,6 +2,7 @@ const { fn, col, literal, Op } = require('sequelize');
 const { Reservation } = require('../models');
 const logger = require('../middleware/logger');
 const { formatDateShort: formatDate } = require('../utils/dateFormat');
+const { likeContains } = require('../utils/search');
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -11,9 +12,9 @@ function buildWhere(driverId, search) {
   return {
     ...base,
     [Op.or]: [
-      { email:     { [Op.like]: `%${search}%` } },
-      { firstName: { [Op.like]: `%${search}%` } },
-      { lastName:  { [Op.like]: `%${search}%` } },
+      likeContains('email', search),
+      likeContains('firstName', search),
+      likeContains('lastName', search),
     ],
   };
 }

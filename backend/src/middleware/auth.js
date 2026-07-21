@@ -1,6 +1,6 @@
-const jwt    = require('jsonwebtoken');
 const { Driver, RevokedToken } = require('../models');
 const logger = require('./logger');
+const { verifySessionToken } = require('../utils/security');
 
 module.exports = async (req, res, next) => {
   try {
@@ -15,7 +15,7 @@ module.exports = async (req, res, next) => {
       return res.status(401).json({ error: 'Accès refusé. Token manquant.' });
     }
 
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    const decoded = verifySessionToken(token, process.env.JWT_SECRET);
 
     // ── Vérifier la blacklist (token révoqué via logout ou compromission) ──────
     if (decoded.jti) {

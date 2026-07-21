@@ -3,6 +3,7 @@
  * Appliquées côté serveur indépendamment du frontend
  */
 const { body, param, validationResult } = require('express-validator');
+const { FRENCH_PHONE_PATTERN, normalizeFrenchPhone } = require('../utils/phone');
 
 // Patterns SQL suspects à rejeter (défense en profondeur — l'ORM protège déjà)
 const SQL_PATTERN = /(\bOR\b|\bAND\b|\bUNION\b|\bSELECT\b|\bINSERT\b|\bDROP\b|\bDELETE\b|\bUPDATE\b|--|;|\/\*|\*\/)/i;
@@ -38,7 +39,8 @@ const reservationRules = [
 
   body('phone')
     .trim().notEmpty().withMessage('Le téléphone est requis.')
-    .matches(/^(\+33|0033|0)[1-9](\d{8})$/).withMessage('Numéro de téléphone invalide (format français requis).'),
+    .customSanitizer(normalizeFrenchPhone)
+    .matches(FRENCH_PHONE_PATTERN).withMessage('Numéro de téléphone invalide (format français requis).'),
 
   body('departureAddress')
     .trim().notEmpty().withMessage('L\'adresse de départ est requise.')
@@ -137,7 +139,8 @@ const registerRules = [
   body('phone')
     .optional({ checkFalsy: true })
     .trim()
-    .matches(/^(\+33|0033|0)[1-9](\d{8})$/).withMessage('Numéro de téléphone invalide (format français requis).'),
+    .customSanitizer(normalizeFrenchPhone)
+    .matches(FRENCH_PHONE_PATTERN).withMessage('Numéro de téléphone invalide (format français requis).'),
 ];
 
 // ── Validation UUID ───────────────────────────────────────────────────────────
@@ -169,7 +172,8 @@ const contactOptionalFieldRules = [
 
   body('phone')
     .optional({ checkFalsy: true }).trim()
-    .matches(/^(\+33|0033|0)[1-9](\d{8})$/).withMessage('Numéro de téléphone invalide (format français requis).'),
+    .customSanitizer(normalizeFrenchPhone)
+    .matches(FRENCH_PHONE_PATTERN).withMessage('Numéro de téléphone invalide (format français requis).'),
 
   body('email')
     .optional({ checkFalsy: true }).trim().isEmail().withMessage('Adresse email invalide.').normalizeEmail(),

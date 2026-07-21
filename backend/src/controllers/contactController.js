@@ -6,6 +6,7 @@ const { Contact, ContactEvent } = require('../models');
 const { buildVcard } = require('../services/vcardService');
 const { CONTACT_UPLOADS_DIR, ALLOWED_MIME_TYPES } = require('../middleware/uploadContactPhoto');
 const logger = require('../middleware/logger');
+const { likeContains } = require('../utils/search');
 
 // Champs exposés publiquement — jamais d'id, jamais de driverId, jamais de
 // champ non prévu pour l'exposition publique (choix de sécurité délibéré,
@@ -135,9 +136,9 @@ exports.listContacts = async (req, res) => {
     const where = {};
     if (search) {
       where[Op.or] = [
-        { firstName: { [Op.like]: `%${search}%` } },
-        { lastName:  { [Op.like]: `%${search}%` } },
-        { company:   { [Op.like]: `%${search}%` } },
+        likeContains('firstName', search),
+        likeContains('lastName', search),
+        likeContains('company', search),
       ];
     }
 

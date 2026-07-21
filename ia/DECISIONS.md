@@ -128,3 +128,38 @@ Les décisions peuvent entraîner des mises à jour de :
 * CHANGELOG.md.
 
 Elles peuvent également être citées dans les audits (AUDIT.md) lorsqu’un choix d’architecture ou d’organisation est évalué.
+
+---
+
+## ADR-001
+
+**Date**
+2026-07-21 17:23
+
+**Auteur**
+Développeur
+
+**Contexte**
+La mise en production publique nécessite une base adaptée aux écritures concurrentes, aux sauvegardes et à l’exploitation. SQLite reste adaptée au développement local, mais pas au déploiement public retenu. Le plan opérationnel de référence reste `PLAN_DEPLOIEMENT_PROXMOX_POSTGRES.md`.
+
+**Décision**
+Migrer la base de données de production de SQLite vers PostgreSQL avant toute ouverture publique. Déployer l’application sur une VM dédiée Proxmox, avec reverse proxy HTTPS, backend et PostgreSQL non exposés publiquement, puis valider l’application en staging privé avant ouverture.
+
+**Justification**
+PostgreSQL répond aux besoins de concurrence, de fiabilité opérationnelle et de sauvegarde de l’application. Une VM dédiée isole l’application, ses secrets, ses journaux et ses sauvegardes du reste de l’infrastructure.
+
+**Alternatives étudiées**
+
+- Maintenir SQLite en production : écartée, car inadaptée à l’exploitation publique prévue.
+- Déployer directement sur l’hôte Proxmox : écartée, car l’isolation opérationnelle est insuffisante.
+- Ouvrir publiquement avant staging privé : écartée, car les flux critiques doivent être validés dans un environnement contrôlé.
+
+**Conséquences**
+
+- Les index identifiés dans AES-A002 doivent être définis et vérifiés dans le schéma PostgreSQL.
+- Une migration de données avec gel temporaire des écritures et contrôles d’intégrité est requise.
+- Les secrets restent exclusivement sur la VM, hors dépôt et hors journaux.
+- Le détail d’exécution, l’architecture cible et la checklist de sécurité sont maintenus dans `PLAN_DEPLOIEMENT_PROXMOX_POSTGRES.md`, sans duplication ici.
+
+**Statut**
+Validée

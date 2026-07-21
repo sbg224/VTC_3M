@@ -4,6 +4,7 @@ const logger = require('../middleware/logger');
 const { updatePricingCache, getPricingValues } = require('../services/priceService');
 const { emailsEnabled, createTransporter } = require('../services/emailService');
 const { TRIAL_DURATION_DAYS } = require('../utils/constants');
+const { likeContains } = require('../utils/search');
 
 // Ne jamais renvoyer un message d'erreur interne brut (détails SMTP, requête…)
 // au client en production — seul le log en garde la trace.
@@ -79,8 +80,8 @@ exports.getDrivers = async (req, res) => {
     if (status !== 'all') where.status = status;
     if (search) {
       where[Op.or] = [
-        { name:  { [Op.like]: `%${search}%` } },
-        { email: { [Op.like]: `%${search}%` } },
+        likeContains('name', search),
+        likeContains('email', search),
       ];
     }
 
@@ -249,10 +250,10 @@ exports.getAllReservations = async (req, res) => {
     }
     if (search) {
       where[Op.or] = [
-        { firstName:        { [Op.like]: `%${search}%` } },
-        { lastName:         { [Op.like]: `%${search}%` } },
-        { email:            { [Op.like]: `%${search}%` } },
-        { reservationNumber:{ [Op.like]: `%${search}%` } },
+        likeContains('firstName', search),
+        likeContains('lastName', search),
+        likeContains('email', search),
+        likeContains('reservationNumber', search),
       ];
     }
 
@@ -292,9 +293,9 @@ exports.getGlobalClients = async (req, res) => {
     const where = {};
     if (search) {
       where[Op.or] = [
-        { firstName: { [Op.like]: `%${search}%` } },
-        { lastName:  { [Op.like]: `%${search}%` } },
-        { email:     { [Op.like]: `%${search}%` } },
+        likeContains('firstName', search),
+        likeContains('lastName', search),
+        likeContains('email', search),
       ];
     }
 

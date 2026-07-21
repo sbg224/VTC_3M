@@ -3,6 +3,8 @@ const jwt    = require('jsonwebtoken');
 const { v4: uuidv4 } = require('uuid');
 const { Driver, RevokedToken } = require('../models');
 const logger = require('../middleware/logger');
+const { signSessionToken, isStrongPassword } = require('../utils/security');
+const { normalizeFrenchPhone, isValidFrenchPhone } = require('../utils/phone');
 
 // ── Session : cookie httpOnly plutôt que token exposé en JS (localStorage) ────
 // httpOnly empêche tout script (y compris via une faille XSS) de lire le
@@ -26,10 +28,10 @@ function cookieOptions(maxAge) {
 function signToken(driver) {
   const jti = uuidv4(); // Identifiant unique du token — permet la révocation
   const expiresIn = process.env.JWT_EXPIRES_IN || '8h';
-  const token = jwt.sign(
+  const token = signSessionToken(
     { id: driver.id, email: driver.email, jti },
     process.env.JWT_SECRET,
-    { expiresIn }
+    expiresIn
   );
   return { token, jti };
 }
@@ -143,11 +145,11 @@ exports.register = async (req, res) => {
     if (!email?.trim() || !/\S+@\S+\.\S+/.test(email)) {
       return res.status(400).json({ error: 'Adresse email invalide.' });
     }
-    if (!password || password.length < 8 || !/[A-Z]/.test(password) || !/[0-9]/.test(password)) {
+    if (!isStrongPassword(password)) {
       return res.status(400).json({ error: 'Le mot de passe ne respecte pas les critères minimums.' });
     }
-    const normalizedPhone = phone?.replace(/\s/g, '') || '';
-    if (normalizedPhone && !/^(\+33|0)[1-9](\d{8})$/.test(normalizedPhone)) {
+    const normalizedPhone = normalizeFrenchPhone(phone);
+    if (normalizedPhone && !isValidFrenchPhone(normalizedPhone)) {
       return res.status(400).json({ error: 'Numéro de téléphone invalide (format français).' });
     }
     if (gdprConsent !== true) {
@@ -196,8 +198,8 @@ exports.changePassword = async (req, res) => {
     if (!currentPassword || !newPassword) {
       return res.status(400).json({ error: 'Champs requis manquants.' });
     }
-    if (newPassword.length < 8) {
-      return res.status(400).json({ error: 'Le nouveau mot de passe doit faire au moins 8 caractères.' });
+    if (!isStrongPassword(newPassword)) {
+      return res.status(400).json({ error: 'Le nouveau mot de passe doit contenir au moins 8 caractères, une majuscule et un chiffre.' });
     }
 
     const driver = await Driver.findByPk(req.driver.id);
