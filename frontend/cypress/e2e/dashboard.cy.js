@@ -15,7 +15,8 @@ describe('Dashboard admin', () => {
   });
 
   it('permet de se déconnecter et revient à /login', () => {
-    cy.contains(/déconnexion|se déconnecter/i).click({ force: true });
+    cy.get('button[aria-label="Plus d\'options"]').click();
+    cy.contains('button', 'Déconnexion').should('be.visible').click();
     cy.location('pathname', { timeout: 10000 }).should('eq', '/login');
   });
 });

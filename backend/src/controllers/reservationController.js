@@ -7,6 +7,8 @@ const logger = require('../middleware/logger');
 const path = require('path');
 const fs = require('fs');
 const { Op } = require('sequelize');
+const { normalizeFrenchPhone, isValidFrenchPhone } = require('../utils/phone');
+const { likeContains } = require('../utils/search');
 
 // ── Créer une réservation (public) ────────────────────────────────────────────
 exports.createReservation = async (req, res) => {
@@ -26,8 +28,8 @@ exports.createReservation = async (req, res) => {
     if (!email?.trim() || !/\S+@\S+\.\S+/.test(email)) {
       validationErrors.email = 'Adresse email invalide.';
     }
-    const normalizedPhone = phone?.replace(/\s/g, '') || '';
-    if (!normalizedPhone || !/^(\+33|0)[1-9](\d{8})$/.test(normalizedPhone)) {
+    const normalizedPhone = normalizeFrenchPhone(phone);
+    if (!normalizedPhone || !isValidFrenchPhone(normalizedPhone)) {
       validationErrors.phone = 'Numéro de téléphone invalide (format français).';
     }
     if (!departureAddress?.trim()) {
@@ -77,7 +79,7 @@ exports.createReservation = async (req, res) => {
     }
 
     const reservation = await Reservation.createUnique({
-      firstName, lastName, email, phone,
+      firstName, lastName, email, phone: normalizedPhone,
       departureAddress, arrivalAddress,
       date, time,
       passengers:     parseInt(passengers) || 1,
@@ -188,11 +190,11 @@ exports.getAllReservations = async (req, res) => {
     if (search && search.trim()) {
       const term = search.trim().substring(0, 100);
       where[Op.or] = [
-        { firstName: { [Op.like]: `%${term}%` } },
-        { lastName:  { [Op.like]: `%${term}%` } },
-        { email:     { [Op.like]: `%${term}%` } },
-        { reservationNumber: { [Op.like]: `%${term}%` } },
-        { phone:     { [Op.like]: `%${term}%` } },
+        likeContains('firstName', term),
+        likeContains('lastName', term),
+        likeContains('email', term),
+        likeContains('reservationNumber', term),
+        likeContains('phone', term),
       ];
     }
 

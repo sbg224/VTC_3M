@@ -2,10 +2,10 @@ import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   LayoutDashboard, Users, ClipboardList, UserCheck, UserX, Bell,
-  LogOut, Search, ChevronDown, ChevronUp, RefreshCw, Send,
+  LogOut, Search, ChevronDown, ChevronUp, RefreshCw, Send, MoreHorizontal, Home,
   CheckCircle, XCircle, Clock, Flag, Ban, Eye, Mail, Phone,
   Euro, Car, TrendingUp, AlertTriangle, Loader2, X,
-  Shield, Activity, BarChart3, MessageSquare, Filter,
+  Activity, BarChart3, MessageSquare, Filter,
   ChevronLeft, ChevronRight, Zap, ExternalLink, UserCog, SlidersHorizontal, Save,
   Calculator, FileText, Download, Percent, Wallet, ReceiptText, CalendarDays, Edit3, Check,
   IdCard, Copy, Plus, Trash2, Pencil, ToggleLeft, ToggleRight, Upload,
@@ -32,6 +32,7 @@ export default function AdminDashboard() {
   }, [adminUser, navigate]);
 
   const [section, setSection]   = useState('overview');
+  const [moreOpen, setMoreOpen] = useState(false);
   const [stats, setStats]       = useState(null);
   const [statsLoading, setStatsLoading] = useState(true);
 
@@ -302,12 +303,14 @@ export default function AdminDashboard() {
     }
   };
 
-  // ── Navigation sidebar ─────────────────────────────────────────────────────
-  const navItems = [
+  // ── Navigation ───────────────────────────────────────────────────────────
+  const primaryNavItems = [
     { id: 'overview',      label: 'Vue d\'ensemble',    Icon: LayoutDashboard },
     { id: 'inscriptions',  label: 'Inscriptions',        Icon: UserCheck, badge: stats?.drivers?.byStatus?.pending },
     { id: 'drivers',       label: 'CRM Chauffeurs',      Icon: Users },
     { id: 'reservations',  label: 'Courses globales',    Icon: ClipboardList },
+  ];
+  const moreNavItems = [
     { id: 'clients',       label: 'CRM Clients',         Icon: MessageSquare },
     { id: 'contacts',      label: 'Cartes de visite',    Icon: IdCard },
     { id: 'notifications', label: 'Notifications',       Icon: Bell },
@@ -319,44 +322,70 @@ export default function AdminDashboard() {
 
   return (
     <div className="adm-layout">
-      {/* ── Sidebar ─────────────────────────────────────────────────────────── */}
-      <aside className="adm-sidebar">
-        <div className="adm-sidebar-brand">
+      {/* ── Navigation flottante ──────────────────────────────────────────────── */}
+      {moreOpen && <div className="bottom-nav-backdrop" onClick={() => setMoreOpen(false)} />}
+      <nav className="bottom-nav" aria-label="Navigation de l'administration">
+        {primaryNavItems.map(({ id, label, Icon, badge }) => (
           <button
-            className="adm-brand-logo-btn"
-            onClick={() => navigate('/')}
-            title="Retour à l'accueil"
-            aria-label="Retour à l'accueil"
+            key={id}
+            className={`bottom-nav-item ${section === id ? 'active' : ''}`}
+            onClick={() => { setSection(id); setMoreOpen(false); }}
           >
-            <img src="/images/nav-logo-dark.webp" alt="3M Drive" className="adm-brand-logo" />
+            <Icon size={18} strokeWidth={1.75} />
+            <span className="bottom-nav-label">{label}</span>
+            {badge > 0 && <span className="bottom-nav-badge">{badge > 9 ? '9+' : badge}</span>}
           </button>
-          <div className="adm-brand-role">Administration</div>
-        </div>
+        ))}
 
-        <nav className="adm-nav">
-          {navItems.map(({ id, label, Icon, badge }) => (
-            <button
-              key={id}
-              className={`adm-nav-item ${section === id ? 'active' : ''}`}
-              onClick={() => setSection(id)}
-            >
-              <Icon size={17} strokeWidth={1.75} />
-              <span>{label}</span>
-              {badge > 0 && <span className="adm-badge">{badge}</span>}
-            </button>
-          ))}
-        </nav>
+        <div className="bottom-nav-divider" />
 
-        <div className="adm-sidebar-footer">
-          <div className="adm-admin-info">
-            <Shield size={14} strokeWidth={1.75} style={{ color:'#6366f1' }} />
-            <span>{adminUser?.name || 'Admin'}</span>
-          </div>
-          <button className="adm-logout" onClick={() => { logout(); navigate('/login'); }}>
-            <LogOut size={15} strokeWidth={1.75} /> <span>Déconnexion</span>
+        <div style={{ position: 'relative' }}>
+          <button
+            className={`bottom-nav-icon-btn ${moreOpen ? 'active' : ''}`}
+            onClick={() => setMoreOpen(o => !o)}
+            aria-label="Plus d'options"
+          >
+            <MoreHorizontal size={18} strokeWidth={1.75} />
           </button>
+
+          {moreOpen && (
+            <div className="bottom-nav-more-panel">
+              <button
+                onClick={() => { navigate('/'); setMoreOpen(false); }}
+                title="Retour à l'accueil"
+                aria-label="Retour à l'accueil"
+                style={{ display:'flex', alignItems:'center', padding:'8px 12px 12px' }}
+              >
+                <img src="/images/nav-logo-dark.webp" alt="3M Drive" className="adm-brand-logo" />
+              </button>
+              <div className="bottom-nav-more-divider" />
+              {moreNavItems.map(({ id, label, Icon, badge }) => (
+                <button
+                  key={id}
+                  className={`bottom-nav-more-item ${section === id ? 'active' : ''}`}
+                  onClick={() => { setSection(id); setMoreOpen(false); }}
+                >
+                  <Icon size={16} strokeWidth={1.5} />
+                  {label}
+                  {badge > 0 && <span className="bottom-nav-more-badge">{badge > 9 ? '9+' : badge}</span>}
+                </button>
+              ))}
+              <div className="bottom-nav-more-divider" />
+              <button className="bottom-nav-more-item" onClick={() => { navigate('/'); setMoreOpen(false); }}>
+                <Home size={16} strokeWidth={1.5} />
+                Retour à l'accueil
+              </button>
+              <div className="bottom-nav-more-driver">
+                Connecté en tant que <strong>{adminUser?.name || 'Admin'}</strong>
+              </div>
+              <button className="bottom-nav-more-item logout" onClick={() => { logout(); navigate('/login'); }}>
+                <LogOut size={16} strokeWidth={1.5} />
+                Déconnexion
+              </button>
+            </div>
+          )}
         </div>
-      </aside>
+      </nav>
 
       {/* ── Contenu principal ────────────────────────────────────────────────── */}
       <main className="adm-main">
