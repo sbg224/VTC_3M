@@ -239,7 +239,7 @@ export default function Register() {
         {/* Formulaire */}
         <div className="login-card-body">
           {serverError && (
-            <div className="alert alert-error flex items-center gap-2" style={{ marginBottom: '16px' }}>
+            <div className="alert alert-error" style={{ marginBottom: '16px' }}>
               <AlertCircle size={15} strokeWidth={1.5} /> {serverError}
             </div>
           )}
@@ -257,7 +257,7 @@ export default function Register() {
                 autoComplete="name" autoFocus
               />
               {errors.name && (
-                <div className="form-error flex items-center gap-1" style={{ fontSize: '0.78rem', marginTop: '4px', color: 'var(--color-error)' }}>
+                <div className="form-error" style={{ fontSize: '0.78rem', marginTop: '4px', color: 'var(--color-error)' }}>
                   <AlertCircle size={11} strokeWidth={1.5} /> {errors.name}
                 </div>
               )}
@@ -274,7 +274,7 @@ export default function Register() {
                 autoComplete="email"
               />
               {errors.email && (
-                <div className="form-error flex items-center gap-1" style={{ fontSize: '0.78rem', marginTop: '4px', color: 'var(--color-error)' }}>
+                <div className="form-error" style={{ fontSize: '0.78rem', marginTop: '4px', color: 'var(--color-error)' }}>
                   <AlertCircle size={11} strokeWidth={1.5} /> {errors.email}
                 </div>
               )}
@@ -291,7 +291,7 @@ export default function Register() {
                 autoComplete="tel"
               />
               {errors.phone && (
-                <div className="form-error flex items-center gap-1" style={{ fontSize: '0.78rem', marginTop: '4px', color: 'var(--color-error)' }}>
+                <div className="form-error" style={{ fontSize: '0.78rem', marginTop: '4px', color: 'var(--color-error)' }}>
                   <AlertCircle size={11} strokeWidth={1.5} /> {errors.phone}
                 </div>
               )}
@@ -323,7 +323,7 @@ export default function Register() {
               </div>
               <PasswordStrength password={form.password} />
               {errors.password && (
-                <div className="form-error flex items-center gap-1" style={{ fontSize: '0.78rem', marginTop: '4px', color: 'var(--color-error)' }}>
+                <div className="form-error" style={{ fontSize: '0.78rem', marginTop: '4px', color: 'var(--color-error)' }}>
                   <AlertCircle size={11} strokeWidth={1.5} /> {errors.password}
                 </div>
               )}
@@ -354,7 +354,7 @@ export default function Register() {
                 </button>
               </div>
               {errors.confirmPassword && (
-                <div className="form-error flex items-center gap-1" style={{ fontSize: '0.78rem', marginTop: '4px', color: 'var(--color-error)' }}>
+                <div className="form-error" style={{ fontSize: '0.78rem', marginTop: '4px', color: 'var(--color-error)' }}>
                   <AlertCircle size={11} strokeWidth={1.5} /> {errors.confirmPassword}
                 </div>
               )}
@@ -375,7 +375,7 @@ export default function Register() {
               </label>
             </div>
             {errors.gdprConsent && (
-              <div className="form-error flex items-center gap-1" style={{ fontSize: '0.78rem', marginTop: '4px', color: 'var(--color-error)' }}>
+              <div className="form-error" style={{ fontSize: '0.78rem', marginTop: '4px', color: 'var(--color-error)' }}>
                 <AlertCircle size={11} strokeWidth={1.5} /> {errors.gdprConsent}
               </div>
             )}
@@ -393,14 +393,14 @@ export default function Register() {
               </label>
             </div>
             {errors.termsAccepted && (
-              <div className="form-error flex items-center gap-1" style={{ fontSize: '0.78rem', marginTop: '4px', color: 'var(--color-error)' }}>
+              <div className="form-error" style={{ fontSize: '0.78rem', marginTop: '4px', color: 'var(--color-error)' }}>
                 <AlertCircle size={11} strokeWidth={1.5} /> {errors.termsAccepted}
               </div>
             )}
 
             <button
               type="submit"
-              className="btn btn-primary flex items-center justify-center gap-2"
+              className="btn btn-primary"
               style={{ width: '100%', marginTop: '8px' }}
               disabled={loading}
             >

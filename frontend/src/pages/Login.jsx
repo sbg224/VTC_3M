@@ -63,7 +63,7 @@ export default function Login() {
         </div>
         <div className="login-card-body">
           {error && (
-            <div className="alert alert-error flex items-center gap-2">
+            <div className="alert alert-error">
               <AlertCircle size={15} strokeWidth={1.5} /> {error}
             </div>
           )}
@@ -92,7 +92,7 @@ export default function Login() {
 
             <button
               type="submit"
-              className="btn btn-primary flex items-center justify-center gap-2"
+              className="btn btn-primary"
               style={{ width: '100%', marginTop: '8px' }}
               disabled={loading}
             >
