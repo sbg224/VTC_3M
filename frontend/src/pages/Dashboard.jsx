@@ -397,7 +397,7 @@ export default function Dashboard() {
                               <td><strong>{r.reservationNumber}</strong></td>
                               <td>{r.firstName} {r.lastName}</td>
                               <td>{formatDate(r.date)}</td>
-                              <td><span className={`badge ${s.badge} inline-flex items-center gap-1`}><s.Icon size={12} strokeWidth={1.5} /> {s.label}</span></td>
+                              <td><span className={`badge ${s.badge}`}><s.Icon size={12} strokeWidth={1.5} /> {s.label}</span></td>
                               <td>
                                 <button className="btn btn-sm btn-dark" onClick={() => setSelectedReservation(r)}>
                                   Détails
@@ -492,7 +492,7 @@ export default function Dashboard() {
                                 <span style={{ width: 6, height: 6, borderRadius: '50%', background: 'var(--color-error)', display: 'inline-block', flexShrink: 0 }}></span> {r.arrivalAddress}
                               </div>
                             </td>
-                            <td><span className={`badge ${s.badge} inline-flex items-center gap-1`}><s.Icon size={12} strokeWidth={1.5} /> {s.label}</span></td>
+                            <td><span className={`badge ${s.badge}`}><s.Icon size={12} strokeWidth={1.5} /> {s.label}</span></td>
                             <td>{r.price ? `${Number(r.price).toFixed(2)} €` : '—'}</td>
                             <td>
                               <div className="actions">

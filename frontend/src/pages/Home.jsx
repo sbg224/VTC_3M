@@ -629,7 +629,7 @@ export default function Home() {
             </div>
           </div>
           <div className="section-cta">
-            <button onClick={scrollToSimulator} className="btn btn-primary btn-lg flex items-center gap-2" style={{ display: 'inline-flex' }}>
+            <button onClick={scrollToSimulator} className="btn btn-primary btn-lg" style={{ display: 'inline-flex', alignItems: 'center', gap: '8px' }}>
               <Calculator size={16} strokeWidth={1.5} /> Simuler le prix de ma course
             </button>
           </div>
@@ -718,7 +718,7 @@ export default function Home() {
             ))}
           </div>
           <div className="section-cta">
-            <Link to="/reservation" className="btn btn-primary btn-lg flex items-center gap-2" style={{ display: 'inline-flex' }}>
+            <Link to="/reservation" className="btn btn-primary btn-lg" style={{ display: 'inline-flex', alignItems: 'center', gap: '8px' }}>
               <Car size={16} strokeWidth={1.5} /> Réserver ma course maintenant
             </Link>
           </div>

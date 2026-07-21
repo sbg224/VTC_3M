@@ -7,9 +7,10 @@ import {
   Timer, ShieldCheck, Zap,
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { reservationAPI, simulateAPI } from '../services/api';
+import { simulateAPI } from '../services/api';
 import Seo from '../components/Seo';
-import { emptyReservationForm, validateReservationForm } from '../utils/reservationForm';
+import { emptyReservationForm } from '../utils/reservationForm';
+import useReservationForm from '../hooks/useReservationForm';
 
 // ── Constantes ────────────────────────────────────────────────────────────────
 const DURATIONS = ['1h','2h','3h','4h','5h','6h','8h','10h','12h'];
@@ -106,8 +107,6 @@ function SimWidget({ departure, arrival, onResult, simData, onClear }) {
 }
 
 // ── Formulaire principal ──────────────────────────────────────────────────────
-const emptyForm = emptyReservationForm;
-
 export default function Reservation() {
   const location = useLocation();
   const formRef  = useRef(null);
@@ -115,12 +114,34 @@ export default function Reservation() {
 
   const [serviceType, setServiceType] = useState('transfert');
   const [duration,    setDuration]    = useState('2h');
-  const [form,        setForm]        = useState(emptyForm);
-  const [errors,      setErrors]      = useState({});
-  const [loading,     setLoading]     = useState(false);
   const [success,     setSuccess]     = useState(null);
-  const [serverError, setServerError] = useState('');
-  const [simData,     setSimData]     = useState(null);
+  const {
+    form, setForm, errors, setErrors, loading, serverError,
+    simData, setSimData, handleChange, handleSubmit,
+  } = useReservationForm({
+    validateOptions: { requireArrival: serviceType === 'transfert' },
+    errorSelector: '.has-error',
+    buildPayload: ({ form: reservationForm, simData: simulation }) => {
+      const serviceNote = serviceType === 'mise_a_disposition'
+        ? `[Mise à disposition – ${duration}] `
+        : '[Transfert] ';
+      return {
+        ...reservationForm,
+        arrivalAddress: serviceType === 'mise_a_disposition'
+          ? `Mise à disposition – ${duration}`
+          : reservationForm.arrivalAddress,
+        comments: serviceNote + (reservationForm.comments || ''),
+        ...(simulation && {
+          distance: simulation.distance_km,
+          estimatedPrice: simulation.estimatedPrice,
+        }),
+      };
+    },
+    onSuccess: ({ data, simData: simulation }) => {
+      setSuccess({ ...data, simData: simulation, serviceType, duration });
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    },
+  });
 
   // Pré-remplissage depuis le formulaire héro
   useEffect(() => {
@@ -151,55 +172,6 @@ export default function Reservation() {
     }
   }, [serviceType]);
 
-  const handleChange = (e) => {
-    const { name, value, type, checked } = e.target;
-    setForm(prev => ({ ...prev, [name]: type === 'checkbox' ? checked : value }));
-    if (errors[name]) setErrors(prev => ({ ...prev, [name]: '' }));
-  };
-
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    setServerError('');
-    const errs = validateReservationForm(form, { requireArrival: serviceType === 'transfert' });
-    if (Object.keys(errs).length > 0) {
-      setErrors(errs);
-      document.querySelector('.has-error')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-      return;
-    }
-    setLoading(true);
-
-    // Enrichit les commentaires avec le type de service
-    const serviceNote = serviceType === 'mise_a_disposition'
-      ? `[Mise à disposition – ${duration}] `
-      : '[Transfert] ';
-    const enrichedComments = serviceNote + (form.comments || '');
-
-    try {
-      const payload = {
-        ...form,
-        arrivalAddress: serviceType === 'mise_a_disposition'
-          ? `Mise à disposition – ${duration}`
-          : form.arrivalAddress,
-        comments: enrichedComments,
-        ...(simData && {
-          distance:       simData.distance_km,
-          estimatedPrice: simData.estimatedPrice,
-        }),
-      };
-      const { data } = await reservationAPI.create(payload);
-      setSuccess({ ...data, simData, serviceType, duration });
-      window.scrollTo({ top: 0, behavior: 'smooth' });
-    } catch (err) {
-      const backendFields = err.response?.data?.fields;
-      if (backendFields) {
-        setErrors(prev => ({ ...prev, ...backendFields }));
-        document.querySelector('.has-error')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-      }
-      setServerError(err.response?.data?.error || 'Une erreur est survenue. Veuillez réessayer.');
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const seo = (
     <Seo
@@ -245,7 +217,7 @@ export default function Reservation() {
             <div className="resv-success-actions">
               <button
                 className="btn btn-ghost"
-                onClick={() => { setSuccess(null); setForm(emptyForm); setSimData(null); }}
+                onClick={() => { setSuccess(null); setForm(emptyReservationForm); setSimData(null); }}
               >
                 Nouvelle réservation
               </button>

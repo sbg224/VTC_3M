@@ -4,9 +4,10 @@ import {
   Calculator, Loader2, AlertTriangle, MapPin, Clock, Euro, Car,
   CheckCircle, ClipboardList, User, Lock, Star, Shield,
 } from 'lucide-react';
-import { reservationAPI, simulateAPI, driverPublicAPI } from '../services/api';
+import { simulateAPI, driverPublicAPI } from '../services/api';
 import Seo from '../components/Seo';
-import { emptyReservationForm, validateReservationForm } from '../utils/reservationForm';
+import { emptyReservationForm } from '../utils/reservationForm';
+import useReservationForm from '../hooks/useReservationForm';
 
 // ── Widget simulation (identique à Reservation.jsx) ──────────────────────────
 
@@ -78,7 +79,7 @@ function SimulationWidget({ onReserve }) {
         </div>
 
         {error && (
-          <div className="alert alert-error flex items-center gap-2">
+          <div className="alert alert-error">
             <AlertTriangle size={14} strokeWidth={1.5} /> {error}
           </div>
         )}
@@ -146,8 +147,6 @@ function SimulationWidget({ onReserve }) {
 
 // ── Validation ────────────────────────────────────────────────────────────────
 
-const emptyForm = emptyReservationForm;
-
 function FormField({ label, required, error, children }) {
   return (
     <div className="form-group">
@@ -155,7 +154,7 @@ function FormField({ label, required, error, children }) {
         {label}{required && <span>*</span>}
       </label>
       {children}
-      {error && <div className="form-error flex items-center gap-1"><AlertTriangle size={12} strokeWidth={1.5} /> {error}</div>}
+      {error && <div className="form-error"><AlertTriangle size={12} strokeWidth={1.5} /> {error}</div>}
     </div>
   );
 }
@@ -171,12 +170,25 @@ export default function BookingPage() {
   const [driverError,  setDriverError]  = useState('');
 
   // État formulaire
-  const [form,        setForm]        = useState(emptyForm);
-  const [errors,      setErrors]      = useState({});
-  const [loading,     setLoading]     = useState(false);
   const [success,     setSuccess]     = useState(null);
-  const [serverError, setServerError] = useState('');
-  const [simData,     setSimData]     = useState(null);
+  const {
+    form, setForm, errors, setErrors, loading, serverError,
+    simData, setSimData, handleChange, handleSubmit,
+  } = useReservationForm({
+    errorSelector: '.form-error',
+    buildPayload: ({ form: reservationForm, simData: simulation }) => ({
+      ...reservationForm,
+      driverSlug: slug,
+      ...(simulation && {
+        distance: simulation.distance_km,
+        estimatedPrice: simulation.estimatedPrice,
+      }),
+    }),
+    onSuccess: ({ data, simData: simulation }) => {
+      setSuccess({ ...data, simData: simulation });
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    },
+  });
 
   const formRef = useRef(null);
   const today = new Date().toISOString().split('T')[0];
@@ -201,48 +213,6 @@ export default function BookingPage() {
     }, 100);
   };
 
-  const handleChange = (e) => {
-    const { name, value, type, checked } = e.target;
-    setForm(prev => ({ ...prev, [name]: type === 'checkbox' ? checked : value }));
-    if (errors[name]) setErrors(prev => ({ ...prev, [name]: '' }));
-    if ((name === 'departureAddress' || name === 'arrivalAddress') && simData) {
-      setSimData(null);
-    }
-  };
-
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    setServerError('');
-    const errs = validateReservationForm(form);
-    if (Object.keys(errs).length > 0) {
-      setErrors(errs);
-      document.querySelector('.form-error')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-      return;
-    }
-    setLoading(true);
-    try {
-      const payload = {
-        ...form,
-        driverSlug: slug,                // rattache la réservation à CE chauffeur
-        ...(simData && {
-          distance:       simData.distance_km,
-          estimatedPrice: simData.estimatedPrice,
-        }),
-      };
-      const { data } = await reservationAPI.create(payload);
-      setSuccess({ ...data, simData });
-      window.scrollTo({ top: 0, behavior: 'smooth' });
-    } catch (err) {
-      const backendFields = err.response?.data?.fields;
-      if (backendFields) {
-        setErrors(prev => ({ ...prev, ...backendFields }));
-        document.querySelector('.form-error')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-      }
-      setServerError(err.response?.data?.error || 'Une erreur est survenue. Veuillez réessayer.');
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const seo = (
     <Seo
@@ -321,7 +291,7 @@ export default function BookingPage() {
               <button
                 className="btn btn-outline"
                 style={{ color: 'var(--color-primary)', borderColor: 'var(--color-gray-light)' }}
-                onClick={() => { setSuccess(null); setForm(emptyForm); setSimData(null); }}
+                onClick={() => { setSuccess(null); setForm(emptyReservationForm); setSimData(null); }}
               >
                 Nouvelle réservation
               </button>
@@ -381,12 +351,12 @@ export default function BookingPage() {
 
           <form onSubmit={handleSubmit} className="reservation-form-body" noValidate>
             {serverError && (
-              <div className="alert alert-error flex items-center gap-2">
+              <div className="alert alert-error">
                 <AlertTriangle size={14} strokeWidth={1.5} /> {serverError}
               </div>
             )}
 
-            <div className="form-section-title flex items-center gap-2">
+            <div className="form-section-title">
               <User size={14} strokeWidth={1.5} /> Informations personnelles
             </div>
             <div className="form-row">
@@ -426,7 +396,7 @@ export default function BookingPage() {
               </FormField>
             </div>
 
-            <div className="form-section-title flex items-center gap-2" style={{ marginTop: '24px' }}>
+            <div className="form-section-title" style={{ marginTop: '24px' }}>
               <MapPin size={14} strokeWidth={1.5} /> Détails de la course
             </div>
             <FormField label="Adresse de départ" required error={errors.departureAddress}>
@@ -530,7 +500,7 @@ export default function BookingPage() {
               </label>
             </div>
             {errors.gdprConsent && (
-              <div className="form-error flex items-center gap-1" style={{ marginLeft: '28px' }}>
+              <div className="form-error" style={{ marginLeft: '28px' }}>
                 <AlertTriangle size={12} strokeWidth={1.5} /> {errors.gdprConsent}
               </div>
             )}
@@ -548,7 +518,7 @@ export default function BookingPage() {
               </label>
             </div>
             {errors.termsAccepted && (
-              <div className="form-error flex items-center gap-1" style={{ marginLeft: '28px' }}>
+              <div className="form-error" style={{ marginLeft: '28px' }}>
                 <AlertTriangle size={12} strokeWidth={1.5} /> {errors.termsAccepted}
               </div>
             )}

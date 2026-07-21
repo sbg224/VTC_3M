@@ -109,3 +109,15 @@ La structure peut être adaptée aux besoins du projet, à condition de conserve
 Le CHANGELOG.md constitue l’historique de référence du projet.
 
 Il permet de comprendre rapidement ce qui a évolué, à quel moment et dans quel objectif, sans avoir à analyser l’historique complet du code.
+
+---
+
+## [Unreleased]
+
+### Changed
+
+- Mutualisation de la logique commune des formulaires de réservation publique dans un hook partagé, tout en préservant les parcours générique et chauffeur.
+
+### Fixed
+
+- Suppression des classes utilitaires CSS non définies sur les pages de réservation, connexion, inscription, accueil et dashboard.
