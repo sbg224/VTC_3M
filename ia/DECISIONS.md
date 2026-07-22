@@ -162,4 +162,39 @@ PostgreSQL répond aux besoins de concurrence, de fiabilité opérationnelle et 
 - Le détail d’exécution, l’architecture cible et la checklist de sécurité sont maintenus dans `PLAN_DEPLOIEMENT_PROXMOX_POSTGRES.md`, sans duplication ici.
 
 **Statut**
+Remplacée (voir ADR-002)
+
+---
+
+## ADR-002
+
+**Date**
+2026-07-22 12:35
+
+**Auteur**
+Développeur
+
+**Contexte**
+ADR-001 avait retenu une VM Proxmox auto-hébergée pour PostgreSQL. Le choix de déploiement de l'application a évolué vers Vercel (fonctions serverless), incompatible avec une base auto-hébergée non exposée publiquement telle que prévue dans ADR-001.
+
+**Décision**
+Remplacer ADR-001 : migrer la base de données de production de SQLite vers PostgreSQL hébergé sur Supabase (managé), et déployer l'application sur Vercel au lieu d'une VM Proxmox. Connexion via le Transaction pooler Supabase (port 6543, Supavisor), `DB_SSL=true`.
+
+**Justification**
+Un déploiement serverless Vercel ne peut pas atteindre une base auto-hébergée non exposée publiquement — un fournisseur managé accessible est nécessaire. Le pooler transaction évite l'épuisement des connexions Postgres propre aux invocations serverless à froid fréquent.
+
+**Alternatives étudiées**
+
+- VM Proxmox (ADR-001) : écartée, incompatible avec Vercel et charge opérationnelle (VM, sauvegardes, reverse proxy) injustifiée dès lors que Vercel est retenu.
+- Connexion directe Supabase (port 5432) : écartée, épuiserait rapidement les connexions disponibles en contexte serverless.
+- Autres fournisseurs managés (Railway, Render, Neon, Heroku Postgres, déjà cités dans `.env.example`) : écartés, projet déjà créé sur Supabase.
+
+**Conséquences**
+
+- `PLAN_DEPLOIEMENT_PROXMOX_POSTGRES.md` devient obsolète pour la partie infrastructure (VM/reverse proxy) — à traiter séparément, non modifié ici.
+- `DATABASE_URL`/`DB_SSL` déjà configurés et testés (connexion validée) vers le pooler Supabase.
+- Point de vigilance reporté : le mode transaction du pooler Supabase ne supporte pas les *prepared statements* nommés — à surveiller lors de la première charge réelle (candidat `LEARNING.md`, à proposer séparément).
+- `FRONTEND_URL`/CORS à mettre à jour avec le domaine Vercel une fois déployé.
+
+**Statut**
 Validée
