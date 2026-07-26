@@ -72,3 +72,11 @@ React 18 + Vite, plain CSS (`styles/global.css`), no CSS framework/component lib
 - `CHECKLIST_PREPROD.md` — pre-production checklist
 - `PLAN_DEPLOIEMENT_PROXMOX_POSTGRES.md` — production deployment plan (Proxmox, Postgres, Traefik/Nginx reverse proxy) — relevant context for `trust proxy` and CORS behavior in `index.js`
 - `STRIPE_SETUP.md` — Stripe product/webhook configuration for the billing module
+
+<!-- AES:SOCLE:BEGIN -->
+## AES — AI Engineering System
+@ia/SYSTEM.md
+@ia/RULES_OF_ENGAGEMENT.md
+@ia/WORKFLOW.md
+@ia/AGENT.md
+<!-- AES:SOCLE:END -->
