@@ -9,6 +9,8 @@ const fs = require('fs');
 const { Op } = require('sequelize');
 const { normalizeFrenchPhone, isValidFrenchPhone } = require('../utils/phone');
 const { likeContains } = require('../utils/search');
+const { calculateTrip, getTripCalculationHttpError } = require('../services/tripCalculationService');
+const { PDF_DIR } = require('../config/storage');
 
 // ── Créer une réservation (public) ────────────────────────────────────────────
 exports.createReservation = async (req, res) => {
@@ -17,9 +19,10 @@ exports.createReservation = async (req, res) => {
       firstName, lastName, email, phone,
       departureAddress, arrivalAddress,
       date, time, passengers, luggage, comments,
-      distance, estimatedPrice,
       gdprConsent, termsAccepted,
-      driverSlug,   // optionnel : slug du chauffeur ciblé (URL /book/:slug)
+      driverSlug,
+      serviceType,
+      serviceDuration,
     } = req.body;
 
     const validationErrors = {};
@@ -35,11 +38,18 @@ exports.createReservation = async (req, res) => {
     if (!departureAddress?.trim()) {
       validationErrors.departureAddress = 'L\'adresse de départ est requise.';
     }
-    if (!arrivalAddress?.trim()) {
+    if (serviceType === 'transfert' && !arrivalAddress?.trim()) {
       validationErrors.arrivalAddress = 'L\'adresse d\'arrivée est requise.';
     }
     if (!date) validationErrors.date = 'La date est requise.';
     if (!time) validationErrors.time = 'L\'heure est requise.';
+    if (!driverSlug?.trim()) validationErrors.driverSlug = 'Le chauffeur doit être sélectionné.';
+    if (!['transfert', 'mise_a_disposition'].includes(serviceType)) {
+      validationErrors.serviceType = 'Type de prestation invalide.';
+    }
+    if (serviceType === 'mise_a_disposition' && !serviceDuration) {
+      validationErrors.serviceDuration = 'La durée de mise à disposition est requise.';
+    }
     if (gdprConsent !== true) {
       validationErrors.gdprConsent = 'Le consentement à la politique de confidentialité est requis.';
     }
@@ -54,39 +64,44 @@ exports.createReservation = async (req, res) => {
       });
     }
 
-    // ── Résoudre le chauffeur destinataire ──────────────────────────────────
-    // Priorité 1 : slug passé explicitement dans le formulaire
-    // Priorité 2 : premier chauffeur actif en DB (compatibilité mono-chauffeur)
-    let targetDriver = null;
-    if (driverSlug) {
-      targetDriver = await Driver.findOne({
-        where: { slug: driverSlug, status: { [Op.in]: ['trial', 'active'] } },
-      });
-      if (!targetDriver) {
-        return res.status(404).json({ error: 'Chauffeur introuvable ou compte inactif.' });
-      }
-    } else {
-      // Fallback : premier chauffeur actif — exclure les admins (role:'driver' obligatoire)
-      targetDriver = await Driver.findOne({
-        where: { role: 'driver', status: { [Op.in]: ['trial', 'active'] } },
-        order: [['createdAt', 'ASC']],
-      });
+    // Le propriétaire est toujours déterminé explicitement par son slug.
+    const targetDriver = await Driver.findOne({
+      where: {
+        slug: driverSlug,
+        role: 'driver',
+        status: { [Op.in]: ['trial', 'active'] },
+      },
+    });
+    if (!targetDriver) {
+      return res.status(404).json({ error: 'Chauffeur introuvable ou compte inactif.' });
     }
 
-    if (!targetDriver) {
-      logger.error('[RESERVATION] Aucun chauffeur actif trouvé pour assigner la réservation.');
-      return res.status(503).json({ error: 'Le service de réservation est temporairement indisponible.' });
+    // Une mise à disposition n'avait déjà aucun tarif automatique fiable :
+    // elle reste enregistrée sans distance/prix. Pour un transfert, le calcul
+    // serveur est obligatoire et précède strictement toute écriture en base.
+    let trip = null;
+    let persistedArrivalAddress = arrivalAddress;
+    if (serviceType === 'transfert') {
+      try {
+        trip = await calculateTrip(departureAddress, arrivalAddress);
+      } catch (calculationError) {
+        logger.warn(`[RESERVATION] Calcul trajet refusé : ${calculationError.message}`);
+        const httpError = getTripCalculationHttpError(calculationError);
+        return res.status(httpError.status).json({ error: httpError.message });
+      }
+    } else {
+      persistedArrivalAddress = `Mise à disposition – ${serviceDuration}`;
     }
 
     const reservation = await Reservation.createUnique({
       firstName, lastName, email, phone: normalizedPhone,
-      departureAddress, arrivalAddress,
+      departureAddress, arrivalAddress: persistedArrivalAddress,
       date, time,
       passengers:     parseInt(passengers) || 1,
       luggage:        parseInt(luggage) || 0,
       comments:       comments || null,
-      distance:       distance       ? parseFloat(distance)       : null,
-      estimatedPrice: estimatedPrice ? parseFloat(estimatedPrice) : null,
+      distance:       trip?.distance_km ?? null,
+      estimatedPrice: trip?.estimatedPrice ?? null,
       gdprConsent,
       termsAccepted,
       status:         'pending',
@@ -121,6 +136,9 @@ exports.createReservation = async (req, res) => {
         id: reservation.id,
         reservationNumber: reservation.reservationNumber,
         status: reservation.status,
+        distance: reservation.distance,
+        duration: trip?.duration_min ?? null,
+        estimatedPrice: reservation.estimatedPrice,
       },
     });
 
@@ -360,7 +378,7 @@ exports.downloadReservationPdf = async (req, res) => {
     if (!reservation) return res.status(404).json({ error: 'Réservation introuvable.' });
 
     const filename = `reservation-${reservation.reservationNumber}.pdf`;
-    const filepath = path.join(__dirname, '../../pdfs', filename);
+    const filepath = path.join(PDF_DIR, filename);
 
     if (!fs.existsSync(filepath)) {
       logger.warn(`[PDF] Bon manquant, régénération : ${filename}`);
@@ -389,7 +407,7 @@ exports.downloadInvoicePdf = async (req, res) => {
     }
 
     const filename = `facture-${reservation.reservationNumber}.pdf`;
-    const filepath = path.join(__dirname, '../../pdfs', filename);
+    const filepath = path.join(PDF_DIR, filename);
 
     if (!fs.existsSync(filepath)) {
       logger.warn(`[PDF] Facture manquante, régénération : ${filename}`);

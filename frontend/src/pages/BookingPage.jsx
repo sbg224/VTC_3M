@@ -6,7 +6,7 @@ import {
 } from 'lucide-react';
 import { simulateAPI, driverPublicAPI } from '../services/api';
 import Seo from '../components/Seo';
-import { emptyReservationForm } from '../utils/reservationForm';
+import { emptyReservationForm, getBusinessDateString } from '../utils/reservationForm';
 import useReservationForm from '../hooks/useReservationForm';
 
 // ── Widget simulation (identique à Reservation.jsx) ──────────────────────────
@@ -176,22 +176,19 @@ export default function BookingPage() {
     simData, setSimData, handleChange, handleSubmit,
   } = useReservationForm({
     errorSelector: '.form-error',
-    buildPayload: ({ form: reservationForm, simData: simulation }) => ({
+    buildPayload: ({ form: reservationForm }) => ({
       ...reservationForm,
       driverSlug: slug,
-      ...(simulation && {
-        distance: simulation.distance_km,
-        estimatedPrice: simulation.estimatedPrice,
-      }),
+      serviceType: 'transfert',
     }),
     onSuccess: ({ data, simData: simulation }) => {
-      setSuccess({ ...data, simData: simulation });
+      setSuccess({ ...data, previousEstimate: simulation });
       window.scrollTo({ top: 0, behavior: 'smooth' });
     },
   });
 
   const formRef = useRef(null);
-  const today = new Date().toISOString().split('T')[0];
+  const today = getBusinessDateString();
 
   // ── Chargement du profil chauffeur ─────────────────────────────────────────
   useEffect(() => {
@@ -270,7 +267,7 @@ export default function BookingPage() {
               Réservation confirmée !
             </h2>
             <div className="success-number">{success.reservation?.reservationNumber}</div>
-            {success.simData && (
+            {success.reservation?.estimatedPrice != null && (
               <div style={{
                 background: '#ecfdf5', border: '1px solid #bbf7d0',
                 borderRadius: 'var(--radius)', padding: '12px 24px',
@@ -278,8 +275,15 @@ export default function BookingPage() {
               }}>
                 <span style={{ fontSize: '1.15rem', fontWeight: '700', color: '#065f46', display: 'flex', alignItems: 'center', gap: '6px' }}>
                   <Euro size={16} strokeWidth={1.5} />
-                  {Number(success.simData.estimatedPrice).toFixed(2)} € – {success.simData.distance_km} km
+                  {Number(success.reservation.estimatedPrice).toFixed(2)} € – {Number(success.reservation.distance).toFixed(1)} km
                 </span>
+                {success.previousEstimate
+                  && Math.abs(Number(success.previousEstimate.estimatedPrice) - Number(success.reservation.estimatedPrice)) >= 0.01 && (
+                    <div style={{ marginTop: '6px', fontSize: '0.8rem', color: '#475569' }}>
+                      Estimation précédente : {Number(success.previousEstimate.estimatedPrice).toFixed(2)} €.
+                      Le tarif ci-dessus a été recalculé lors de la confirmation.
+                    </div>
+                  )}
               </div>
             )}
             <p className="success-desc">

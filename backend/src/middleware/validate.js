@@ -4,6 +4,7 @@
  */
 const { body, param, validationResult } = require('express-validator');
 const { FRENCH_PHONE_PATTERN, normalizeFrenchPhone } = require('../utils/phone');
+const { validateReservationDateTime } = require('../utils/reservationDateTime');
 
 // Patterns SQL suspects à rejeter (défense en profondeur — l'ORM protège déjà)
 const SQL_PATTERN = /(\bOR\b|\bAND\b|\bUNION\b|\bSELECT\b|\bINSERT\b|\bDROP\b|\bDELETE\b|\bUPDATE\b|--|;|\/\*|\*\/)/i;
@@ -20,7 +21,7 @@ const validate = (req, res, next) => {
 };
 
 // ── Règles réservation ────────────────────────────────────────────────────────
-const reservationRules = [
+const buildReservationRules = ({ nowProvider = () => new Date() } = {}) => [
   body('firstName')
     .trim().notEmpty().withMessage('Le prénom est requis.')
     .isLength({ min: 2, max: 100 }).withMessage('Prénom invalide (2-100 caractères).')
@@ -48,24 +49,39 @@ const reservationRules = [
     .not().matches(SQL_PATTERN).withMessage('Adresse de départ : contenu invalide.'),
 
   body('arrivalAddress')
+    .if((value, { req }) => req.body.serviceType === 'transfert')
     .trim().notEmpty().withMessage('L\'adresse d\'arrivée est requise.')
     .isLength({ min: 3, max: 500 }).withMessage('Adresse d\'arrivée invalide.')
     .not().matches(SQL_PATTERN).withMessage('Adresse d\'arrivée : contenu invalide.'),
 
   body('date')
     .notEmpty().withMessage('La date est requise.')
-    .isDate({ format: 'YYYY-MM-DD' }).withMessage('Format de date invalide.')
-    .custom((value) => {
-      const d = new Date(value);
-      const today = new Date();
-      today.setHours(0, 0, 0, 0);
-      if (d < today) throw new Error('La date doit être dans le futur.');
-      return true;
-    }),
+    .isDate({ format: 'YYYY-MM-DD', strictMode: true }).withMessage('Format de date invalide.'),
 
   body('time')
     .notEmpty().withMessage('L\'heure est requise.')
-    .matches(/^([01]?\d|2[0-3]):[0-5]\d$/).withMessage('Format d\'heure invalide (HH:MM).'),
+    .matches(/^([01]\d|2[0-3]):[0-5]\d$/).withMessage('Format d\'heure invalide (HH:MM).')
+    .custom((value, { req }) => validateReservationDateTime(req.body.date, value, { now: nowProvider() })),
+
+  body('serviceType')
+    .notEmpty().withMessage('Le type de prestation est requis.')
+    .isIn(['transfert', 'mise_a_disposition']).withMessage('Type de prestation invalide.'),
+
+  body('serviceDuration')
+    .custom((value, { req }) => {
+      if (
+        req.body.serviceType === 'mise_a_disposition'
+        && !['1h', '2h', '3h', '4h', '5h', '6h', '8h', '10h', '12h'].includes(value)
+      ) {
+        throw new Error('Durée de mise à disposition invalide.');
+      }
+      return true;
+    }),
+
+  body('driverSlug')
+    .trim().notEmpty().withMessage('Le chauffeur doit être sélectionné.')
+    .isLength({ max: 80 }).withMessage('Chauffeur invalide.')
+    .matches(/^[a-z0-9-]+$/).withMessage('Chauffeur invalide.'),
 
   body('passengers')
     .optional()
@@ -80,14 +96,6 @@ const reservationRules = [
     .trim()
     .isLength({ max: 1000 }).withMessage('Commentaire trop long (max 1000 caractères).'),
 
-  body('distance')
-    .optional()
-    .isFloat({ min: 0, max: 99999 }).withMessage('Distance invalide.'),
-
-  body('estimatedPrice')
-    .optional()
-    .isFloat({ min: 0, max: 99999 }).withMessage('Prix estimé invalide.'),
-
   body('gdprConsent')
     .notEmpty().withMessage('Le consentement RGPD est requis.')
     .custom((value) => {
@@ -96,7 +104,18 @@ const reservationRules = [
       }
       return true;
     }),
+
+  body('termsAccepted')
+    .notEmpty().withMessage('L\'acceptation des CGU est requise.')
+    .custom((value) => {
+      if (value !== true && value !== 'true') {
+        throw new Error('Vous devez accepter les CGU.');
+      }
+      return true;
+    }),
 ];
+
+const reservationRules = buildReservationRules();
 
 // ── Règles complétion course ──────────────────────────────────────────────────
 const completeRules = [
@@ -228,6 +247,6 @@ const contactEventRules = [
 const handleValidation = validate;
 
 module.exports = {
-  validate, handleValidation, reservationRules, completeRules, loginRules, registerRules, uuidRule,
+  validate, handleValidation, buildReservationRules, reservationRules, completeRules, loginRules, registerRules, uuidRule,
   contactSlugParamRule, contactCreateRules, contactUpdateRules, contactEventRules,
 };

@@ -7,9 +7,9 @@ import {
   Timer, ShieldCheck, Zap,
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { simulateAPI } from '../services/api';
+import { simulateAPI, driverPublicAPI } from '../services/api';
 import Seo from '../components/Seo';
-import { emptyReservationForm } from '../utils/reservationForm';
+import { emptyReservationForm, getBusinessDateString } from '../utils/reservationForm';
 import useReservationForm from '../hooks/useReservationForm';
 
 // ── Constantes ────────────────────────────────────────────────────────────────
@@ -110,18 +110,21 @@ function SimWidget({ departure, arrival, onResult, simData, onClear }) {
 export default function Reservation() {
   const location = useLocation();
   const formRef  = useRef(null);
-  const today    = new Date().toISOString().split('T')[0];
+  const today    = getBusinessDateString();
 
   const [serviceType, setServiceType] = useState('transfert');
   const [duration,    setDuration]    = useState('2h');
   const [success,     setSuccess]     = useState(null);
+  const [drivers,     setDrivers]     = useState([]);
+  const [driversLoading, setDriversLoading] = useState(true);
+  const [driversError, setDriversError] = useState('');
   const {
     form, setForm, errors, setErrors, loading, serverError,
     simData, setSimData, handleChange, handleSubmit,
   } = useReservationForm({
-    validateOptions: { requireArrival: serviceType === 'transfert' },
+    validateOptions: { requireArrival: serviceType === 'transfert', requireDriver: true },
     errorSelector: '.has-error',
-    buildPayload: ({ form: reservationForm, simData: simulation }) => {
+    buildPayload: ({ form: reservationForm }) => {
       const serviceNote = serviceType === 'mise_a_disposition'
         ? `[Mise à disposition – ${duration}] `
         : '[Transfert] ';
@@ -131,17 +134,28 @@ export default function Reservation() {
           ? `Mise à disposition – ${duration}`
           : reservationForm.arrivalAddress,
         comments: serviceNote + (reservationForm.comments || ''),
-        ...(simulation && {
-          distance: simulation.distance_km,
-          estimatedPrice: simulation.estimatedPrice,
-        }),
+        serviceType,
+        serviceDuration: serviceType === 'mise_a_disposition' ? duration : undefined,
       };
     },
     onSuccess: ({ data, simData: simulation }) => {
-      setSuccess({ ...data, simData: simulation, serviceType, duration });
+      setSuccess({ ...data, previousEstimate: simulation, serviceType, duration });
       window.scrollTo({ top: 0, behavior: 'smooth' });
     },
   });
+
+  useEffect(() => {
+    driverPublicAPI.getPublicList()
+      .then(({ data }) => {
+        const eligibleDrivers = data.drivers || [];
+        setDrivers(eligibleDrivers);
+        if (eligibleDrivers.length === 1) {
+          setForm((current) => ({ ...current, driverSlug: eligibleDrivers[0].slug }));
+        }
+      })
+      .catch(() => setDriversError('Impossible de charger la liste des chauffeurs disponibles.'))
+      .finally(() => setDriversLoading(false));
+  }, [setForm]);
 
   // Pré-remplissage depuis le formulaire héro
   useEffect(() => {
@@ -196,12 +210,20 @@ export default function Reservation() {
               {success.reservation?.reservationNumber}
             </div>
 
-            {success.simData && (
+            {success.reservation?.estimatedPrice != null && (
               <div className="resv-success-price">
                 <Euro size={15} strokeWidth={1.75} />
-                {Number(success.simData.estimatedPrice).toFixed(2)} € · {success.simData.distance_km} km
+                {Number(success.reservation.estimatedPrice).toFixed(2)} € · {Number(success.reservation.distance).toFixed(1)} km
               </div>
             )}
+            {success.previousEstimate
+              && success.reservation?.estimatedPrice != null
+              && Math.abs(Number(success.previousEstimate.estimatedPrice) - Number(success.reservation.estimatedPrice)) >= 0.01 && (
+                <p className="resv-success-desc">
+                  Estimation précédente : {Number(success.previousEstimate.estimatedPrice).toFixed(2)} €.
+                  Le tarif final ci-dessus a été recalculé lors de la confirmation.
+                </p>
+              )}
             {success.serviceType === 'mise_a_disposition' && (
               <div className="resv-success-price">
                 <Timer size={15} strokeWidth={1.75} />
@@ -217,7 +239,14 @@ export default function Reservation() {
             <div className="resv-success-actions">
               <button
                 className="btn btn-ghost"
-                onClick={() => { setSuccess(null); setForm(emptyReservationForm); setSimData(null); }}
+                onClick={() => {
+                  setSuccess(null);
+                  setForm({
+                    ...emptyReservationForm,
+                    driverSlug: drivers.length === 1 ? drivers[0].slug : '',
+                  });
+                  setSimData(null);
+                }}
               >
                 Nouvelle réservation
               </button>
@@ -282,6 +311,40 @@ export default function Reservation() {
                 <AlertTriangle size={14} strokeWidth={1.75} /> {serverError}
               </div>
             )}
+
+            <div className="resv-section">
+              <div className="resv-section-head">
+                <div className="resv-section-icon"><Car size={16} strokeWidth={1.75} /></div>
+                <div>
+                  <h2>Chauffeur</h2>
+                  <p>Sélectionnez explicitement le chauffeur destinataire de la réservation</p>
+                </div>
+              </div>
+              <div className="resv-fields">
+                <Field id="driverSlug" label="Chauffeur" required error={errors.driverSlug} icon={Car}>
+                  <select
+                    name="driverSlug"
+                    className="resv-input resv-select"
+                    value={form.driverSlug}
+                    onChange={handleChange}
+                    disabled={driversLoading || Boolean(driversError)}
+                  >
+                    <option value="">
+                      {driversLoading ? 'Chargement des chauffeurs…' : 'Sélectionner un chauffeur'}
+                    </option>
+                    {drivers.map((driver) => (
+                      <option key={driver.id} value={driver.slug}>
+                        {driver.businessName || driver.name}
+                      </option>
+                    ))}
+                  </select>
+                </Field>
+                {driversError && <div className="resv-server-error">{driversError}</div>}
+                {!driversLoading && !driversError && drivers.length === 0 && (
+                  <div className="resv-server-error">Aucun chauffeur n'est actuellement disponible.</div>
+                )}
+              </div>
+            </div>
 
             {/* ── Section 1 : Itinéraire ──────────────────────────────────────── */}
             <div className="resv-section">
