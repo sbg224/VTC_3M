@@ -6,8 +6,9 @@
   "scripts": {
     "start": "node src/index.js",
     "dev": "nodemon src/index.js",
-    "seed": "node src/seed.js",
-    "test": "jest --runInBand --forceExit"
+    "db:migrate": "node scripts/migrate.js",
+    "db:baseline-existing": "node scripts/baseline-existing.js",
+    "test": "node scripts/run-tests.js"
   },
   "dependencies": {
     "bcryptjs": "^2.4.3",

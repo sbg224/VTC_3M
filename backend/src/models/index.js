@@ -1,26 +1,11 @@
-const { Sequelize } = require('sequelize');
-const path = require('path');
+require('dotenv').config();
+const { resolveDatabaseConfig } = require('../config/environment');
 
-// ── Connexion : PostgreSQL si DATABASE_URL défini, sinon SQLite ──────────────
-let sequelize;
-if (process.env.DATABASE_URL) {
-  sequelize = new Sequelize(process.env.DATABASE_URL, {
-    dialect: 'postgres',
-    protocol: 'postgres',
-    dialectOptions: {
-      ssl: process.env.DB_SSL === 'true'
-        ? { require: true, rejectUnauthorized: false } // Pour Heroku/Render/Railway
-        : false,
-    },
-    logging: false,
-  });
-} else {
-  sequelize = new Sequelize({
-    dialect: 'sqlite',
-    storage: process.env.DB_PATH || path.join(__dirname, '../../database.sqlite'),
-    logging: false,
-  });
-}
+const databaseConfig = resolveDatabaseConfig();
+const { Sequelize } = require('sequelize');
+const sequelize = databaseConfig.url
+  ? new Sequelize(databaseConfig.url, databaseConfig.options)
+  : new Sequelize(databaseConfig);
 
 const Driver       = require('./Driver')(sequelize);
 const Reservation  = require('./Reservation')(sequelize);

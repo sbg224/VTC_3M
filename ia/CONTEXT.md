@@ -77,7 +77,7 @@ Développement actif, en phase de pré-production. Le backlog de dette technique
 Techniques
 
 * Monorepo sans outillage de workspace partagé : `backend/` et `frontend/` sont deux applications Node indépendantes (installation et lancement séparés).
-* Base de données SQLite par défaut, bascule automatique vers PostgreSQL si `DATABASE_URL` est défini ; pas de Sequelize-CLI, un runner de migration interne (`db/runMigrations.js`) gère les évolutions de schéma sur les tables existantes.
+* En développement, SQLite reste le défaut et `DATABASE_URL` sélectionne PostgreSQL. La production exige PostgreSQL et les tests exigent une `DATABASE_URL_TEST` locale sûre ou SQLite en mémoire. Le runner interne versionné (`db/runMigrations.js` + `db/migrations/`) est l'unique autorité de schéma ; `sequelize.sync()` n'est plus utilisé.
 * Dépendance à un serveur public de démonstration OSRM pour le calcul d'itinéraire — dette technique connue (voir Évolution).
 
 Réglementaires

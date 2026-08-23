@@ -5,9 +5,11 @@ frontend/node_modules/
 
 # ── Variables d'environnement (CONFIDENTIEL – ne jamais commiter) ─────────────
 .env
-.env.local
-.env.*.local
-backend/.env
+.env.*
+**/.env
+**/.env.*
+!.env.example
+!**/.env.example
 
 # ── Base de données ───────────────────────────────────────────────────────────
 *.sqlite
