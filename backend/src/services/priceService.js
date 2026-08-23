@@ -14,15 +14,31 @@ let _pricing = {
 };
 
 /**
+ * `parseFloat` rend `NaN` pour toute entrée non numérique, et `??` ne le
+ * rattrape pas (`NaN ?? x` vaut `NaN`) : une seule valeur tarifaire invalide
+ * empoisonnait le cache et rendait tous les prix `NaN`. `Number.isFinite`
+ * ferme aussi la porte à `Infinity` et `-Infinity`.
+ */
+function positiveOr(value, fallback) {
+  const parsed = parseFloat(value);
+  return Number.isFinite(parsed) && parsed > 0 ? parsed : fallback;
+}
+
+function nonNegativeOr(value, fallback) {
+  const parsed = parseFloat(value);
+  return Number.isFinite(parsed) && parsed >= 0 ? parsed : fallback;
+}
+
+/**
  * Met à jour le cache mémoire avec les nouvelles valeurs tarifaires.
  * Appelé au démarrage (depuis DB) et après chaque modification admin.
  * @param {{ pricePerKm: number, minimumPrice: number, baseFee: number }} newPricing
  */
 function updatePricingCache(newPricing) {
   _pricing = {
-    PRICE_PER_KM:  parseFloat(newPricing.pricePerKm)  || _pricing.PRICE_PER_KM,
-    MINIMUM_PRICE: parseFloat(newPricing.minimumPrice) || _pricing.MINIMUM_PRICE,
-    BASE_FEE:      parseFloat(newPricing.baseFee)      ?? _pricing.BASE_FEE,
+    PRICE_PER_KM:  positiveOr(newPricing.pricePerKm,   _pricing.PRICE_PER_KM),
+    MINIMUM_PRICE: positiveOr(newPricing.minimumPrice, _pricing.MINIMUM_PRICE),
+    BASE_FEE:      nonNegativeOr(newPricing.baseFee,   _pricing.BASE_FEE),
   };
 }
 
@@ -40,9 +56,13 @@ function getPricingValues() {
  * @returns {number} prix arrondi à 2 décimales
  */
 function calculatePrice(distance_km) {
-  if (!distance_km || distance_km <= 0) return _pricing.MINIMUM_PRICE;
+  // `Number.isFinite` plutôt que `!distance_km` : une distance `Infinity`
+  // passait le test et produisait un prix `Infinity`.
+  if (!Number.isFinite(distance_km) || distance_km <= 0) return _pricing.MINIMUM_PRICE;
   const raw = _pricing.BASE_FEE + distance_km * _pricing.PRICE_PER_KM;
-  return Math.round(Math.max(_pricing.MINIMUM_PRICE, raw) * 100) / 100;
+  const price = Math.round(Math.max(_pricing.MINIMUM_PRICE, raw) * 100) / 100;
+  // Dernier filet : aucun prix non fini ne doit sortir de ce service.
+  return Number.isFinite(price) ? price : _pricing.MINIMUM_PRICE;
 }
 
 module.exports = { calculatePrice, updatePricingCache, getPricingValues };

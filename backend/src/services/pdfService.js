@@ -4,7 +4,7 @@ const path = require('path');
 const logger = require('../middleware/logger');
 const { formatDateLong: formatDate } = require('../utils/dateFormat');
 
-const PDFS_DIR = path.join(__dirname, '../../pdfs');
+const { PDF_DIR: PDFS_DIR } = require('../config/storage');
 
 function ensurePdfsDir() {
   if (!fs.existsSync(PDFS_DIR)) {

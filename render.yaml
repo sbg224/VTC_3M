@@ -1,0 +1,117 @@
+# Blueprint Render — API Express AHADI VTC (backend long-running).
+#
+# Le frontend n'est PAS déployé ici : il vit sur Vercel et atteint cette API
+# par une réécriture /api/* (voir frontend/vercel.json), de sorte que le
+# navigateur ne voie qu'une seule origine et que le cookie de session
+# `sameSite: 'strict'` continue de fonctionner.
+#
+# Plan payant requis, pour deux raisons non négociables :
+#   - le plan gratuit met le service en veille : le flux SSE du tableau de bord
+#     et le cron horaire de purge des jetons révoqués cesseraient de fonctionner ;
+#   - le disque persistant n'existe pas sur le plan gratuit, or les PDF et les
+#     photos de cartes de visite sont écrits sur le système de fichiers.
+services:
+  - type: web
+    name: ahadi-vtc-api
+    runtime: node
+    region: frankfurt          # au plus près de Supabase eu-west-1
+    plan: starter
+    rootDir: backend
+    branch: chore/env-supabase-migration
+    autoDeploy: false          # déploiement déclenché explicitement
+
+    buildCommand: npm ci
+    # Les migrations s'appliquent AVANT que l'instance ne serve du trafic.
+    # src/index.js les rejoue au démarrage : le registre étant idempotent et
+    # suivi dans schema_migrations, la seconde exécution est un no-op.
+    preDeployCommand: npm run db:migrate
+    startCommand: npm start
+    healthCheckPath: /api/health
+
+    # Render n'autorise qu'un disque par service : PDF et uploads partagent
+    # /data via PDF_DIR et UPLOAD_DIR (voir backend/src/config/storage.js).
+    disk:
+      name: ahadi-vtc-data
+      mountPath: /data
+      sizeGB: 1
+
+    envVars:
+      - key: NODE_VERSION
+        value: "22.12.0"
+      - key: NODE_ENV
+        value: production
+      - key: PDF_DIR
+        value: /data/pdfs
+      - key: UPLOAD_DIR
+        value: /data/uploads
+      # Render place un proxy devant le service : sans ce réglage, req.ip vaut
+      # l'IP du proxy et le rate limiting par IP devient inopérant.
+      - key: TRUST_PROXY_HOPS
+        value: "1"
+      - key: DB_SSL
+        value: "true"
+      - key: JWT_EXPIRES_IN
+        value: 8h
+      - key: EMAIL_ENABLED
+        value: "true"
+      - key: SMS_ENABLED
+        value: "false"
+      # Empêche toute réinitialisation implicite du compte admin au démarrage.
+      - key: ADMIN_FORCE_RESET
+        value: "false"
+
+      # ── Secrets et valeurs propres à l'environnement ────────────────────
+      # sync: false => jamais dans Git, saisis dans le tableau de bord Render.
+      - key: DATABASE_URL          # pooler Supabase, mode session, port 5432
+        sync: false
+      - key: JWT_SECRET            # 64 caractères minimum, aléatoire
+        sync: false
+      - key: FRONTEND_URL          # https://<domaine-vercel> — sans slash final
+        sync: false
+      - key: ADMIN_LOGIN_EMAIL
+        sync: false
+      - key: ADMIN_PASSWORD        # 16 caractères minimum
+        sync: false
+      - key: ADMIN_NAME
+        sync: false
+      - key: ADMIN_PHONE
+        sync: false
+      - key: ADMIN_EMAIL           # destinataire des notifications
+        sync: false
+      - key: EMAIL_HOST
+        sync: false
+      - key: EMAIL_PORT
+        sync: false
+      - key: EMAIL_USER
+        sync: false
+      - key: EMAIL_PASS
+        sync: false
+      - key: EMAIL_FROM
+        sync: false
+      - key: COMPANY_NAME
+        sync: false
+      - key: COMPANY_ADDRESS
+        sync: false
+      - key: COMPANY_PHONE
+        sync: false
+      - key: COMPANY_EMAIL
+        sync: false
+      - key: COMPANY_SIRET
+        sync: false
+      - key: STRIPE_SECRET_KEY
+        sync: false
+      - key: STRIPE_WEBHOOK_SECRET
+        sync: false
+      - key: STRIPE_PRICE_ID_MONTHLY
+        sync: false
+      - key: STRIPE_PRICE_ID_YEARLY
+        sync: false
+      # Optionnelles — décommenter si utilisées
+      # - key: TWILIO_ACCOUNT_SID
+      #   sync: false
+      # - key: TWILIO_AUTH_TOKEN
+      #   sync: false
+      # - key: TWILIO_FROM_NUMBER
+      #   sync: false
+      # - key: OSRM_BASE_URL       # bascule vers une instance OSRM dédiée (V2)
+      #   sync: false
