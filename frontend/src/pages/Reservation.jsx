@@ -13,7 +13,11 @@ import { emptyReservationForm, getBusinessDateString } from '../utils/reservatio
 import useReservationForm from '../hooks/useReservationForm';
 
 // ── Constantes ────────────────────────────────────────────────────────────────
-const DURATIONS = ['1h','2h','3h','4h','5h','6h','8h','10h','12h'];
+// '1h' retiré : la durée minimum facturable est de 2 h. Proposer une heure
+// qu'on facturerait systématiquement le double induirait le client en
+// erreur. Le plancher reste appliqué côté serveur, l'interface n'étant
+// jamais une garantie.
+const DURATIONS = ['2h','3h','4h','5h','6h','8h','10h','12h'];
 
 // ── Animations ────────────────────────────────────────────────────────────────
 const fadeSlide = {
@@ -114,6 +118,10 @@ export default function Reservation() {
 
   const [serviceType, setServiceType] = useState('transfert');
   const [duration,    setDuration]    = useState('2h');
+  // Estimation de la mise à disposition, rafraîchie à chaque changement de
+  // durée. La grille tarifaire vit côté serveur : la dupliquer ici la ferait
+  // diverger au premier ajustement depuis l'administration.
+  const [hourlyQuote, setHourlyQuote] = useState(null);
   const [success,     setSuccess]     = useState(null);
   const [drivers,     setDrivers]     = useState([]);
   const [driversLoading, setDriversLoading] = useState(true);
@@ -143,6 +151,21 @@ export default function Reservation() {
       window.scrollTo({ top: 0, behavior: 'smooth' });
     },
   });
+
+  useEffect(() => {
+    if (serviceType !== 'mise_a_disposition') {
+      setHourlyQuote(null);
+      return undefined;
+    }
+    let cancelled = false;
+    const hours = parseInt(duration, 10);
+    simulateAPI.hourly(hours)
+      .then(({ data }) => { if (!cancelled) setHourlyQuote(data); })
+      // Une estimation indisponible ne doit pas bloquer la réservation : le
+      // bloc d'information reste affiché sans le montant.
+      .catch(() => { if (!cancelled) setHourlyQuote(null); });
+    return () => { cancelled = true; };
+  }, [serviceType, duration]);
 
   useEffect(() => {
     driverPublicAPI.getPublicList()
@@ -419,8 +442,19 @@ export default function Reservation() {
                   {serviceType === 'mise_a_disposition' && (
                     <motion.div key="mada-info" {...fadeSlide} className="resv-mada-info">
                       <Timer size={14} strokeWidth={1.75} />
-                      Le prix final sera établi selon la durée réelle et le kilométrage parcouru.
-                      Un devis vous sera confirmé avant la course.
+                      {hourlyQuote ? (
+                        <span>
+                          <strong>{Number(hourlyQuote.estimatedPrice).toFixed(2)} € TTC</strong> pour {hourlyQuote.hours} h,
+                          <strong> {hourlyQuote.includedKm} km inclus</strong>.
+                          Au-delà, les kilomètres supplémentaires sont facturés {Number(hourlyQuote.breakdown.pricePerKm).toFixed(2)} €/km
+                          et ajoutés à la facture après la course.
+                        </span>
+                      ) : (
+                        <span>
+                          Le prix final sera établi selon la durée réservée et le kilométrage parcouru.
+                          Un devis vous sera confirmé avant la course.
+                        </span>
+                      )}
                     </motion.div>
                   )}
                 </AnimatePresence>
