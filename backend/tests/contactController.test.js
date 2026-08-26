@@ -2,13 +2,16 @@ const request = require('supertest');
 const app = require('../src/index.js');
 const { sequelize, Contact, ContactEvent } = require('../src/models');
 const contactController = require('../src/controllers/contactController');
+const { runMigrations } = require('../src/db/runMigrations');
+
+const silentLogger = { info: jest.fn(), warn: jest.fn(), error: jest.fn() };
 
 describe('Routes publiques /api/contacts', () => {
   let publicContact;
   let privateContact;
 
   beforeAll(async () => {
-    await sequelize.sync();
+    await runMigrations(sequelize, silentLogger);
     publicContact = await Contact.create({
       firstName: 'Marie', lastName: 'Dupont', company: '3M Drive',
       phone: '+33612345678', email: 'marie@example.com', isPublic: true,

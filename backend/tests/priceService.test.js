@@ -49,4 +49,35 @@ describe('priceService', () => {
     expect(getPricingValues().PRICE_PER_KM).toBe(3);
     expect(getPricingValues().MINIMUM_PRICE).toBe(12);
   });
+  test('aucune valeur non finie ne peut entrer dans le cache tarifaire', () => {
+    updatePricingCache({ pricePerKm: 3, minimumPrice: 12, baseFee: 4 });
+    // baseFee passait auparavant par `??`, qui ne rattrape pas NaN : une seule
+    // valeur invalide suffisait à rendre tous les prix NaN.
+    for (const invalid of [NaN, Infinity, -Infinity, 'abc', null, undefined, {}]) {
+      updatePricingCache({ pricePerKm: invalid, minimumPrice: invalid, baseFee: invalid });
+      expect(getPricingValues()).toEqual({ PRICE_PER_KM: 3, MINIMUM_PRICE: 12, BASE_FEE: 4 });
+    }
+  });
+
+  test('baseFee nul reste accepté, baseFee NaN est rejeté', () => {
+    updatePricingCache({ pricePerKm: 2, minimumPrice: 10, baseFee: 5 });
+    updatePricingCache({ pricePerKm: 2, minimumPrice: 10, baseFee: 0 });
+    expect(getPricingValues().BASE_FEE).toBe(0);
+    updatePricingCache({ pricePerKm: 2, minimumPrice: 10, baseFee: NaN });
+    expect(getPricingValues().BASE_FEE).toBe(0);
+  });
+
+  test('calculatePrice ne retourne jamais NaN ni Infinity', () => {
+    for (const distance of [NaN, Infinity, -Infinity, 'abc', null, undefined, {}]) {
+      const price = calculatePrice(distance);
+      expect(Number.isFinite(price)).toBe(true);
+      expect(price).toBe(10);
+    }
+  });
+
+  test('une distance très grande produit un prix fini', () => {
+    const price = calculatePrice(1e6);
+    expect(Number.isFinite(price)).toBe(true);
+    expect(price).toBe(2000000);
+  });
 });

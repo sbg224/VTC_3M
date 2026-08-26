@@ -5,9 +5,8 @@
  * fichier final est généré par le contrôleur (jamais celui du client).
  */
 const multer = require('multer');
-const path = require('path');
 
-const CONTACT_UPLOADS_DIR = path.join(__dirname, '../../uploads/contacts');
+const { CONTACT_UPLOADS_DIR } = require('../config/storage');
 
 const ALLOWED_MIME_TYPES = {
   'image/jpeg': 'jpg',

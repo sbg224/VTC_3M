@@ -6,6 +6,19 @@ on:
   pull_request:
     branches: [main]
 
+# Base de test isolée, disponible pour toutes les étapes.
+# DATABASE_URL n'est volontairement JAMAIS définie : depuis ADR-002 elle désigne
+# la base Supabase de production. La CI ne doit atteindre aucune base distante —
+# deux gardes bloquantes le vérifient (étapes « Garde-fou » et « Configurer »).
+#
+# NODE_ENV n'est PAS défini ici mais étape par étape, volontairement : le poser
+# au niveau du job le propage à `vite build`, qui produit alors un bundle React
+# en mode développement (chunk vendor 163 ko -> 346 ko, +111 %) et fausse
+# l'audit Lighthouse. Le backend reçoit NODE_ENV=test explicitement sur ses
+# propres étapes et via backend/.env.
+env:
+  DATABASE_URL_TEST: 'sqlite::memory:'
+
 jobs:
   e2e:
     runs-on: ubuntu-latest
@@ -14,7 +27,22 @@ jobs:
 
       - uses: actions/setup-node@v4
         with:
-          node-version: '18'
+          node-version: '22'
+
+      - name: Garde-fou — aucune base distante accessible depuis la CI
+        env:
+          NODE_ENV: test
+        run: |
+          set -euo pipefail
+          if [ -n "${DATABASE_URL:-}" ]; then
+            echo "::error::DATABASE_URL est définie dans l'environnement CI. Les tests ne doivent jamais cibler une base distante (cf. ADR-002)."
+            exit 1
+          fi
+          if [ "${DATABASE_URL_TEST:-}" != "sqlite::memory:" ]; then
+            echo "::error::DATABASE_URL_TEST doit valoir exactement sqlite::memory: (reçu : '${DATABASE_URL_TEST:-<vide>}')."
+            exit 1
+          fi
+          echo "DATABASE_URL absente, DATABASE_URL_TEST=sqlite::memory:, NODE_ENV=${NODE_ENV}"
 
       - name: Installer les dépendances backend
         working-directory: backend
@@ -24,34 +52,101 @@ jobs:
         working-directory: frontend
         run: npm ci
 
+      # Exécutée AVANT la création de backend/.env : prouve que la suite ne
+      # dépend que de l'environnement CI. scripts/run-tests.js refuse de
+      # démarrer si DATABASE_URL_TEST est absente ou désigne une base distante.
+      - name: Tests unitaires backend (Jest, SQLite en mémoire)
+        working-directory: backend
+        env:
+          NODE_ENV: test
+        run: npm test
+
+      # Sans NODE_ENV : vite build doit produire un bundle de production.
       - name: Vérifier que le frontend build sans erreur
         working-directory: frontend
         run: npm run build
 
-      - name: Configurer le backend en mode test (aucun envoi réel)
+      - name: Vérifier que le bundle est bien en mode production
+        working-directory: frontend
+        run: |
+          set -euo pipefail
+          if grep -rql 'validateDOMNesting\|react-dom\.development' dist/assets/; then
+            echo "::error::Le bundle contient React en mode développement. Une variable NODE_ENV non-production a fuité dans l'étape de build."
+            exit 1
+          fi
+          echo "Bundle de production confirmé (aucun marqueur React de développement)."
+
+      - name: Configurer le backend en mode test (aucun envoi réel, base isolée)
         working-directory: backend
         run: |
+          set -euo pipefail
           cp .env.example .env
+          # Retirer les clés que la CI impose elle-même, plutôt que de les
+          # substituer : une substitution sed est silencieusement sans effet si
+          # la ligne disparaît un jour du gabarit, ce qui ferait retomber la CI
+          # sur NODE_ENV=development sans aucun signal.
+          sed -i '/^[[:space:]]*DATABASE_URL[[:space:]]*=/d' .env
+          sed -i '/^[[:space:]]*NODE_ENV[[:space:]]*=/d' .env
+          sed -i '/^[[:space:]]*JWT_SECRET[[:space:]]*=/d' .env
+          sed -i '/^[[:space:]]*DATABASE_URL_TEST[[:space:]]*=/d' .env
           JWT_SECRET=$(node -e "console.log(require('crypto').randomBytes(64).toString('hex'))")
-          sed -i "s|^JWT_SECRET=.*|JWT_SECRET=${JWT_SECRET}|" .env
-          sed -i "s|^NODE_ENV=.*|NODE_ENV=test|" .env
           {
+            echo "NODE_ENV=test"
+            echo "DATABASE_URL_TEST=sqlite::memory:"
+            echo "JWT_SECRET=${JWT_SECRET}"
             echo "EMAIL_ENABLED=false"
             echo "SMS_ENABLED=false"
           } >> .env
+          grep -qx 'NODE_ENV=test' .env \
+            || { echo "::error::NODE_ENV=test absent de backend/.env"; exit 1; }
+          grep -qx 'DATABASE_URL_TEST=sqlite::memory:' .env \
+            || { echo "::error::DATABASE_URL_TEST absente de backend/.env"; exit 1; }
+          if grep -qE '^[[:space:]]*DATABASE_URL[[:space:]]*=' .env; then
+            echo "::error::DATABASE_URL présente dans backend/.env — la CI ne doit cibler aucune base distante."
+            exit 1
+          fi
+          echo "backend/.env vérifié : NODE_ENV=test, DATABASE_URL_TEST=sqlite::memory:, aucune DATABASE_URL."
 
+      # npm start plutôt que npm run dev : nodemon surveille le système de
+      # fichiers et peut redémarrer le serveur au milieu d'une spec Cypress.
       - name: Démarrer le backend
         working-directory: backend
-        run: nohup npm run dev > backend.log 2>&1 &
+        env:
+          NODE_ENV: test
+        run: |
+          nohup npm start > backend.log 2>&1 &
+          echo "backend lancé (PID $!)"
 
       - name: Démarrer le frontend
         working-directory: frontend
-        run: nohup npm run dev > frontend.log 2>&1 &
+        run: |
+          nohup npm run dev > frontend.log 2>&1 &
+          echo "frontend lancé (PID $!)"
 
       - name: Attendre que les serveurs répondent
         run: |
-          for i in $(seq 1 30); do curl -sf http://127.0.0.1:5001/api/health && break; sleep 2; done
-          for i in $(seq 1 30); do curl -sf http://127.0.0.1:3000 > /dev/null && break; sleep 2; done
+          set -uo pipefail
+          ok=0
+          for i in $(seq 1 45); do
+            if curl -sf http://127.0.0.1:5001/api/health > /dev/null; then ok=1; break; fi
+            sleep 2
+          done
+          if [ "$ok" != "1" ]; then
+            echo "::error::Le backend n'a pas répondu sur /api/health après 90 s."
+            echo "── backend.log ──"; cat backend/backend.log || true
+            exit 1
+          fi
+          ok=0
+          for i in $(seq 1 45); do
+            if curl -sf http://127.0.0.1:3000 > /dev/null; then ok=1; break; fi
+            sleep 2
+          done
+          if [ "$ok" != "1" ]; then
+            echo "::error::Le frontend n'a pas répondu sur le port 3000 après 90 s."
+            echo "── frontend.log ──"; cat frontend/frontend.log || true
+            exit 1
+          fi
+          echo "Les deux serveurs répondent."
 
       - name: Suite fonctionnelle Cypress (parcours accueil/réservation/login/dashboard)
         working-directory: frontend

@@ -56,13 +56,20 @@ app.set('trust proxy', trustProxyHops);
 const privateDevOriginRegex = /^https?:\/\/(localhost|127\.0\.0\.1|10\.\d+\.\d+\.\d+|192\.168\.\d+\.\d+|172\.(1[6-9]|2\d|3[0-1])\.\d+\.\d+|100\.\d+\.\d+\.\d+)(:\d+)?$/i;
 app.use(cors({
   origin: (origin, cb) => {
-    // En production : rejeter toute requête sans header Origin (scripts, curl, etc.)
+    // Absence d'en-tête Origin : requête NON cross-origin.
+    //
+    // Le frontend Vercel atteint l'API via une réécriture /api/* vers ce
+    // service : côté navigateur tout est donc same-origin, et la spécification
+    // Fetch n'ajoute alors PAS d'en-tête Origin aux requêtes GET/HEAD (seules
+    // les méthodes modifiantes en portent un). Rejeter les requêtes sans
+    // Origin en production revenait à refuser tous les GET du tableau de bord.
+    //
+    // CORS ne gouverne que les requêtes cross-origin : l'allowlist ci-dessous
+    // continue de s'appliquer intégralement dès qu'un Origin est présent. La
+    // protection contre le CSRF reste assurée par le cookie de session
+    // `sameSite: 'strict'` (voir controllers/authController.js), qu'un site
+    // tiers ne peut de toute façon pas faire émettre par le navigateur.
     if (!origin) {
-      if (isProd) {
-        logger.warn('[CORS] Requête sans Origin rejetée (production)');
-        return cb(new Error('Origine non autorisée par CORS.'));
-      }
-      // En développement : autoriser les outils comme Postman, curl
       return cb(null, true);
     }
     const normalizedOrigin = normalizeOrigin(origin);
@@ -138,7 +145,7 @@ app.use('/api', rateLimit({
 //    Contrairement aux PDFs, ce sont des assets publics par nature (une
 //    carte de visite n'est exposée que si isPublic=true) — noms de fichiers
 //    générés côté serveur (UUID), aucune donnée sensible dans ce dossier.
-app.use('/uploads/contacts', express.static(path.join(__dirname, '../uploads/contacts')));
+app.use('/uploads/contacts', express.static(require('./config/storage').CONTACT_UPLOADS_DIR));
 
 // ── Routes API ────────────────────────────────────────────────────────────────
 app.use('/api/auth',         require('./routes/auth'));
@@ -181,13 +188,8 @@ async function start() {
     await sequelize.authenticate();
     logger.info('[DB] Connexion établie.');
 
-    // sync() sans options = création des tables manquantes uniquement.
-    // JAMAIS de force:true en production — cela efface toutes les données.
-    // Pour des migrations de schéma, utiliser Sequelize-CLI migrations.
-    await sequelize.sync();
-    logger.info('[DB] Modèles synchronisés (tables créées si inexistantes).');
-
     await runMigrations(sequelize, logger);
+    logger.info('[DB] Migrations vérifiées/appliquées.');
 
     // Créer ou mettre à jour le compte admin depuis .env
     const { Driver } = require('./models');
@@ -209,38 +211,54 @@ async function start() {
       );
     }
 
+    // Le compte admin n'est plus réécrit à chaque démarrage : l'ancien
+    // comportement re-hachait ADMIN_PASSWORD et l'imposait en base à chaque
+    // boot, ce qui annulait silencieusement tout changement de mot de passe
+    // fait depuis l'interface — et laissait l'ancienne valeur d'environnement
+    // indéfiniment valide. Une réinitialisation reste possible, mais devient
+    // un acte explicite via ADMIN_FORCE_RESET=true.
+    const forceReset = process.env.ADMIN_FORCE_RESET === 'true';
+
     let admin = await Driver.findOne({ where: { email: adminEmail } });
     if (!admin) {
       admin = await Driver.findOne({ where: { email: 'admin@vtc3m.fr' } });
     }
-    const hashedPass = await bcrypt.hash(adminPass, 12);
-    if (admin) {
-      await admin.update({
+
+    if (!admin) {
+      await Driver.create({
         name:          adminName,
         email:         adminEmail,
-        password:      hashedPass,
+        password:      await bcrypt.hash(adminPass, 12),
         phone:         adminPhone,
         role:          'admin',
         status:        'active',
         slug:          null,          // l'admin n'a pas de page publique
         trialEndDate:  null,          // l'admin n'a pas d'essai
         plan:          'free',
-        subscriptionStatus: null,
       });
-      logger.info(`[AUTH] Compte admin mis à jour : ${adminEmail}`);
-    } else {
-      await Driver.create({
+      logger.info(`[AUTH] Compte admin créé : ${adminEmail}`);
+    } else if (forceReset) {
+      await admin.update({
         name:          adminName,
         email:         adminEmail,
-        password:      hashedPass,
+        password:      await bcrypt.hash(adminPass, 12),
         phone:         adminPhone,
         role:          'admin',
         status:        'active',
         slug:          null,
         trialEndDate:  null,
         plan:          'free',
+        subscriptionStatus: null,
       });
-      logger.info(`[AUTH] Compte admin créé : ${adminEmail}`);
+      logger.warn(`[AUTH] ADMIN_FORCE_RESET=true — compte admin réinitialisé depuis l'environnement : ${adminEmail}`);
+    } else {
+      logger.info(`[AUTH] Compte admin existant conservé : ${admin.email}`);
+      if (admin.email !== adminEmail) {
+        logger.warn(
+          `[AUTH] Le compte admin en base (${admin.email}) diffère de ADMIN_LOGIN_EMAIL (${adminEmail}). `
+          + 'Utiliser ADMIN_FORCE_RESET=true pour aligner explicitement le compte.',
+        );
+      }
     }
 
     // Charger la tarification depuis la DB (ou l'initialiser si absente)

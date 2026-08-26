@@ -11,13 +11,27 @@ const logger = require('../middleware/logger');
 const TIMEOUT_MS = 8000;
 const USER_AGENT = `VTC3M/1.0 (${process.env.COMPANY_EMAIL || 'contact@vtc3m.fr'})`;
 
-/** Effectue un GET HTTPS et parse le JSON */
+/**
+ * Effectue un GET HTTPS et parse le JSON.
+ *
+ * Le minuteur couvre l'échange COMPLET, en-têtes ET corps de réponse. Il était
+ * auparavant annulé dès la réception des en-têtes : un serveur qui répondait
+ * puis cessait d'émettre laissait la promesse pendante indéfiniment, bloquant
+ * la création de réservation qui en dépend. À l'expiration, la requête est
+ * maintenant réellement avortée (`destroy`), au lieu de laisser la socket
+ * ouverte jusqu'à la fin du processus.
+ */
 function httpGet(url) {
   return new Promise((resolve, reject) => {
-    const timeout = setTimeout(
-      () => reject(new Error('Délai dépassé – service externe indisponible.')),
-      TIMEOUT_MS,
-    );
+    let settled = false;
+    let timer = null;
+
+    const settle = (fn, value) => {
+      if (settled) return;
+      settled = true;
+      if (timer) clearTimeout(timer);
+      fn(value);
+    };
 
     const options = {
       headers: {
@@ -26,18 +40,23 @@ function httpGet(url) {
       },
     };
 
-    https.get(url, options, (res) => {
-      clearTimeout(timeout);
+    const req = https.get(url, options, (res) => {
       let raw = '';
+      res.setEncoding('utf8');
       res.on('data', (chunk) => { raw += chunk; });
       res.on('end', () => {
-        try { resolve(JSON.parse(raw)); }
-        catch { reject(new Error('Réponse API invalide.')); }
+        try { settle(resolve, JSON.parse(raw)); }
+        catch { settle(reject, new Error('Réponse API invalide.')); }
       });
-    }).on('error', (err) => {
-      clearTimeout(timeout);
-      reject(err);
+      res.on('error', (err) => settle(reject, err));
     });
+
+    timer = setTimeout(() => {
+      req.destroy();
+      settle(reject, new Error('Délai dépassé – service externe indisponible.'));
+    }, TIMEOUT_MS);
+
+    req.on('error', (err) => settle(reject, err));
   });
 }
 
@@ -68,8 +87,11 @@ async function calculateRoute(departureAddress, arrivalAddress) {
     geocode(arrivalAddress),
   ]);
 
-  // OSRM public demo server (conduite routière)
-  const url = `https://router.project-osrm.org/route/v1/driving/${from.lon},${from.lat};${to.lon},${to.lat}?overview=false`;
+  // OSRM : serveur de démonstration public par défaut — dette technique V2
+  // assumée (voir ia/AUDIT.md, AES-A002). OSRM_BASE_URL permet de basculer
+  // vers une instance dédiée sans redéployer de code ni toucher au calcul.
+  const osrmBaseUrl = (process.env.OSRM_BASE_URL || 'https://router.project-osrm.org').replace(/\/$/, '');
+  const url = `${osrmBaseUrl}/route/v1/driving/${from.lon},${from.lat};${to.lon},${to.lat}?overview=false`;
   const routeData = await httpGet(url);
 
   if (routeData.code !== 'Ok' || !routeData.routes || routeData.routes.length === 0) {
