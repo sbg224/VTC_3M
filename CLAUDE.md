@@ -21,7 +21,7 @@ Le reste de `ia/` (`CONTEXT.md`, `STACK.md`, `ARCHITECTURE.md`, `DECISIONS.md`, 
 ### Backend (`cd backend`)
 - `npm run dev` — start with nodemon (port from `PORT` env, default 5001)
 - `npm start` — production start
-- `npm test` — run Jest test suite (`--runInBand --forceExit`; tests import the Express `app` directly via supertest, no DB/network needed)
+- `npm test` — exécute la suite Jest via `scripts/run-tests.js`, qui force `NODE_ENV=test`, valide `DATABASE_URL_TEST` (**obligatoire** : `sqlite::memory:` ou une base PostgreSQL locale dont le nom contient `test`), puis lance Jest avec `--runInBand --no-watchman`. Les options supplémentaires sont transmises (ex. `npm test -- --forceExit`). Les tests importent directement l'app Express via supertest — aucun serveur ni réseau requis.
 - `npx jest tests/priceService.test.js` — run a single test file
 - `npm run seed` — run `src/seed.js`
 

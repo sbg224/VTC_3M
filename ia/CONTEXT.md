@@ -34,7 +34,7 @@ Il constitue le point d'entrée fonctionnel du projet.
 
 Nom
 
-« 3M Drive » (le code et le README utilisent encore « VTC 3M »). L'entreprise qui opère le produit s'appelle désormais AHADI (anciennement « 3M Services 31»). Un renommage du produit en « AHADI Transport » sous une ombrelle « AHADI Groupe » est envisagé mais non tranché à ce jour — le nom « 3M Drive » est conservé en attendant une décision sur le nouveau logo.
+« 3M Drive » est le nom commercial affiché aux clients. La société qui exploite le produit est AHADI Services, société par actions simplifiée à associé unique au capital de 500,00 €, immatriculée 108 767 393 R.C.S. Toulouse (anciennement « 3M Services 31 »). Les replis « VTC 3M » qui subsistaient dans le code ont été remplacés par « 3M Drive » ; l'identité légale complète n'est plus écrite en dur mais portée par les variables `COMPANY_*` (voir `backend/.env.example`). Un renommage du produit en « AHADI Transport » sous une ombrelle « AHADI Groupe » est envisagé mais non tranché à ce jour — le nom « 3M Drive » est conservé en attendant une décision sur le nouveau logo.
 
 Description
 
@@ -103,6 +103,7 @@ Non trouvé / à confirmer
 * Les PDF de réservation/facture ne sont jamais accessibles publiquement : uniquement par le chauffeur propriétaire, authentifié.
 * Les identifiants du compte administrateur par défaut (documentés publiquement dans le README) sont bloqués en production tant que des valeurs réelles n'ont pas été définies.
 * Les pages publiques par chauffeur (`/book/:slug`, `/contact/:slug`) sont volontairement désindexées, leur contenu étant quasiment dupliqué d'un chauffeur à l'autre.
+* La société est **assujettie à la TVA** au taux réduit de **10 %** applicable au transport de voyageurs (art. 279 b quater du CGI) — elle n'est pas en franchise en base. Le prix convenu avec le client est un prix **TTC** : la facture en extrait la base HT (`TTC ÷ 1,10`) au lieu d'ajouter la taxe par-dessus, afin que le total facturé reste le montant accepté à la réservation. N° de TVA intracommunautaire : `FR11 108767393`.
 
 ⸻
 
