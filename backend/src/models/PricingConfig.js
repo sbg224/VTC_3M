@@ -30,6 +30,24 @@ module.exports = (sequelize) => {
       defaultValue: 0.0,
       comment:      'Frais de prise en charge fixes (€)',
     },
+    hourlyRate: {
+      type:         DataTypes.FLOAT,
+      allowNull:    false,
+      defaultValue: 28.772,
+      comment:      'Tarif horaire TTC de la mise à disposition (€)',
+    },
+    minimumHours: {
+      type:         DataTypes.FLOAT,
+      allowNull:    false,
+      defaultValue: 2,
+      comment:      'Durée minimum facturable en mise à disposition (heures)',
+    },
+    includedKmPerHour: {
+      type:         DataTypes.FLOAT,
+      allowNull:    false,
+      defaultValue: 25,
+      comment:      'Kilomètres inclus par heure réservée ; au-delà, facturés au pricePerKm',
+    },
     updatedBy: {
       type:      DataTypes.STRING,
       allowNull: true,

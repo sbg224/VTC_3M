@@ -14,6 +14,7 @@ const Review       = require('./Review')(sequelize);
 const RevokedToken = require('./RevokedToken')(sequelize);
 const Contact      = require('./Contact')(sequelize);
 const ContactEvent = require('./ContactEvent')(sequelize);
+const InvoiceSequence = require('./InvoiceSequence')(sequelize);
 
 // ── Associations ──────────────────────────────────────────────────────────────
 // Un chauffeur possède plusieurs réservations
@@ -44,4 +45,4 @@ Driver.hasMany(Contact,   { foreignKey: 'driverId', as: 'contacts' });
 ContactEvent.belongsTo(Contact, { foreignKey: 'contactId', as: 'contact' });
 Contact.hasMany(ContactEvent,   { foreignKey: 'contactId', as: 'events' });
 
-module.exports = { sequelize, Driver, Reservation, PricingConfig, Review, RevokedToken, Contact, ContactEvent };
+module.exports = { sequelize, Driver, Reservation, PricingConfig, Review, RevokedToken, Contact, ContactEvent, InvoiceSequence };
