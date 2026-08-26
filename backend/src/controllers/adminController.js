@@ -389,19 +389,25 @@ exports.getPricing = async (req, res) => {
     if (!config) {
       const current = getPricingValues();
       config = await PricingConfig.create({
-        id:           1,
-        pricePerKm:   current.PRICE_PER_KM,
-        minimumPrice: current.MINIMUM_PRICE,
-        baseFee:      current.BASE_FEE,
-        updatedBy:    'system',
+        id:                1,
+        pricePerKm:        current.PRICE_PER_KM,
+        minimumPrice:      current.MINIMUM_PRICE,
+        baseFee:           current.BASE_FEE,
+        hourlyRate:        current.HOURLY_RATE,
+        minimumHours:      current.MINIMUM_HOURS,
+        includedKmPerHour: current.INCLUDED_KM_PER_HOUR,
+        updatedBy:         'system',
       });
     }
     res.json({
-      pricePerKm:   config.pricePerKm,
-      minimumPrice: config.minimumPrice,
-      baseFee:      config.baseFee,
-      updatedBy:    config.updatedBy,
-      updatedAt:    config.updatedAt,
+      pricePerKm:        config.pricePerKm,
+      minimumPrice:      config.minimumPrice,
+      baseFee:           config.baseFee,
+      hourlyRate:        config.hourlyRate,
+      minimumHours:      config.minimumHours,
+      includedKmPerHour: config.includedKmPerHour,
+      updatedBy:         config.updatedBy,
+      updatedAt:         config.updatedAt,
     });
   } catch (err) {
     logger.error('Erreur adminController.getPricing', { error: err.message });
@@ -411,42 +417,60 @@ exports.getPricing = async (req, res) => {
 
 exports.updatePricing = async (req, res) => {
   try {
-    const { pricePerKm, minimumPrice, baseFee } = req.body;
+    const {
+      pricePerKm, minimumPrice, baseFee,
+      hourlyRate, minimumHours, includedKmPerHour,
+    } = req.body;
 
-    // Validation des valeurs
-    if (pricePerKm !== undefined && (isNaN(pricePerKm) || pricePerKm < 0)) {
-      return res.status(400).json({ error: 'pricePerKm invalide (doit être >= 0).' });
+    // Validation des valeurs. minimumHours doit être strictement positif : une
+    // durée plancher nulle laisserait facturer une mise à disposition de zéro
+    // heure. includedKmPerHour peut valoir 0 — tout le kilométrage devient
+    // alors supplément, ce qui reste un choix tarifaire légitime.
+    const positiveFields = { pricePerKm, minimumPrice, hourlyRate, minimumHours };
+    for (const [field, value] of Object.entries(positiveFields)) {
+      if (value !== undefined && (isNaN(value) || Number(value) <= 0)) {
+        return res.status(400).json({ error: `${field} invalide (doit être > 0).` });
+      }
     }
-    if (minimumPrice !== undefined && (isNaN(minimumPrice) || minimumPrice < 0)) {
-      return res.status(400).json({ error: 'minimumPrice invalide (doit être >= 0).' });
-    }
-    if (baseFee !== undefined && (isNaN(baseFee) || baseFee < 0)) {
-      return res.status(400).json({ error: 'baseFee invalide (doit être >= 0).' });
+    const nonNegativeFields = { baseFee, includedKmPerHour };
+    for (const [field, value] of Object.entries(nonNegativeFields)) {
+      if (value !== undefined && (isNaN(value) || Number(value) < 0)) {
+        return res.status(400).json({ error: `${field} invalide (doit être >= 0).` });
+      }
     }
 
     // Upsert : met à jour la ligne id=1 ou la crée si absente
     const [config] = await PricingConfig.upsert({
-      id:           1,
-      pricePerKm:   parseFloat(pricePerKm),
-      minimumPrice: parseFloat(minimumPrice),
-      baseFee:      parseFloat(baseFee),
-      updatedBy:    req.driver?.name || req.driver?.email || 'admin',
+      id:                1,
+      pricePerKm:        parseFloat(pricePerKm),
+      minimumPrice:      parseFloat(minimumPrice),
+      baseFee:           parseFloat(baseFee),
+      hourlyRate:        parseFloat(hourlyRate),
+      minimumHours:      parseFloat(minimumHours),
+      includedKmPerHour: parseFloat(includedKmPerHour),
+      updatedBy:         req.driver?.name || req.driver?.email || 'admin',
     });
 
     // Mise à jour du cache mémoire → effective immédiatement
-    updatePricingCache({ pricePerKm, minimumPrice, baseFee });
+    updatePricingCache({
+      pricePerKm, minimumPrice, baseFee,
+      hourlyRate, minimumHours, includedKmPerHour,
+    });
 
     logger.info(`[Admin] Tarification mise à jour par ${req.driver?.email}`, {
-      pricePerKm, minimumPrice, baseFee,
+      pricePerKm, minimumPrice, baseFee, hourlyRate, minimumHours, includedKmPerHour,
     });
 
     res.json({
       message: 'Tarification mise à jour avec succès.',
-      pricePerKm:   parseFloat(pricePerKm),
-      minimumPrice: parseFloat(minimumPrice),
-      baseFee:      parseFloat(baseFee),
-      updatedBy:    req.driver?.name || req.driver?.email || 'admin',
-      updatedAt:    new Date(),
+      pricePerKm:        parseFloat(pricePerKm),
+      minimumPrice:      parseFloat(minimumPrice),
+      baseFee:           parseFloat(baseFee),
+      hourlyRate:        parseFloat(hourlyRate),
+      minimumHours:      parseFloat(minimumHours),
+      includedKmPerHour: parseFloat(includedKmPerHour),
+      updatedBy:         req.driver?.name || req.driver?.email || 'admin',
+      updatedAt:         new Date(),
     });
   } catch (err) {
     logger.error('Erreur adminController.updatePricing', { error: err.message });

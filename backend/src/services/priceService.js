@@ -11,6 +11,11 @@ let _pricing = {
   PRICE_PER_KM:  parseFloat(process.env.PRICE_PER_KM)  || 2.0,
   MINIMUM_PRICE: parseFloat(process.env.MINIMUM_PRICE) || 10.0,
   BASE_FEE:      parseFloat(process.env.BASE_FEE)      || 0.0,
+  // Mise à disposition : tarif horaire TTC, durée plancher facturable et
+  // kilomètres compris dans chaque heure réservée.
+  HOURLY_RATE:         parseFloat(process.env.HOURLY_RATE)          || 28.772,
+  MINIMUM_HOURS:       parseFloat(process.env.MINIMUM_HOURS)        || 2,
+  INCLUDED_KM_PER_HOUR: parseFloat(process.env.INCLUDED_KM_PER_HOUR) || 25,
 };
 
 /**
@@ -39,6 +44,11 @@ function updatePricingCache(newPricing) {
     PRICE_PER_KM:  positiveOr(newPricing.pricePerKm,   _pricing.PRICE_PER_KM),
     MINIMUM_PRICE: positiveOr(newPricing.minimumPrice, _pricing.MINIMUM_PRICE),
     BASE_FEE:      nonNegativeOr(newPricing.baseFee,   _pricing.BASE_FEE),
+    HOURLY_RATE:   positiveOr(newPricing.hourlyRate,   _pricing.HOURLY_RATE),
+    MINIMUM_HOURS: positiveOr(newPricing.minimumHours, _pricing.MINIMUM_HOURS),
+    // Un forfait de 0 km inclus est un choix tarifaire légitime (tout le
+    // kilométrage devient alors supplément), d'où nonNegativeOr.
+    INCLUDED_KM_PER_HOUR: nonNegativeOr(newPricing.includedKmPerHour, _pricing.INCLUDED_KM_PER_HOUR),
   };
 }
 
@@ -65,4 +75,78 @@ function calculatePrice(distance_km) {
   return Number.isFinite(price) ? price : _pricing.MINIMUM_PRICE;
 }
 
-module.exports = { calculatePrice, updatePricingCache, getPricingValues };
+/**
+ * Durée effectivement facturée : la durée réservée, relevée au plancher
+ * commercial. Réserver une heure alors que deux sont facturées serait trompeur
+ * — l'interface ne propose plus cette durée, mais la règle est appliquée ici,
+ * côté serveur, seul endroit qui fasse foi.
+ *
+ * @param {number} hours - durée réservée en heures
+ * @returns {number} durée facturable en heures
+ */
+function billableHours(hours) {
+  const parsed = parseFloat(hours);
+  if (!Number.isFinite(parsed) || parsed <= 0) return _pricing.MINIMUM_HOURS;
+  return Math.max(_pricing.MINIMUM_HOURS, parsed);
+}
+
+/**
+ * Prix d'une mise à disposition : part horaire seule.
+ *
+ * Le supplément kilométrique n'en fait pas partie : à la réservation, aucune
+ * destination n'est connue, donc aucune distance. Il est calculé à la
+ * validation de la course par calculateExtraKmCharge().
+ *
+ * @param {number} hours - durée réservée en heures
+ * @returns {number} prix TTC arrondi au centime
+ */
+function calculateHourlyPrice(hours) {
+  const price = Math.round(billableHours(hours) * _pricing.HOURLY_RATE * 100) / 100;
+  return Number.isFinite(price) ? price : 0;
+}
+
+/**
+ * Kilomètres compris dans une réservation, proportionnels à la durée facturée.
+ *
+ * @param {number} hours - durée réservée en heures
+ * @returns {number} forfait kilométrique inclus
+ */
+function includedKm(hours) {
+  return billableHours(hours) * _pricing.INCLUDED_KM_PER_HOUR;
+}
+
+/**
+ * Supplément dû pour les kilomètres dépassant le forfait inclus, facturés au
+ * tarif kilométrique du mode transfert.
+ *
+ * @param {number} hours - durée réservée en heures
+ * @param {number} actualDistanceKm - kilométrage réellement parcouru
+ * @returns {{ includedKm: number, extraKm: number, charge: number }}
+ */
+function calculateExtraKmCharge(hours, actualDistanceKm) {
+  const included = includedKm(hours);
+  const actual = parseFloat(actualDistanceKm);
+  if (!Number.isFinite(actual) || actual <= included) {
+    return { includedKm: included, extraKm: 0, charge: 0 };
+  }
+  // Soustraction en centièmes entiers plutôt qu'en flottants : `50.555 - 50`
+  // vaut 0.5549999999999997 en binaire et s'arrondirait à 0,55 km au lieu de
+  // 0,56. On arrondit chaque opérande avant de soustraire.
+  const extraKm = (Math.round(actual * 100) - Math.round(included * 100)) / 100;
+  const charge = Math.round(extraKm * _pricing.PRICE_PER_KM * 100) / 100;
+  return {
+    includedKm: included,
+    extraKm,
+    charge: Number.isFinite(charge) ? charge : 0,
+  };
+}
+
+module.exports = {
+  calculatePrice,
+  calculateHourlyPrice,
+  calculateExtraKmCharge,
+  billableHours,
+  includedKm,
+  updatePricingCache,
+  getPricingValues,
+};

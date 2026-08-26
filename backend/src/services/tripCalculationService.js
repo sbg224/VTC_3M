@@ -1,5 +1,8 @@
 const { calculateRoute } = require('./geoService');
-const { calculatePrice, getPricingValues } = require('./priceService');
+const {
+  calculatePrice, calculateHourlyPrice, calculateExtraKmCharge,
+  billableHours, includedKm, getPricingValues,
+} = require('./priceService');
 
 const UNAVAILABLE_ERROR_CODES = new Set([
   'ECONNABORTED',
@@ -62,4 +65,36 @@ function getTripCalculationHttpError(error) {
   };
 }
 
-module.exports = { calculateTrip, getTripCalculationHttpError };
+/**
+ * Source tarifaire unique pour la simulation et la création d'une mise à
+ * disposition. Aucun appel réseau : sans destination, il n'y a ni géocodage ni
+ * itinéraire à calculer — seule la durée détermine le prix annoncé.
+ *
+ * @param {number} hours - durée réservée en heures
+ */
+function calculateHourlyService(hours) {
+  const pricing = getPricingValues();
+  const billable = billableHours(hours);
+
+  return {
+    serviceType: 'mise_a_disposition',
+    hours: billable,
+    estimatedPrice: calculateHourlyPrice(hours),
+    includedKm: includedKm(hours),
+    breakdown: {
+      hourlyRate: pricing.HOURLY_RATE,
+      minimumHours: pricing.MINIMUM_HOURS,
+      includedKmPerHour: pricing.INCLUDED_KM_PER_HOUR,
+      // Rappelé ici car c'est à ce tarif que seront facturés les kilomètres
+      // dépassant le forfait, une fois la course effectuée.
+      pricePerKm: pricing.PRICE_PER_KM,
+    },
+  };
+}
+
+module.exports = {
+  calculateTrip,
+  calculateHourlyService,
+  calculateExtraKmCharge,
+  getTripCalculationHttpError,
+};

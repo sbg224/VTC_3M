@@ -9,7 +9,9 @@ const fs = require('fs');
 const { Op } = require('sequelize');
 const { normalizeFrenchPhone, isValidFrenchPhone } = require('../utils/phone');
 const { likeContains } = require('../utils/search');
-const { calculateTrip, getTripCalculationHttpError } = require('../services/tripCalculationService');
+const {
+  calculateTrip, calculateHourlyService, getTripCalculationHttpError,
+} = require('../services/tripCalculationService');
 const { PDF_DIR } = require('../config/storage');
 
 // ── Créer une réservation (public) ────────────────────────────────────────────
@@ -76,11 +78,17 @@ exports.createReservation = async (req, res) => {
       return res.status(404).json({ error: 'Chauffeur introuvable ou compte inactif.' });
     }
 
-    // Une mise à disposition n'avait déjà aucun tarif automatique fiable :
-    // elle reste enregistrée sans distance/prix. Pour un transfert, le calcul
-    // serveur est obligatoire et précède strictement toute écriture en base.
+    // Le calcul serveur est obligatoire dans les deux modes et précède
+    // strictement toute écriture en base.
+    //
+    // Transfert : géocodage puis itinéraire, donc distance et prix au km.
+    // Mise à disposition : aucune destination, donc aucune distance — le prix
+    // annoncé ne couvre que la part horaire. Le supplément kilométrique est
+    // calculé à la validation de la course, une fois le kilométrage relevé.
     let trip = null;
-    let persistedArrivalAddress = arrivalAddress;
+    let hourlyService = null;
+    let hours = null;
+
     if (serviceType === 'transfert') {
       try {
         trip = await calculateTrip(departureAddress, arrivalAddress);
@@ -90,18 +98,36 @@ exports.createReservation = async (req, res) => {
         return res.status(httpError.status).json({ error: httpError.message });
       }
     } else {
-      persistedArrivalAddress = `Mise à disposition – ${serviceDuration}`;
+      hours = parseInt(serviceDuration, 10);
+      if (!Number.isFinite(hours) || hours <= 0) {
+        return res.status(400).json({
+          error: 'Formulaire incomplet ou invalide.',
+          fields: { serviceDuration: 'Durée de mise à disposition invalide.' },
+        });
+      }
+      hourlyService = calculateHourlyService(hours);
     }
 
     const reservation = await Reservation.createUnique({
       firstName, lastName, email, phone: normalizedPhone,
-      departureAddress, arrivalAddress: persistedArrivalAddress,
+      // L'adresse d'arrivée n'est plus détournée pour encoder le mode de
+      // prestation (« Mise à disposition – 3h ») : serviceType porte désormais
+      // cette information. Une mise à disposition n'ayant pas de destination,
+      // le champ reste vide.
+      //
+      // Chaîne vide et non NULL : la colonne est déclarée allowNull: false et
+      // la rendre nullable exigerait une migration supplémentaire. À reprendre
+      // le jour où le schéma évoluera de nouveau — NULL exprimerait plus
+      // justement « pas de destination » qu'une chaîne vide.
+      departureAddress, arrivalAddress: serviceType === 'transfert' ? arrivalAddress : '',
       date, time,
       passengers:     parseInt(passengers) || 1,
       luggage:        parseInt(luggage) || 0,
       comments:       comments || null,
+      serviceType,
+      serviceDurationHours: hourlyService ? hourlyService.hours : null,
       distance:       trip?.distance_km ?? null,
-      estimatedPrice: trip?.estimatedPrice ?? null,
+      estimatedPrice: trip?.estimatedPrice ?? hourlyService?.estimatedPrice ?? null,
       gdprConsent,
       termsAccepted,
       status:         'pending',
@@ -136,9 +162,12 @@ exports.createReservation = async (req, res) => {
         id: reservation.id,
         reservationNumber: reservation.reservationNumber,
         status: reservation.status,
+        serviceType: reservation.serviceType,
+        serviceDurationHours: reservation.serviceDurationHours,
         distance: reservation.distance,
         duration: trip?.duration_min ?? null,
         estimatedPrice: reservation.estimatedPrice,
+        includedKm: hourlyService?.includedKm ?? null,
       },
     });
 

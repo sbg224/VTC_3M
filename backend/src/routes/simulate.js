@@ -22,6 +22,16 @@ const simulateRules = [
     .isLength({ min: 3, max: 500 }).withMessage('Adresse d\'arrivée invalide (3-500 caractères).'),
 ];
 
+const hourlyRules = [
+  body('hours')
+    .notEmpty().withMessage('La durée est requise.')
+    .isInt({ min: 1, max: 24 }).withMessage('Durée invalide (1 à 24 heures).'),
+];
+
 router.post('/', simulateLimiter, simulateRules, validate, ctrl.simulate);
+// Mise à disposition : même quota que la simulation de transfert, bien
+// qu'aucun service externe ne soit sollicité — la limite protège d'abord
+// contre l'exploration automatisée de la grille tarifaire.
+router.post('/hourly', simulateLimiter, hourlyRules, validate, ctrl.simulateHourly);
 
 module.exports = router;
