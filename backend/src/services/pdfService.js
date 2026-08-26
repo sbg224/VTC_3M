@@ -26,11 +26,55 @@ const company = {
 };
 
 // ── TVA ──────────────────────────────────────────────────────────────────────
-// Transport de voyageurs : taux réduit de 10 % (art. 279 b quater du CGI).
-const TVA_RATE = 0.10;
+// Le taux dépend de la nature réelle de la prestation, pas de l'activité de
+// l'entreprise :
+//
+// - un transfert d'un point A à un point B est un contrat de transport de
+//   voyageurs, relevant du taux réduit de 10 % (art. 279 b quater du CGI) ;
+// - une mise à disposition, facturée à l'heure et sans trajet prédéfini, est
+//   fiscalement assimilée à une location de véhicule avec chauffeur : le
+//   kilométrage y est accessoire, et le taux normal de 20 % s'applique
+//   (art. 278 du CGI).
+//
+// Appliquer 10 % à une mise à disposition expose à un redressement.
+const TVA_RATES = {
+  transfert: 0.10,
+  mise_a_disposition: 0.20,
+};
+
+// Les réservations antérieures à l'introduction de serviceType n'en portent
+// pas ; la migration leur a attribué « transfert », ce qui correspond à leur
+// nature réelle — elles avaient toutes une adresse d'arrivée.
+const DEFAULT_SERVICE_TYPE = 'transfert';
 
 /**
- * Ventile un montant TTC en base HT et TVA.
+ * Taux de TVA applicable à un mode de prestation.
+ *
+ * @param {string} serviceType - 'transfert' ou 'mise_a_disposition'
+ * @returns {number} taux (0.10 ou 0.20)
+ */
+function vatRateFor(serviceType) {
+  return TVA_RATES[serviceType] ?? TVA_RATES[DEFAULT_SERVICE_TYPE];
+}
+
+/**
+ * Mention légale du taux appliqué, à porter sur la facture.
+ *
+ * @param {string} serviceType - 'transfert' ou 'mise_a_disposition'
+ * @returns {string}
+ */
+function vatLegalMention(serviceType) {
+  if (serviceType === 'mise_a_disposition') {
+    return 'TVA au taux normal de 20 % : mise à disposition de véhicule avec '
+      + 'chauffeur, assimilée à une location et non à un transport de '
+      + 'voyageurs (art. 278 du CGI).';
+  }
+  return 'TVA au taux réduit de 10 % applicable au transport de voyageurs '
+    + '(art. 279 b quater du CGI).';
+}
+
+/**
+ * Ventile un montant TTC en base HT et TVA, au taux du mode de prestation.
  *
  * `reservation.price` est le prix convenu avec le client, donc TTC : un prix
  * annoncé à un particulier s'entend toutes taxes comprises (art. L112-1 du
@@ -38,16 +82,22 @@ const TVA_RATE = 0.10;
  * ajoutée par-dessus — sinon la facture réclamerait au client davantage que
  * le prix accepté lors de la réservation.
  *
+ * Le taux n'est pas passé directement mais dérivé de `serviceType` : aucun
+ * appelant ne peut ainsi appliquer par erreur un taux incohérent avec la
+ * prestation facturée.
+ *
  * @param {number} ttc - montant toutes taxes comprises
- * @returns {{ ht: number, tva: number, ttc: number }} montants arrondis au centime
+ * @param {string} [serviceType] - 'transfert' (défaut) ou 'mise_a_disposition'
+ * @returns {{ ht: number, tva: number, ttc: number, rate: number }}
  */
-function splitVat(ttc) {
+function splitVat(ttc, serviceType = DEFAULT_SERVICE_TYPE) {
+  const rate = vatRateFor(serviceType);
   const total = Math.round(Number(ttc) * 100) / 100;
-  const ht = Math.round((total / (1 + TVA_RATE)) * 100) / 100;
+  const ht = Math.round((total / (1 + rate)) * 100) / 100;
   // La TVA est calculée par différence : garantit ht + tva === ttc au centime,
   // sans écart d'arrondi visible sur la facture.
   const tva = Math.round((total - ht) * 100) / 100;
-  return { ht, tva, ttc: total };
+  return { ht, tva, ttc: total, rate };
 }
 
 function ensurePdfsDir() {
@@ -324,8 +374,8 @@ async function generateInvoicePdf(reservation) {
     const totalsX = 350;
     const totalsW = doc.page.width - totalsX - 50;
 
-    const { ht, tva, ttc } = splitVat(reservation.price);
-    const tvaPercent = (TVA_RATE * 100).toFixed(0);
+    const { ht, tva, ttc, rate } = splitVat(reservation.price, reservation.serviceType);
+    const tvaPercent = (rate * 100).toFixed(0);
 
     doc.rect(totalsX, y, totalsW, 24).fill('#f9f9f9').stroke('#e5e7eb');
     doc.fontSize(9).fillColor('#666666').font('Helvetica')
@@ -347,11 +397,7 @@ async function generateInvoicePdf(reservation) {
 
     // Note TVA
     doc.fontSize(8).fillColor('#888888').font('Helvetica')
-      .text(
-        `TVA au taux réduit de ${tvaPercent} % applicable au transport de voyageurs `
-        + '(art. 279 b quater du CGI).',
-        50, y, { width: 280 }
-      );
+      .text(vatLegalMention(reservation.serviceType), 50, y, { width: 280 });
     y += 20;
 
     // Mentions légales
@@ -557,12 +603,14 @@ async function generateBordereauPdf(data) {
   });
 }
 
-// splitVat et TVA_RATE sont exportés pour être testables unitairement : la
-// ventilation HT/TVA d'une facture doit rester vérifiable sans générer de PDF.
+// La ventilation HT/TVA et le taux applicable sont exportés pour être
+// vérifiables unitairement, sans générer de PDF.
 module.exports = {
   generateReservationPdf,
   generateInvoicePdf,
   generateBordereauPdf,
   splitVat,
-  TVA_RATE,
+  vatRateFor,
+  vatLegalMention,
+  TVA_RATES,
 };

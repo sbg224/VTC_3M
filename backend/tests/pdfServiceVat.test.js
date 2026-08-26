@@ -1,4 +1,6 @@
-const { splitVat, TVA_RATE } = require('../src/services/pdfService');
+const {
+  splitVat, vatRateFor, vatLegalMention, TVA_RATES,
+} = require('../src/services/pdfService');
 
 /**
  * La ventilation HT/TVA d'une facture n'est vérifiable qu'ici : les suites qui
@@ -6,8 +8,37 @@ const { splitVat, TVA_RATE } = require('../src/services/pdfService');
  * et ne contrôlent donc jamais les montants réellement imprimés.
  */
 describe('pdfService — ventilation de la TVA', () => {
-  test('applique le taux réduit de 10 % du transport de voyageurs', () => {
-    expect(TVA_RATE).toBe(0.10);
+  describe('taux applicable selon la nature de la prestation', () => {
+    // Le taux dépend de la prestation, pas de l'activité de l'entreprise : un
+    // transfert est un transport de voyageurs (10 %), une mise à disposition
+    // est assimilée à une location de véhicule avec chauffeur (20 %).
+    test('un transfert relève du taux réduit de 10 %', () => {
+      expect(TVA_RATES.transfert).toBe(0.10);
+      expect(vatRateFor('transfert')).toBe(0.10);
+    });
+
+    test('une mise à disposition relève du taux normal de 20 %', () => {
+      expect(TVA_RATES.mise_a_disposition).toBe(0.20);
+      expect(vatRateFor('mise_a_disposition')).toBe(0.20);
+    });
+
+    test('un mode absent ou inconnu retombe sur le transfert', () => {
+      // Les réservations antérieures à serviceType avaient toutes une adresse
+      // d'arrivée : la migration les a qualifiées de transferts.
+      for (const value of [undefined, null, '', 'inconnu']) {
+        expect(vatRateFor(value)).toBe(0.10);
+      }
+    });
+
+    test('la mention légale portée sur la facture suit le mode', () => {
+      expect(vatLegalMention('transfert')).toContain('279 b quater');
+      expect(vatLegalMention('transfert')).toContain('10 %');
+      expect(vatLegalMention('mise_a_disposition')).toContain('278 du CGI');
+      expect(vatLegalMention('mise_a_disposition')).toContain('20 %');
+      // La mention d'une mise à disposition ne doit jamais invoquer le
+      // transport de voyageurs, base légale du seul taux réduit.
+      expect(vatLegalMention('mise_a_disposition')).not.toContain('279 b quater');
+    });
   });
 
   describe('extrait la base HT du prix TTC convenu avec le client', () => {
@@ -28,7 +59,7 @@ describe('pdfService — ventilation de la TVA', () => {
     ];
 
     test.each(cas)('$ttc € TTC = $ht € HT + $tva € de TVA', ({ ttc, ht, tva }) => {
-      expect(splitVat(ttc)).toEqual({ ht, tva, ttc });
+      expect(splitVat(ttc, 'transfert')).toEqual({ ht, tva, ttc, rate: 0.10 });
     });
   });
 
@@ -65,6 +96,49 @@ describe('pdfService — ventilation de la TVA', () => {
 
   test('accepte un prix fourni sous forme de chaîne', () => {
     // Sequelize renvoie les DECIMAL en chaîne selon le dialecte.
-    expect(splitVat('44.00')).toEqual({ ht: 40, tva: 4, ttc: 44 });
+    expect(splitVat('44.00')).toEqual({ ht: 40, tva: 4, ttc: 44, rate: 0.10 });
+  });
+
+  describe('ventile une mise à disposition au taux normal de 20 %', () => {
+    const cas = [
+      { ttc: 60.00, ht: 50.00, tva: 10.00 },   // division exacte
+      { ttc: 57.54, ht: 47.95, tva: 9.59 },    // 2 h à 28,772 €/h
+      { ttc: 10.00, ht: 8.33,  tva: 1.67 },
+      { ttc: 33.33, ht: 27.78, tva: 5.55 },
+      { ttc: 99.99, ht: 83.33, tva: 16.66 },
+      { ttc: 120.50, ht: 100.42, tva: 20.08 },
+      { ttc: 12.34, ht: 10.28, tva: 2.06 },
+      { ttc: 1.05,  ht: 0.88,  tva: 0.17 },
+      { ttc: 0.01,  ht: 0.01,  tva: 0.00 },
+    ];
+
+    test.each(cas)('$ttc € TTC = $ht € HT + $tva € de TVA', ({ ttc, ht, tva }) => {
+      expect(splitVat(ttc, 'mise_a_disposition')).toEqual({ ht, tva, ttc, rate: 0.20 });
+    });
+
+    test('produit bien une TVA supérieure à celle d\'un transfert de même montant', () => {
+      const transfert = splitVat(120, 'transfert');
+      const mad = splitVat(120, 'mise_a_disposition');
+      expect(mad.tva).toBeGreaterThan(transfert.tva);
+      // Le montant réclamé au client reste identique : c'est la répartition
+      // entre base et taxe qui change, pas le total.
+      expect(mad.ttc).toBe(transfert.ttc);
+    });
+  });
+
+  test('garantit HT + TVA === TTC au centime aux deux taux', () => {
+    // Balaie 0,01 € à 500,00 € par pas d'un centime, pour chaque mode : aucun
+    // arrondi ne doit faire diverger le total du montant accepté par le client.
+    const ecarts = [];
+    for (const serviceType of ['transfert', 'mise_a_disposition']) {
+      for (let centimes = 1; centimes <= 50000; centimes += 1) {
+        const attendu = centimes / 100;
+        const { ht, tva, ttc } = splitVat(attendu, serviceType);
+        if (Math.round((ht + tva) * 100) !== centimes || ttc !== Math.round(attendu * 100) / 100) {
+          ecarts.push(`${serviceType}:${attendu}`);
+        }
+      }
+    }
+    expect(ecarts).toEqual([]);
   });
 });
