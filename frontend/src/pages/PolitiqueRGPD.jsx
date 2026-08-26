@@ -1,5 +1,6 @@
 import { Mail, Phone, MapPin } from 'lucide-react';
 import Seo from '../components/Seo';
+import { CONTACT_EMAIL, CONTACT_PHONE_E164, CONTACT_PHONE_DISPLAY } from '../utils/contact';
 
 const BREADCRUMB_LD = JSON.stringify({
   '@context': 'https://schema.org',
@@ -39,13 +40,15 @@ export default function PolitiqueRGPD() {
           <div className="legal-section">
             <h2 className="legal-h2">1. Responsable du traitement</h2>
             <ul className="legal-list">
-              <li><strong>Raison sociale :</strong> 3M SERVICES 31</li>
+              <li><strong>Raison sociale :</strong> AHADI Services</li>
               <li><strong>Nom commercial :</strong> 3M Drive</li>
-              <li><strong>Représentant :</strong> Mohamed BAH</li>
-              <li><strong>Adresse :</strong> 1 rue Virginia Woolf, 31000 Toulouse, France</li>
-              <li><strong>Email DPO :</strong>{' '}
-                <a href="mailto:3m.services31@gmail.com" className="legal-link">
-                  3m.services31@gmail.com
+              <li><strong>Forme juridique :</strong> Société par Actions Simplifiée (société à associé unique)</li>
+              <li><strong>SIREN :</strong> 108 767 393</li>
+              <li><strong>Représentant légal :</strong> Mohamed Sanoussy Bah, Président</li>
+              <li><strong>Adresse :</strong> 1 rue Virginia Woolf, 31200 Toulouse, France</li>
+              <li><strong>Email de contact :</strong>{' '}
+                <a href={`mailto:${CONTACT_EMAIL}`} className="legal-link">
+                  {CONTACT_EMAIL}
                 </a>
               </li>
             </ul>
@@ -158,8 +161,8 @@ export default function PolitiqueRGPD() {
             </ul>
             <p>
               Pour exercer ces droits, contactez-nous à :{' '}
-              <a href="mailto:3m.services31@gmail.com" className="legal-link">
-                3m.services31@gmail.com
+              <a href={`mailto:${CONTACT_EMAIL}`} className="legal-link">
+                {CONTACT_EMAIL}
               </a>.
               Nous répondrons dans un délai maximum de <strong>30 jours</strong>.
             </p>
@@ -214,19 +217,19 @@ export default function PolitiqueRGPD() {
             <div className="legal-contact-block">
               <div className="legal-contact-item">
                 <Mail size={16} strokeWidth={1.5} className="legal-contact-icon" />
-                <a href="mailto:3m.services31@gmail.com" className="legal-link">
-                  3m.services31@gmail.com
+                <a href={`mailto:${CONTACT_EMAIL}`} className="legal-link">
+                  {CONTACT_EMAIL}
                 </a>
               </div>
               <div className="legal-contact-item">
                 <Phone size={16} strokeWidth={1.5} className="legal-contact-icon" />
-                <a href="tel:+33751044407" className="legal-link">
-                  +33 7 51 04 44 07
+                <a href={`tel:${CONTACT_PHONE_E164}`} className="legal-link">
+                  {CONTACT_PHONE_DISPLAY}
                 </a>
               </div>
               <div className="legal-contact-item">
                 <MapPin size={16} strokeWidth={1.5} className="legal-contact-icon" />
-                <span>1 rue Virginia Woolf, 31000 Toulouse, France</span>
+                <span>1 rue Virginia Woolf, 31200 Toulouse, France</span>
               </div>
             </div>
           </div>

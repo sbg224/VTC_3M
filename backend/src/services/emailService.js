@@ -50,7 +50,7 @@ async function sendAdminNotification(reservation, pdfPath, driverEmail) {
     <body>
       <div class="container">
         <div class="header">
-          <h1>🚗 ${process.env.COMPANY_NAME || 'VTC 3M'}</h1>
+          <h1>🚗 ${process.env.COMPANY_NAME || '3M Drive'}</h1>
           <div class="badge">NOUVELLE RÉSERVATION</div>
         </div>
         <div class="body">
@@ -79,7 +79,7 @@ async function sendAdminNotification(reservation, pdfPath, driverEmail) {
           </div>
         </div>
         <div class="footer">
-          ${process.env.COMPANY_NAME || 'VTC 3M'} – ${process.env.COMPANY_PHONE || ''}<br>
+          ${process.env.COMPANY_NAME || '3M Drive'} – ${process.env.COMPANY_PHONE || ''}<br>
           Connectez-vous au tableau de bord pour confirmer cette course.
         </div>
       </div>
@@ -87,7 +87,7 @@ async function sendAdminNotification(reservation, pdfPath, driverEmail) {
   `;
 
   const mailOptions = {
-    from: process.env.EMAIL_FROM || 'VTC 3M <noreply@vtc3m.fr>',
+    from: process.env.EMAIL_FROM || '3M Drive <noreply@3mdrive.fr>',
     to: driverEmail || process.env.ADMIN_EMAIL,  // chauffeur ciblé, fallback sur ADMIN_EMAIL
     subject: `🚗 Nouvelle réservation ${reservation.reservationNumber} – ${reservation.firstName} ${reservation.lastName}`,
     html,
@@ -135,7 +135,7 @@ async function sendClientConfirmation(reservation, pdfPath) {
     <body>
       <div class="container">
         <div class="header">
-          <h1>🚗 ${process.env.COMPANY_NAME || 'VTC 3M'}</h1>
+          <h1>🚗 ${process.env.COMPANY_NAME || '3M Drive'}</h1>
           <p style="color:#aaa;margin:5px 0 0">Confirmation de votre réservation</p>
         </div>
         <div class="body">
@@ -152,7 +152,7 @@ async function sendClientConfirmation(reservation, pdfPath) {
           <p style="color:#666;font-size:13px">Votre bon de réservation est joint à cet email. Pour toute question, contactez-nous au <strong>${process.env.COMPANY_PHONE || ''}</strong>.</p>
         </div>
         <div class="footer">
-          ${process.env.COMPANY_NAME || 'VTC 3M'} – ${process.env.COMPANY_EMAIL || ''}<br>
+          ${process.env.COMPANY_NAME || '3M Drive'} – ${process.env.COMPANY_EMAIL || ''}<br>
           Merci de votre confiance !
         </div>
       </div>
@@ -160,9 +160,9 @@ async function sendClientConfirmation(reservation, pdfPath) {
   `;
 
   const mailOptions = {
-    from: process.env.EMAIL_FROM || 'VTC 3M <noreply@vtc3m.fr>',
+    from: process.env.EMAIL_FROM || '3M Drive <noreply@3mdrive.fr>',
     to: reservation.email,
-    subject: `✅ Confirmation réservation ${reservation.reservationNumber} – ${process.env.COMPANY_NAME || 'VTC 3M'}`,
+    subject: `✅ Confirmation réservation ${reservation.reservationNumber} – ${process.env.COMPANY_NAME || '3M Drive'}`,
     html,
     attachments: pdfPath ? [{
       filename: `reservation-${reservation.reservationNumber}.pdf`,
@@ -203,13 +203,13 @@ async function sendInvoiceToClient(reservation, pdfPath, reviewToken) {
     </div>` : '';
 
   const mailOptions = {
-    from: process.env.EMAIL_FROM || 'VTC 3M <noreply@vtc3m.fr>',
+    from: process.env.EMAIL_FROM || '3M Drive <noreply@3mdrive.fr>',
     to: reservation.email,
-    subject: `🧾 Facture ${reservation.reservationNumber} – ${process.env.COMPANY_NAME || 'VTC 3M'}`,
+    subject: `🧾 Facture ${reservation.reservationNumber} – ${process.env.COMPANY_NAME || '3M Drive'}`,
     html: `
       <div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto">
         <div style="background:#1a1a2e;color:#c9a227;padding:30px;text-align:center">
-          <h1 style="margin:0">🚗 ${process.env.COMPANY_NAME || 'VTC 3M'}</h1>
+          <h1 style="margin:0">🚗 ${process.env.COMPANY_NAME || '3M Drive'}</h1>
         </div>
         <div style="padding:30px">
           <p>Bonjour <strong>${reservation.firstName}</strong>,</p>
@@ -219,7 +219,7 @@ async function sendInvoiceToClient(reservation, pdfPath, reviewToken) {
           <p style="margin-top:24px">Merci de votre confiance et à bientôt !</p>
         </div>
         <div style="background:#1a1a2e;color:#888;padding:20px;text-align:center;font-size:12px">
-          ${process.env.COMPANY_NAME || 'VTC 3M'} – ${process.env.COMPANY_PHONE || ''}
+          ${process.env.COMPANY_NAME || '3M Drive'} – ${process.env.COMPANY_PHONE || ''}
         </div>
       </div>
     `,
@@ -251,13 +251,13 @@ async function sendInvoiceToDriver(reservation, pdfPath, driverEmail) {
   const transporter = createTransporter();
 
   const mailOptions = {
-    from: process.env.EMAIL_FROM || 'VTC 3M <noreply@vtc3m.fr>',
+    from: process.env.EMAIL_FROM || '3M Drive <noreply@3mdrive.fr>',
     to: driverEmail,
     subject: `🧾 Facture émise – ${reservation.reservationNumber} (${reservation.firstName} ${reservation.lastName})`,
     html: `
       <div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto">
         <div style="background:#1a1a2e;color:#c9a227;padding:30px;text-align:center">
-          <h1 style="margin:0">🚗 ${process.env.COMPANY_NAME || 'VTC 3M'}</h1>
+          <h1 style="margin:0">🚗 ${process.env.COMPANY_NAME || '3M Drive'}</h1>
           <p style="color:#aaa;margin:5px 0 0">Récapitulatif de course</p>
         </div>
         <div style="padding:30px">
@@ -284,7 +284,7 @@ async function sendInvoiceToDriver(reservation, pdfPath, driverEmail) {
           <p style="color:#666;font-size:13px">La facture PDF est jointe à cet email pour vos archives.</p>
         </div>
         <div style="background:#1a1a2e;color:#888;padding:20px;text-align:center;font-size:12px">
-          ${process.env.COMPANY_NAME || 'VTC 3M'} – Tableau de bord disponible sur votre espace chauffeur
+          ${process.env.COMPANY_NAME || '3M Drive'} – Tableau de bord disponible sur votre espace chauffeur
         </div>
       </div>
     `,

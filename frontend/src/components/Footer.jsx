@@ -1,5 +1,12 @@
 import { Link } from 'react-router-dom';
-import { MapPin, Phone, Mail } from 'lucide-react';
+import { MapPin, Mail } from 'lucide-react';
+import WhatsAppIcon from './WhatsAppIcon';
+import {
+  CONTACT_EMAIL,
+  WHATSAPP_URL,
+  WHATSAPP_LABEL,
+  WHATSAPP_ARIA_LABEL,
+} from '../utils/contact';
 
 export default function Footer() {
   const year = new Date().getFullYear();
@@ -21,8 +28,15 @@ export default function Footer() {
             </div>
             <p>Votre chauffeur VTC privé à Toulouse — service premium, discret et ponctuel.</p>
             <div className="footer-contact-row">
-              <a href="tel:+33751044407"><Phone size={13} strokeWidth={1.5} /> +33 7 51 04 44 07</a>
-              <a href="mailto:3m.services31@gmail.com"><Mail size={13} strokeWidth={1.5} /> 3m.services31@gmail.com</a>
+              <a
+                href={WHATSAPP_URL}
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label={WHATSAPP_ARIA_LABEL}
+              >
+                <WhatsAppIcon size={13} /> {WHATSAPP_LABEL}
+              </a>
+              <a href={`mailto:${CONTACT_EMAIL}`}><Mail size={13} strokeWidth={1.5} /> {CONTACT_EMAIL}</a>
               <span><MapPin size={13} strokeWidth={1.5} /> Toulouse (31)</span>
             </div>
           </div>

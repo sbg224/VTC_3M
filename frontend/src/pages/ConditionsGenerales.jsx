@@ -1,4 +1,5 @@
 import Seo from '../components/Seo';
+import { CONTACT_EMAIL, CONTACT_PHONE_E164, CONTACT_PHONE_DISPLAY } from '../utils/contact';
 
 const BREADCRUMB_LD = JSON.stringify({
   '@context': 'https://schema.org',
@@ -32,7 +33,28 @@ export default function ConditionsGenerales() {
 
           <div className="legal-body">
             <div className="legal-section">
-              <h2 className="legal-h2">1. Objet</h2>
+              <h2 className="legal-h2">1. Identification du prestataire</h2>
+              <p>
+                Le site 3M Drive est édité et exploité par AHADI Services, Société par Actions
+                Simplifiée à associé unique au capital de 500,00 euros, immatriculée au RCS de
+                Toulouse sous le numéro 108 767 393, dont le siège social est situé
+                1 rue Virginia Woolf, 31200 Toulouse, représentée par Mohamed Sanoussy Bah,
+                Président.
+              </p>
+              <p>
+                Contact :{' '}
+                <a href={`mailto:${CONTACT_EMAIL}`} className="legal-link">
+                  {CONTACT_EMAIL}
+                </a>{' '}
+                —{' '}
+                <a href={`tel:${CONTACT_PHONE_E164}`} className="legal-link">
+                  {CONTACT_PHONE_DISPLAY}
+                </a>
+              </p>
+            </div>
+
+            <div className="legal-section">
+              <h2 className="legal-h2">2. Objet</h2>
               <p>
                 Le site 3M Drive permet aux utilisateurs de consulter les services proposés,
                 d'effectuer une demande de réservation et, pour les comptes habilités,
@@ -41,7 +63,7 @@ export default function ConditionsGenerales() {
             </div>
 
             <div className="legal-section">
-              <h2 className="legal-h2">2. Acceptation</h2>
+              <h2 className="legal-h2">3. Acceptation</h2>
               <p>
                 Toute utilisation du site implique l'acceptation pleine et entière des présentes
                 conditions générales d'utilisation. L'utilisateur reconnaît également avoir pris
@@ -50,7 +72,7 @@ export default function ConditionsGenerales() {
             </div>
 
             <div className="legal-section">
-              <h2 className="legal-h2">3. Réservations</h2>
+              <h2 className="legal-h2">4. Réservations</h2>
               <p>
                 Toute demande de réservation doit être complète, sincère et exacte. L'envoi du
                 formulaire ne vaut pas automatiquement acceptation définitive de la course.
@@ -60,7 +82,7 @@ export default function ConditionsGenerales() {
             </div>
 
             <div className="legal-section">
-              <h2 className="legal-h2">4. Responsabilités de l'utilisateur</h2>
+              <h2 className="legal-h2">5. Responsabilités de l'utilisateur</h2>
               <p>L'utilisateur s'engage à :</p>
               <ul className="legal-list">
                 <li>ne pas transmettre de fausses informations ;</li>
@@ -71,7 +93,7 @@ export default function ConditionsGenerales() {
             </div>
 
             <div className="legal-section">
-              <h2 className="legal-h2">5. Espace chauffeur / administrateur</h2>
+              <h2 className="legal-h2">6. Espace chauffeur / administrateur</h2>
               <p>
                 Les accès authentifiés sont strictement personnels. Tout utilisateur disposant
                 d'identifiants d'accès doit en assurer la confidentialité. Toute action effectuée
@@ -80,7 +102,7 @@ export default function ConditionsGenerales() {
             </div>
 
             <div className="legal-section">
-              <h2 className="legal-h2">6. Disponibilité du service</h2>
+              <h2 className="legal-h2">7. Disponibilité du service</h2>
               <p>
                 3M Drive met en œuvre les moyens raisonnables pour assurer la disponibilité du site,
                 sans garantir une disponibilité continue ni l'absence totale d'erreurs ou d'interruptions.
@@ -88,7 +110,7 @@ export default function ConditionsGenerales() {
             </div>
 
             <div className="legal-section">
-              <h2 className="legal-h2">7. Données personnelles</h2>
+              <h2 className="legal-h2">8. Données personnelles</h2>
               <p>
                 Le traitement des données personnelles collectées via le site est encadré par la
                 politique de confidentialité et protection des données disponible sur la page dédiée.
@@ -96,7 +118,7 @@ export default function ConditionsGenerales() {
             </div>
 
             <div className="legal-section">
-              <h2 className="legal-h2">8. Propriété intellectuelle</h2>
+              <h2 className="legal-h2">9. Propriété intellectuelle</h2>
               <p>
                 Les contenus, éléments graphiques, textes, interfaces et composants du site restent
                 protégés par le droit de la propriété intellectuelle. Toute reproduction ou réutilisation
@@ -105,7 +127,7 @@ export default function ConditionsGenerales() {
             </div>
 
             <div className="legal-section">
-              <h2 className="legal-h2">9. Droit applicable</h2>
+              <h2 className="legal-h2">10. Droit applicable</h2>
               <p>
                 Les présentes CGU sont soumises au droit français. En cas de litige,
                 et à défaut de résolution amiable, les juridictions compétentes sont celles du ressort de Toulouse.

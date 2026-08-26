@@ -1,5 +1,6 @@
 import { Mail, Phone, MapPin } from 'lucide-react';
 import Seo from '../components/Seo';
+import { CONTACT_EMAIL, CONTACT_PHONE_E164, CONTACT_PHONE_DISPLAY } from '../utils/contact';
 
 const BREADCRUMB_LD = JSON.stringify({
   '@context': 'https://schema.org',
@@ -39,22 +40,28 @@ export default function MentionsLegales() {
             <h2 className="legal-h2">1. Éditeur du site</h2>
             <p>Le présent site est édité par :</p>
             <ul className="legal-list">
-              <li><strong>Raison sociale :</strong> 3M SERVICES 31</li>
+              <li><strong>Raison sociale :</strong> AHADI Services</li>
               <li><strong>Nom commercial :</strong> 3M Drive</li>
-              <li><strong>Forme juridique :</strong> Entreprise individuelle</li>
-              <li><strong>Représentant légal :</strong> Mohamed BAH</li>
-              <li><strong>Siège social :</strong> 1 rue Virginia Woolf, 31000 Toulouse, France</li>
+              <li><strong>Forme juridique :</strong> Société par Actions Simplifiée (société à associé unique)</li>
+              <li><strong>Capital social :</strong> 500,00 euros</li>
+              <li><strong>SIREN :</strong> 108 767 393</li>
+              <li><strong>SIRET (établissement principal) :</strong> 108 767 393 00011</li>
+              <li><strong>RCS :</strong> 108 767 393 R.C.S. Toulouse</li>
+              <li><strong>N° de TVA intracommunautaire :</strong> FR11 108767393</li>
+              <li><strong>Code APE :</strong> 4932Z — Transports de voyageurs par taxis</li>
+              <li><strong>Siège social :</strong> 1 rue Virginia Woolf, 31200 Toulouse, France</li>
+              <li><strong>Représentant légal / Directeur de la publication :</strong> Mohamed Sanoussy Bah, Président</li>
               <li><strong>Email :</strong>{' '}
-                <a href="mailto:3m.services31@gmail.com" className="legal-link">
-                  3m.services31@gmail.com
+                <a href={`mailto:${CONTACT_EMAIL}`} className="legal-link">
+                  {CONTACT_EMAIL}
                 </a>
               </li>
               <li><strong>Téléphone :</strong>{' '}
-                <a href="tel:+33751044407" className="legal-link">
-                  +33 7 51 04 44 07
+                <a href={`tel:${CONTACT_PHONE_E164}`} className="legal-link">
+                  {CONTACT_PHONE_DISPLAY}
                 </a>
               </li>
-              <li><strong>Activité :</strong> Transport de voyageurs — Chauffeur VTC agréé</li>
+              <li><strong>Activité principale :</strong> Voiture de Transport avec Chauffeur (VTC)</li>
             </ul>
           </div>
 
@@ -64,8 +71,8 @@ export default function MentionsLegales() {
             <p>
               Ce site est hébergé par un prestataire tiers. Les coordonnées exactes de
               l'hébergeur sont disponibles sur demande à l'adresse{' '}
-              <a href="mailto:3m.services31@gmail.com" className="legal-link">
-                3m.services31@gmail.com
+              <a href={`mailto:${CONTACT_EMAIL}`} className="legal-link">
+                {CONTACT_EMAIL}
               </a>.
             </p>
           </div>
@@ -75,10 +82,10 @@ export default function MentionsLegales() {
             <h2 className="legal-h2">3. Propriété intellectuelle</h2>
             <p>
               L'ensemble du contenu de ce site — textes, images, graphismes, logo, icônes,
-              sons et logiciels — est la propriété exclusive de 3M SERVICES 31, sauf mention
+              sons et logiciels — est la propriété exclusive d'AHADI Services, sauf mention
               contraire. Toute reproduction, distribution, modification, adaptation,
               retransmission ou publication de ces éléments est strictement interdite sans
-              l'accord écrit préalable de 3M SERVICES 31.
+              l'accord écrit préalable d'AHADI Services.
             </p>
             <p>
               Le non-respect de cette disposition constitue une contrefaçon pouvant engager
@@ -141,19 +148,19 @@ export default function MentionsLegales() {
             <div className="legal-contact-block">
               <div className="legal-contact-item">
                 <Mail size={16} strokeWidth={1.5} className="legal-contact-icon" />
-                <a href="mailto:3m.services31@gmail.com" className="legal-link">
-                  3m.services31@gmail.com
+                <a href={`mailto:${CONTACT_EMAIL}`} className="legal-link">
+                  {CONTACT_EMAIL}
                 </a>
               </div>
               <div className="legal-contact-item">
                 <Phone size={16} strokeWidth={1.5} className="legal-contact-icon" />
-                <a href="tel:+33751044407" className="legal-link">
-                  +33 7 51 04 44 07
+                <a href={`tel:${CONTACT_PHONE_E164}`} className="legal-link">
+                  {CONTACT_PHONE_DISPLAY}
                 </a>
               </div>
               <div className="legal-contact-item">
                 <MapPin size={16} strokeWidth={1.5} className="legal-contact-icon" />
-                <span>1 rue Virginia Woolf, 31000 Toulouse</span>
+                <span>1 rue Virginia Woolf, 31200 Toulouse</span>
               </div>
             </div>
           </div>

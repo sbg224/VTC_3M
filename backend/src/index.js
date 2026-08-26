@@ -298,7 +298,7 @@ async function start() {
     }, 60 * 60 * 1000); // toutes les heures
 
     app.listen(PORT, () => {
-      logger.info(`[SERVER] VTC 3M démarré sur le port ${PORT} – mode ${process.env.NODE_ENV || 'development'}`);
+      logger.info(`[SERVER] 3M Drive démarré sur le port ${PORT} – mode ${process.env.NODE_ENV || 'development'}`);
     });
   } catch (err) {
     logger.error(`[SERVER] Impossible de démarrer : ${err.message}`);

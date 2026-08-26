@@ -12,6 +12,15 @@ import { gsap, ScrollTrigger } from '../animations/gsap';
 import { simulateAPI, publicStatsAPI, driverPublicAPI } from '../services/api';
 import Seo from '../components/Seo';
 import FeatureSteps from '../components/FeatureSteps';
+import WhatsAppIcon from '../components/WhatsAppIcon';
+import {
+  CONTACT_EMAIL,
+  CONTACT_PHONE_E164,
+  CONTACT_PHONE_DISPLAY,
+  WHATSAPP_URL,
+  WHATSAPP_LABEL,
+  WHATSAPP_ARIA_LABEL,
+} from '../utils/contact';
 
 // ── Données ───────────────────────────────────────────────────────────────────
 
@@ -236,12 +245,12 @@ const JSON_LD_LOCAL_BUSINESS = JSON.stringify({
   '@graph': [
     {
       '@type': 'LocalBusiness', '@id': 'https://3mdrive.fr/#business',
-      'name': '3M Drive', 'legalName': '3M SERVICES 31',
+      'name': '3M Drive', 'legalName': 'AHADI Services',
       'description': 'Chauffeur VTC privé à Toulouse. Service premium, ponctuel et discret pour tous vos déplacements en Haute-Garonne (31).',
-      'url': 'https://3mdrive.fr', 'telephone': '+33751044407', 'email': '3m.services31@gmail.com',
+      'url': 'https://3mdrive.fr', 'telephone': CONTACT_PHONE_E164, 'email': CONTACT_EMAIL,
       'logo': 'https://3mdrive.fr/images/logo-3m-new.svg', 'priceRange': '€€',
       'currenciesAccepted': 'EUR', 'openingHours': 'Mo-Su 00:00-24:00',
-      'address': { '@type': 'PostalAddress', 'streetAddress': '1 rue Virginia Woolf', 'addressLocality': 'Toulouse', 'postalCode': '31000', 'addressRegion': 'Haute-Garonne', 'addressCountry': 'FR' },
+      'address': { '@type': 'PostalAddress', 'streetAddress': '1 rue Virginia Woolf', 'addressLocality': 'Toulouse', 'postalCode': '31200', 'addressRegion': 'Haute-Garonne', 'addressCountry': 'FR' },
       // Pas d'aggregateRating tant qu'il n'y a pas de vrais avis clients en base
       // (voir modèle Review) — une note statique non connectée aux données
       // réelles est un risque de non-conformité aux consignes Google sur les
@@ -524,8 +533,8 @@ export default function Home() {
 
 
 
-            <a href="tel:+33751044407" className="hero-phone-link">
-              <Phone size={15} strokeWidth={1.5} /> +33 7 51 04 44 07
+            <a href={`tel:${CONTACT_PHONE_E164}`} className="hero-phone-link">
+              <Phone size={15} strokeWidth={1.5} /> {CONTACT_PHONE_DISPLAY}
             </a>
           </div>
 
@@ -775,6 +784,16 @@ export default function Home() {
                 Calculez le prix de votre trajet directement sur la page d'accueil et réservez en quelques secondes.
               </p>
               <Link to="/reservation" className="btn btn-primary">Simuler &amp; Réserver</Link>
+              <a
+                href={WHATSAPP_URL}
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label={WHATSAPP_ARIA_LABEL}
+                className="btn btn-outline"
+                style={{ marginTop: '12px', display: 'inline-flex', alignItems: 'center', gap: '8px' }}
+              >
+                <WhatsAppIcon size={16} /> {WHATSAPP_LABEL}
+              </a>
             </div>
           </div>
         </div>
