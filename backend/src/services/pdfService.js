@@ -557,4 +557,12 @@ async function generateBordereauPdf(data) {
   });
 }
 
-module.exports = { generateReservationPdf, generateInvoicePdf, generateBordereauPdf };
+// splitVat et TVA_RATE sont exportés pour être testables unitairement : la
+// ventilation HT/TVA d'une facture doit rester vérifiable sans générer de PDF.
+module.exports = {
+  generateReservationPdf,
+  generateInvoicePdf,
+  generateBordereauPdf,
+  splitVat,
+  TVA_RATE,
+};
