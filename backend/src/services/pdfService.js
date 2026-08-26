@@ -3,6 +3,7 @@ const fs = require('fs');
 const path = require('path');
 const logger = require('../middleware/logger');
 const { formatDateLong: formatDate } = require('../utils/dateFormat');
+const { calculateExtraKmCharge } = require('./priceService');
 
 const { PDF_DIR: PDFS_DIR } = require('../config/storage');
 
@@ -303,8 +304,12 @@ async function generateInvoicePdf(reservation) {
 
     // Bloc numéro & date
     doc.rect(50, y, doc.page.width - 100, 40).fill('#f5f0e8').stroke('#c9a227');
+    // Le numéro porté sur la facture est celui de la série légale continue
+    // (art. 242 nonies A du CGI), pas le numéro de réservation qui suit aussi
+    // les courses annulées. Repli sur ce dernier pour les factures antérieures
+    // à l'introduction de la série.
     doc.fontSize(12).fillColor('#1a1a2e').font('Helvetica-Bold')
-      .text(`Facture N° ${reservation.reservationNumber}`, 65, y + 13);
+      .text(`Facture N° ${reservation.invoiceNumber || reservation.reservationNumber}`, 65, y + 13);
     doc.fontSize(10).fillColor('#666666').font('Helvetica')
       .text(`Émise le ${formatDate(new Date())}`, 0, y + 15, {
         align: 'right', width: doc.page.width - 65,
@@ -350,19 +355,55 @@ async function generateInvoicePdf(reservation) {
       .text('MONTANT', 430, y + 7, { width: 80, align: 'right' });
     y += 24;
 
-    // Ligne prestation
-    doc.rect(50, y, doc.page.width - 100, 30).fill('#fafafa').stroke('#e5e7eb');
-    doc.fontSize(9).fillColor('#333333').font('Helvetica')
-      .text(`Course VTC – ${reservation.departureAddress} → ${reservation.arrivalAddress}`, 60, y + 10, { width: 200 })
-      .text(`${formatDate(reservation.date)} à ${reservation.time}`, 280, y + 10)
-      .text(`${Number(reservation.price).toFixed(2)} €`, 430, y + 10, { width: 80, align: 'right' });
-    y += 30;
+    // Lignes de prestation. Une mise à disposition en compte deux : la part
+    // horaire, annoncée au client à la réservation, et le supplément
+    // kilométrique, connu seulement après la course. Les détailler permet au
+    // client de rapprocher sa facture du montant qui lui avait été annoncé.
+    const isHourly = reservation.serviceType === 'mise_a_disposition';
+    const totalPrice = Number(reservation.price);
+    const dateCell = `${formatDate(reservation.date)} à ${reservation.time}`;
+
+    const lines = [];
+    if (isHourly) {
+      const hours = reservation.serviceDurationHours || 0;
+      const extra = calculateExtraKmCharge(hours, reservation.actualDistance);
+      const hourlyPart = Math.round((totalPrice - extra.charge) * 100) / 100;
+      lines.push({
+        label: `Mise à disposition avec chauffeur – ${hours} h – départ ${reservation.departureAddress}`,
+        amount: hourlyPart,
+      });
+      if (extra.charge > 0) {
+        lines.push({
+          label: `Supplément kilométrique – ${extra.extraKm} km au-delà du forfait de ${extra.includedKm} km inclus`,
+          amount: extra.charge,
+        });
+      }
+    } else {
+      lines.push({
+        label: `Course VTC – ${reservation.departureAddress} → ${reservation.arrivalAddress}`,
+        amount: totalPrice,
+      });
+    }
+
+    for (const [index, line] of lines.entries()) {
+      doc.rect(50, y, doc.page.width - 100, 30).fill('#fafafa').stroke('#e5e7eb');
+      doc.fontSize(9).fillColor('#333333').font('Helvetica')
+        .text(line.label, 60, y + 8, { width: 210 })
+        // La date ne figure que sur la première ligne : les deux lignes d'une
+        // mise à disposition portent sur une seule et même prestation.
+        .text(index === 0 ? dateCell : '', 280, y + 10)
+        .text(`${line.amount.toFixed(2)} €`, 430, y + 10, { width: 80, align: 'right' });
+      y += 30;
+    }
 
     // Ligne passagers/bagages/distance
+    const distanceLabel = isHourly
+      ? (reservation.actualDistance ? `Distance parcourue : ${Number(reservation.actualDistance).toFixed(1)} km` : null)
+      : (reservation.distance ? `Distance : ${Number(reservation.distance).toFixed(1)} km` : null);
     const detailLine = [
       `Passagers : ${reservation.passengers || 1}`,
       `Bagages : ${reservation.luggage || 0}`,
-      reservation.distance ? `Distance : ${Number(reservation.distance).toFixed(1)} km` : null,
+      distanceLabel,
     ].filter(Boolean).join(' – ');
     doc.rect(50, y, doc.page.width - 100, 24).fill('#ffffff').stroke('#e5e7eb');
     doc.fontSize(9).fillColor('#666666').font('Helvetica')

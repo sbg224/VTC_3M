@@ -10,8 +10,10 @@ const { Op } = require('sequelize');
 const { normalizeFrenchPhone, isValidFrenchPhone } = require('../utils/phone');
 const { likeContains } = require('../utils/search');
 const {
-  calculateTrip, calculateHourlyService, getTripCalculationHttpError,
+  calculateTrip, calculateHourlyService, calculateExtraKmCharge,
+  getTripCalculationHttpError,
 } = require('../services/tripCalculationService');
+const { assignInvoiceNumber } = require('../services/invoiceNumberService');
 const { PDF_DIR } = require('../config/storage');
 
 // ── Créer une réservation (public) ────────────────────────────────────────────
@@ -319,7 +321,7 @@ exports.updateStatus = async (req, res) => {
 // ── Compléter une course → génère et envoie facture (protégé, isolation chauffeur)
 exports.completeReservation = async (req, res) => {
   try {
-    const { price } = req.body;
+    const { price, actualDistance } = req.body;
 
     // ── Isolation multi-tenant ───────────────────────────────────────────────
     const reservation = await Reservation.findOne({
@@ -340,16 +342,54 @@ exports.completeReservation = async (req, res) => {
       return res.status(400).json({ error: 'Impossible de valider une course annulée.' });
     }
 
-    reservation.status = 'completed';
-    reservation.price  = parseFloat(price);
-    // Générer un token unique pour le lien de notation client
-    if (!reservation.reviewToken) {
-      const { v4: uuidv4 } = require('uuid');
-      reservation.reviewToken = uuidv4();
-    }
-    await reservation.save();
+    // ── Prix facturé ─────────────────────────────────────────────────────────
+    // En mise à disposition, le montant annoncé au client ne couvrait que la
+    // part horaire : le kilométrage n'existe qu'une fois la course faite. Le
+    // dépassement du forfait inclus s'y ajoute ici, au tarif du mode transfert.
+    const isHourly = reservation.serviceType === 'mise_a_disposition';
+    const parsedDistance = actualDistance === undefined || actualDistance === null || actualDistance === ''
+      ? null
+      : parseFloat(actualDistance);
 
-    logger.info(`[COURSE] Validée : ${reservation.reservationNumber} – ${price}€ (par ${req.driver.email})`);
+    if (parsedDistance !== null && (!Number.isFinite(parsedDistance) || parsedDistance < 0)) {
+      return res.status(400).json({ error: 'Kilométrage réel invalide.' });
+    }
+
+    let extraKm = null;
+    let finalPrice = parseFloat(price);
+
+    if (isHourly && parsedDistance !== null) {
+      extraKm = calculateExtraKmCharge(reservation.serviceDurationHours, parsedDistance);
+      finalPrice = Math.round((finalPrice + extraKm.charge) * 100) / 100;
+    }
+
+    if (!Number.isFinite(finalPrice) || finalPrice < 0) {
+      return res.status(400).json({ error: 'Prix de la course invalide.' });
+    }
+
+    // Générer un token unique pour le lien de notation client
+    let reviewToken = reservation.reviewToken;
+    if (!reviewToken) {
+      const { v4: uuidv4 } = require('uuid');
+      reviewToken = uuidv4();
+    }
+
+    // Numéro de facture et passage en « terminée » dans la même transaction :
+    // un échec d'enregistrement annule l'incrément du compteur, de sorte
+    // qu'aucun numéro ne soit consommé pour une facture inexistante — la série
+    // doit rester continue (art. 242 nonies A du CGI).
+    const invoiceNumber = await assignInvoiceNumber(reservation, {
+      status: 'completed',
+      price: finalPrice,
+      actualDistance: parsedDistance,
+      reviewToken,
+    });
+
+    logger.info(
+      `[COURSE] Validée : ${reservation.reservationNumber} – facture ${invoiceNumber}`
+      + ` – ${finalPrice}€${extraKm ? ` (dont ${extraKm.charge}€ de supplément sur ${extraKm.extraKm} km)` : ''}`
+      + ` (par ${req.driver.email})`
+    );
 
     // Répond tout de suite — la génération du PDF (PDFKit) et l'envoi des
     // emails (SMTP) ne bloquent plus la réponse au chauffeur. Rien dans la
@@ -359,6 +399,8 @@ exports.completeReservation = async (req, res) => {
     res.json({
       message: 'Course validée avec succès.',
       reservation,
+      invoiceNumber,
+      extraKm,
     });
 
     // Génération facture PDF + envoi email — après la réponse HTTP.

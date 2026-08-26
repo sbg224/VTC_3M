@@ -122,6 +122,12 @@ const completeRules = [
   body('price')
     .notEmpty().withMessage('Le prix est requis.')
     .isFloat({ min: 1, max: 9999 }).withMessage('Prix invalide (entre 1 et 9999 €).'),
+  // Kilométrage relevé en fin de course. Facultatif : il ne concerne que la
+  // mise à disposition, dont il détermine le supplément au-delà du forfait
+  // inclus. Un transfert a déjà sa distance, calculée à la réservation.
+  body('actualDistance')
+    .optional({ nullable: true, checkFalsy: true })
+    .isFloat({ min: 0, max: 5000 }).withMessage('Kilométrage réel invalide (0 à 5000 km).'),
 ];
 
 // ── Règles login ──────────────────────────────────────────────────────────────
