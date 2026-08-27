@@ -3,8 +3,103 @@ const fs = require('fs');
 const path = require('path');
 const logger = require('../middleware/logger');
 const { formatDateLong: formatDate } = require('../utils/dateFormat');
+const { calculateExtraKmCharge } = require('./priceService');
 
 const { PDF_DIR: PDFS_DIR } = require('../config/storage');
+
+// ── Identité de l'entreprise ─────────────────────────────────────────────────
+// Lue à chaque accès plutôt que figée au chargement du module : les variables
+// d'environnement peuvent être définies après le `require` (tests, scripts).
+//
+// COMPANY_NAME est le nom *commercial* (marque affichée au client, en-têtes) ;
+// COMPANY_LEGAL_NAME est la raison sociale, seule valable sur les mentions
+// légales d'une facture. Les deux ne sont pas interchangeables.
+const company = {
+  get name()      { return process.env.COMPANY_NAME       || '3M Drive'; },
+  get legalName() { return process.env.COMPANY_LEGAL_NAME || process.env.COMPANY_NAME || '3M Drive'; },
+  get legalForm() { return process.env.COMPANY_LEGAL_FORM || ''; },
+  get rcs()       { return process.env.COMPANY_RCS        || ''; },
+  get siret()     { return process.env.COMPANY_SIRET      || ''; },
+  get tvaIntra()  { return process.env.COMPANY_TVA_INTRACOM || ''; },
+  get address()   { return process.env.COMPANY_ADDRESS    || ''; },
+  get phone()     { return process.env.COMPANY_PHONE      || ''; },
+  get email()     { return process.env.COMPANY_EMAIL      || ''; },
+};
+
+// ── TVA ──────────────────────────────────────────────────────────────────────
+// Le taux dépend de la nature réelle de la prestation, pas de l'activité de
+// l'entreprise :
+//
+// - un transfert d'un point A à un point B est un contrat de transport de
+//   voyageurs, relevant du taux réduit de 10 % (art. 279 b quater du CGI) ;
+// - une mise à disposition, facturée à l'heure et sans trajet prédéfini, est
+//   fiscalement assimilée à une location de véhicule avec chauffeur : le
+//   kilométrage y est accessoire, et le taux normal de 20 % s'applique
+//   (art. 278 du CGI).
+//
+// Appliquer 10 % à une mise à disposition expose à un redressement.
+const TVA_RATES = {
+  transfert: 0.10,
+  mise_a_disposition: 0.20,
+};
+
+// Les réservations antérieures à l'introduction de serviceType n'en portent
+// pas ; la migration leur a attribué « transfert », ce qui correspond à leur
+// nature réelle — elles avaient toutes une adresse d'arrivée.
+const DEFAULT_SERVICE_TYPE = 'transfert';
+
+/**
+ * Taux de TVA applicable à un mode de prestation.
+ *
+ * @param {string} serviceType - 'transfert' ou 'mise_a_disposition'
+ * @returns {number} taux (0.10 ou 0.20)
+ */
+function vatRateFor(serviceType) {
+  return TVA_RATES[serviceType] ?? TVA_RATES[DEFAULT_SERVICE_TYPE];
+}
+
+/**
+ * Mention légale du taux appliqué, à porter sur la facture.
+ *
+ * @param {string} serviceType - 'transfert' ou 'mise_a_disposition'
+ * @returns {string}
+ */
+function vatLegalMention(serviceType) {
+  if (serviceType === 'mise_a_disposition') {
+    return 'TVA au taux normal de 20 % : mise à disposition de véhicule avec '
+      + 'chauffeur, assimilée à une location et non à un transport de '
+      + 'voyageurs (art. 278 du CGI).';
+  }
+  return 'TVA au taux réduit de 10 % applicable au transport de voyageurs '
+    + '(art. 279 b quater du CGI).';
+}
+
+/**
+ * Ventile un montant TTC en base HT et TVA, au taux du mode de prestation.
+ *
+ * `reservation.price` est le prix convenu avec le client, donc TTC : un prix
+ * annoncé à un particulier s'entend toutes taxes comprises (art. L112-1 du
+ * code de la consommation). La TVA est donc *extraite* de ce montant et non
+ * ajoutée par-dessus — sinon la facture réclamerait au client davantage que
+ * le prix accepté lors de la réservation.
+ *
+ * Le taux n'est pas passé directement mais dérivé de `serviceType` : aucun
+ * appelant ne peut ainsi appliquer par erreur un taux incohérent avec la
+ * prestation facturée.
+ *
+ * @param {number} ttc - montant toutes taxes comprises
+ * @param {string} [serviceType] - 'transfert' (défaut) ou 'mise_a_disposition'
+ * @returns {{ ht: number, tva: number, ttc: number, rate: number }}
+ */
+function splitVat(ttc, serviceType = DEFAULT_SERVICE_TYPE) {
+  const rate = vatRateFor(serviceType);
+  const total = Math.round(Number(ttc) * 100) / 100;
+  const ht = Math.round((total / (1 + rate)) * 100) / 100;
+  // La TVA est calculée par différence : garantit ht + tva === ttc au centime,
+  // sans écart d'arrondi visible sur la facture.
+  const tva = Math.round((total - ht) * 100) / 100;
+  return { ht, tva, ttc: total, rate };
+}
 
 function ensurePdfsDir() {
   if (!fs.existsSync(PDFS_DIR)) {
@@ -33,7 +128,7 @@ function drawHeader(doc, title) {
   doc.fontSize(26)
     .fillColor('#c9a227')
     .font('Helvetica-Bold')
-    .text(process.env.COMPANY_NAME || 'VTC 3M', 50, 30);
+    .text(company.name, 50, 30);
 
   // Sous-titre
   doc.fontSize(10)
@@ -55,15 +150,22 @@ function drawFooter(doc) {
   doc.rect(0, footerY - 5, doc.page.width, 65).fill('#1a1a2e');
   doc.rect(0, footerY - 10, doc.page.width, 5).fill('#c9a227');
 
+  // Identité légale (raison sociale), distincte du nom commercial affiché en
+  // en-tête : une facture doit désigner la société, pas la marque.
+  const legalLine = [
+    company.legalName,
+    company.legalForm,
+    company.rcs,
+    company.siret && `SIRET ${company.siret}`,
+    company.address,
+  ].filter(Boolean).join(' – ');
+
   doc.fontSize(8)
     .fillColor('#aaaaaa')
     .font('Helvetica')
-    .text(
-      `${process.env.COMPANY_NAME || 'VTC 3M'} – SIRET : ${process.env.COMPANY_SIRET || 'XXX XXX XXX XXXXX'} – ${process.env.COMPANY_ADDRESS || ''}`,
-      50, footerY + 5, { align: 'center', width: doc.page.width - 100 }
-    );
+    .text(legalLine, 50, footerY + 5, { align: 'center', width: doc.page.width - 100 });
   doc.text(
-    `Tél : ${process.env.COMPANY_PHONE || ''} – Email : ${process.env.COMPANY_EMAIL || ''}`,
+    `Tél : ${company.phone} – Email : ${company.email}`,
     50, footerY + 20, { align: 'center', width: doc.page.width - 100 }
   );
   doc.text(
@@ -202,34 +304,45 @@ async function generateInvoicePdf(reservation) {
 
     // Bloc numéro & date
     doc.rect(50, y, doc.page.width - 100, 40).fill('#f5f0e8').stroke('#c9a227');
+    // Le numéro porté sur la facture est celui de la série légale continue
+    // (art. 242 nonies A du CGI), pas le numéro de réservation qui suit aussi
+    // les courses annulées. Repli sur ce dernier pour les factures antérieures
+    // à l'introduction de la série.
     doc.fontSize(12).fillColor('#1a1a2e').font('Helvetica-Bold')
-      .text(`Facture N° ${reservation.reservationNumber}`, 65, y + 13);
+      .text(`Facture N° ${reservation.invoiceNumber || reservation.reservationNumber}`, 65, y + 13);
     doc.fontSize(10).fillColor('#666666').font('Helvetica')
       .text(`Émise le ${formatDate(new Date())}`, 0, y + 15, {
         align: 'right', width: doc.page.width - 65,
       });
     y += 60;
 
-    // Blocs prestataire / client côte à côte
+    // Blocs prestataire / client côte à côte.
+    // Le bloc prestataire porte les mentions obligatoires d'une facture
+    // (art. 242 nonies A du CGI) : raison sociale, forme juridique et capital,
+    // adresse du siège, SIRET, RCS et n° de TVA intracommunautaire.
+    const BLOCK_H = 132;
     const halfW = (doc.page.width - 120) / 2;
-    doc.rect(50, y, halfW, 90).fill('#1a1a2e');
+    doc.rect(50, y, halfW, BLOCK_H).fill('#1a1a2e');
     doc.fontSize(9).fillColor('#c9a227').font('Helvetica-Bold').text('PRESTATAIRE', 60, y + 8);
     doc.fontSize(10).fillColor('#ffffff').font('Helvetica-Bold')
-      .text(process.env.COMPANY_NAME || 'VTC 3M', 60, y + 22);
-    doc.fontSize(9).fillColor('#cccccc').font('Helvetica')
-      .text(process.env.COMPANY_ADDRESS || '', 60, y + 36, { width: halfW - 20 })
-      .text(`Tél : ${process.env.COMPANY_PHONE || ''}`, 60, y + 52)
-      .text(`SIRET : ${process.env.COMPANY_SIRET || ''}`, 60, y + 66);
+      .text(company.legalName, 60, y + 22);
+    doc.fontSize(7.5).fillColor('#cccccc').font('Helvetica')
+      .text(company.legalForm, 60, y + 36, { width: halfW - 20 })
+      .text(company.address, 60, y + 56, { width: halfW - 20 })
+      .text(`Tél : ${company.phone}`, 60, y + 76, { width: halfW - 20 })
+      .text(`SIRET : ${company.siret}`, 60, y + 88, { width: halfW - 20 })
+      .text(company.rcs, 60, y + 100, { width: halfW - 20 })
+      .text(`TVA : ${company.tvaIntra}`, 60, y + 112, { width: halfW - 20 });
 
     const rightBlockX = 50 + halfW + 20;
-    doc.rect(rightBlockX, y, halfW, 90).fill('#f9f9f9').stroke('#e5e7eb');
+    doc.rect(rightBlockX, y, halfW, BLOCK_H).fill('#f9f9f9').stroke('#e5e7eb');
     doc.fontSize(9).fillColor('#888888').font('Helvetica-Bold').text('CLIENT', rightBlockX + 10, y + 8);
     doc.fontSize(10).fillColor('#1a1a2e').font('Helvetica-Bold')
       .text(`${reservation.firstName} ${reservation.lastName}`, rightBlockX + 10, y + 22);
     doc.fontSize(9).fillColor('#444444').font('Helvetica')
       .text(reservation.email, rightBlockX + 10, y + 38)
       .text(reservation.phone, rightBlockX + 10, y + 52);
-    y += 110;
+    y += BLOCK_H + 20;
 
     // Tableau prestations
     y = drawSection(doc, '📋 DÉTAIL DE LA PRESTATION', y);
@@ -242,19 +355,55 @@ async function generateInvoicePdf(reservation) {
       .text('MONTANT', 430, y + 7, { width: 80, align: 'right' });
     y += 24;
 
-    // Ligne prestation
-    doc.rect(50, y, doc.page.width - 100, 30).fill('#fafafa').stroke('#e5e7eb');
-    doc.fontSize(9).fillColor('#333333').font('Helvetica')
-      .text(`Course VTC – ${reservation.departureAddress} → ${reservation.arrivalAddress}`, 60, y + 10, { width: 200 })
-      .text(`${formatDate(reservation.date)} à ${reservation.time}`, 280, y + 10)
-      .text(`${Number(reservation.price).toFixed(2)} €`, 430, y + 10, { width: 80, align: 'right' });
-    y += 30;
+    // Lignes de prestation. Une mise à disposition en compte deux : la part
+    // horaire, annoncée au client à la réservation, et le supplément
+    // kilométrique, connu seulement après la course. Les détailler permet au
+    // client de rapprocher sa facture du montant qui lui avait été annoncé.
+    const isHourly = reservation.serviceType === 'mise_a_disposition';
+    const totalPrice = Number(reservation.price);
+    const dateCell = `${formatDate(reservation.date)} à ${reservation.time}`;
+
+    const lines = [];
+    if (isHourly) {
+      const hours = reservation.serviceDurationHours || 0;
+      const extra = calculateExtraKmCharge(hours, reservation.actualDistance);
+      const hourlyPart = Math.round((totalPrice - extra.charge) * 100) / 100;
+      lines.push({
+        label: `Mise à disposition avec chauffeur – ${hours} h – départ ${reservation.departureAddress}`,
+        amount: hourlyPart,
+      });
+      if (extra.charge > 0) {
+        lines.push({
+          label: `Supplément kilométrique – ${extra.extraKm} km au-delà du forfait de ${extra.includedKm} km inclus`,
+          amount: extra.charge,
+        });
+      }
+    } else {
+      lines.push({
+        label: `Course VTC – ${reservation.departureAddress} → ${reservation.arrivalAddress}`,
+        amount: totalPrice,
+      });
+    }
+
+    for (const [index, line] of lines.entries()) {
+      doc.rect(50, y, doc.page.width - 100, 30).fill('#fafafa').stroke('#e5e7eb');
+      doc.fontSize(9).fillColor('#333333').font('Helvetica')
+        .text(line.label, 60, y + 8, { width: 210 })
+        // La date ne figure que sur la première ligne : les deux lignes d'une
+        // mise à disposition portent sur une seule et même prestation.
+        .text(index === 0 ? dateCell : '', 280, y + 10)
+        .text(`${line.amount.toFixed(2)} €`, 430, y + 10, { width: 80, align: 'right' });
+      y += 30;
+    }
 
     // Ligne passagers/bagages/distance
+    const distanceLabel = isHourly
+      ? (reservation.actualDistance ? `Distance parcourue : ${Number(reservation.actualDistance).toFixed(1)} km` : null)
+      : (reservation.distance ? `Distance : ${Number(reservation.distance).toFixed(1)} km` : null);
     const detailLine = [
       `Passagers : ${reservation.passengers || 1}`,
       `Bagages : ${reservation.luggage || 0}`,
-      reservation.distance ? `Distance : ${Number(reservation.distance).toFixed(1)} km` : null,
+      distanceLabel,
     ].filter(Boolean).join(' – ');
     doc.rect(50, y, doc.page.width - 100, 24).fill('#ffffff').stroke('#e5e7eb');
     doc.fontSize(9).fillColor('#666666').font('Helvetica')
@@ -266,9 +415,8 @@ async function generateInvoicePdf(reservation) {
     const totalsX = 350;
     const totalsW = doc.page.width - totalsX - 50;
 
-    const ht = Number(reservation.price);
-    const tvaRate = 0; // TVA 0% pour auto-entrepreneur
-    const ttc = ht;
+    const { ht, tva, ttc, rate } = splitVat(reservation.price, reservation.serviceType);
+    const tvaPercent = (rate * 100).toFixed(0);
 
     doc.rect(totalsX, y, totalsW, 24).fill('#f9f9f9').stroke('#e5e7eb');
     doc.fontSize(9).fillColor('#666666').font('Helvetica')
@@ -278,8 +426,8 @@ async function generateInvoicePdf(reservation) {
 
     doc.rect(totalsX, y, totalsW, 24).fill('#f9f9f9').stroke('#e5e7eb');
     doc.fontSize(9).fillColor('#666666').font('Helvetica')
-      .text('TVA (0% – Auto-entrepreneur)', totalsX + 10, y + 7)
-      .text('0,00 €', totalsX + 10, y + 7, { width: totalsW - 20, align: 'right' });
+      .text(`TVA ${tvaPercent} % :`, totalsX + 10, y + 7)
+      .text(`${tva.toFixed(2)} €`, totalsX + 10, y + 7, { width: totalsW - 20, align: 'right' });
     y += 24;
 
     doc.rect(totalsX, y, totalsW, 30).fill('#1a1a2e');
@@ -290,7 +438,7 @@ async function generateInvoicePdf(reservation) {
 
     // Note TVA
     doc.fontSize(8).fillColor('#888888').font('Helvetica')
-      .text('TVA non applicable, art. 293 B du CGI.', 50, y);
+      .text(vatLegalMention(reservation.serviceType), 50, y, { width: 280 });
     y += 20;
 
     // Mentions légales
@@ -343,7 +491,7 @@ async function generateBordereauPdf(data) {
     doc.rect(0, 0, doc.page.width, 110).fill('#1a1a2e');
     doc.rect(0, 105, doc.page.width, 5).fill('#c9a227');
     doc.fontSize(22).fillColor('#c9a227').font('Helvetica-Bold')
-      .text(process.env.COMPANY_NAME || 'VTC 3M', 50, 28);
+      .text(company.name, 50, 28);
     doc.fontSize(9).fillColor('#aaaaaa').font('Helvetica')
       .text('Plateforme de gestion VTC', 50, 56);
     doc.fontSize(13).fillColor('#ffffff').font('Helvetica-Bold')
@@ -480,7 +628,7 @@ async function generateBordereauPdf(data) {
       .text(
         'Ce document est un relevé interne de gestion et ne constitue pas un bulletin de salaire, une facture ou tout autre document à valeur fiscale ou légale. ' +
         'Les montants indiqués sont calculés à partir des courses réalisées et du taux de commission convenu entre les parties. ' +
-        `${process.env.COMPANY_NAME || 'VTC 3M'} – ${process.env.COMPANY_ADDRESS || ''} – ${process.env.COMPANY_EMAIL || ''}`,
+        `${company.legalName} – ${company.address} – ${company.email}`,
         50, y, { width: doc.page.width - 100, align: 'justify', lineGap: 2 }
       );
 
@@ -496,4 +644,14 @@ async function generateBordereauPdf(data) {
   });
 }
 
-module.exports = { generateReservationPdf, generateInvoicePdf, generateBordereauPdf };
+// La ventilation HT/TVA et le taux applicable sont exportés pour être
+// vérifiables unitairement, sans générer de PDF.
+module.exports = {
+  generateReservationPdf,
+  generateInvoicePdf,
+  generateBordereauPdf,
+  splitVat,
+  vatRateFor,
+  vatLegalMention,
+  TVA_RATES,
+};

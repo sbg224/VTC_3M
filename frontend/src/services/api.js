@@ -34,6 +34,9 @@ api.interceptors.response.use(
 export const simulateAPI = {
   calculate: (departureAddress, arrivalAddress) =>
     api.post('/simulate', { departureAddress, arrivalAddress }, { timeout: 20000 }),
+  // Mise à disposition : aucun géocodage ni itinéraire à calculer, d'où un
+  // délai d'attente standard là où la simulation de transfert en demande 20 s.
+  hourly: (hours) => api.post('/simulate/hourly', { hours }),
 };
 
 export const reservationAPI = {
@@ -41,7 +44,9 @@ export const reservationAPI = {
   getAll: (params) => api.get('/reservations', { params }),
   getOne: (id) => api.get(`/reservations/${id}`),
   updateStatus: (id, status) => api.put(`/reservations/${id}/status`, { status }),
-  complete: (id, price) => api.put(`/reservations/${id}/complete`, { price }),
+  // actualDistance n'est transmis que pour une mise à disposition, dont le
+  // kilométrage n'est connu qu'une fois la course effectuée.
+  complete: (id, price, actualDistance) => api.put(`/reservations/${id}/complete`, { price, actualDistance }),
   downloadReservationPdf: (id) => api.get(`/reservations/${id}/pdf-reservation`, { responseType: 'blob' }),
   downloadInvoicePdf: (id) => api.get(`/reservations/${id}/pdf-invoice`, { responseType: 'blob' }),
 };

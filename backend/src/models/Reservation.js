@@ -59,8 +59,31 @@ module.exports = (sequelize) => {
       type: DataTypes.TEXT,
       allowNull: true,
     },
+    // ── Nature de la prestation ──────────────────────────────────────────────
+    // Un transfert va d'une adresse à une autre ; une mise à disposition
+    // réserve le véhicule pour une durée, sans destination connue à l'avance.
+    // Ces deux champs remplacent le contournement qui encodait le mode dans
+    // arrivalAddress (« Mise à disposition – 3h »), chaîne impossible à
+    // filtrer, à agréger ou à facturer proprement.
+    serviceType: {
+      type: DataTypes.ENUM('transfert', 'mise_a_disposition'),
+      allowNull: true,
+      defaultValue: 'transfert',
+    },
+    serviceDurationHours: {
+      type: DataTypes.INTEGER,
+      allowNull: true,
+    },
+
     // Tarification calculée à la réservation
     distance: {
+      type: DataTypes.DECIMAL(10, 2),
+      allowNull: true,
+    },
+    // Kilométrage relevé à la validation de la course. Sert au supplément
+    // kilométrique d'une mise à disposition, dont la distance n'est connue
+    // qu'une fois la course effectuée.
+    actualDistance: {
       type: DataTypes.DECIMAL(10, 2),
       allowNull: true,
     },
@@ -77,6 +100,15 @@ module.exports = (sequelize) => {
       type: DataTypes.DECIMAL(10, 2),
       allowNull: true,
     },
+    // Numéro légal de facture (art. 242 nonies A du CGI) : série continue,
+    // attribuée seulement à la facturation. Distinct de reservationNumber, qui
+    // est attribué dès la réservation et suit donc les courses annulées.
+    invoiceNumber: {
+      type: DataTypes.STRING,
+      allowNull: true,
+      unique: true,
+    },
+
     // PDFs
     pdfReservationPath: {
       type: DataTypes.STRING,

@@ -7,9 +7,9 @@
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview",
-    "cy:open": "cypress open",
-    "cy:run": "cypress run",
-    "test:e2e": "cypress run --spec \"cypress/e2e/home.cy.js,cypress/e2e/reservation.cy.js,cypress/e2e/login.cy.js,cypress/e2e/dashboard.cy.js\"",
+    "cy:open": "env -u ELECTRON_RUN_AS_NODE cypress open",
+    "cy:run": "env -u ELECTRON_RUN_AS_NODE cypress run",
+    "test:e2e": "env -u ELECTRON_RUN_AS_NODE cypress run --spec \"cypress/e2e/home.cy.js,cypress/e2e/reservation.cy.js,cypress/e2e/login.cy.js,cypress/e2e/dashboard.cy.js,cypress/e2e/legal-modal.cy.js\"",
     "test:speed": "npm run build && node scripts/lighthouse-audit.js"
   },
   "dependencies": {

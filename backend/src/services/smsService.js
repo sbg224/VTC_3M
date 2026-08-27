@@ -16,7 +16,7 @@ async function sendAdminSms(reservation) {
   const twilio = require('twilio');
   const client = twilio(process.env.TWILIO_ACCOUNT_SID, process.env.TWILIO_AUTH_TOKEN);
 
-  const message = `🚗 VTC 3M – Nouvelle réservation !
+  const message = `🚗 3M Drive – Nouvelle réservation !
 N° ${reservation.reservationNumber}
 Client : ${reservation.firstName} ${reservation.lastName} – ${reservation.phone}
 Course : ${reservation.departureAddress} → ${reservation.arrivalAddress}

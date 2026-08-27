@@ -1,4 +1,4 @@
-import { RefreshCw, Loader2, SlidersHorizontal, Save, CheckCircle, AlertTriangle, TrendingUp } from 'lucide-react';
+import { RefreshCw, Loader2, SlidersHorizontal, Save, CheckCircle, AlertTriangle, TrendingUp, Timer } from 'lucide-react';
 import { fmt, fmtDateTime } from './adminHelpers';
 
 export default function PricingSection({ pricing, pricingForm, pricingLoading, pricingSaving, pricingMsg, onFieldChange, onSave, onRefresh }) {
@@ -66,6 +66,53 @@ export default function PricingSection({ pricing, pricingForm, pricingLoading, p
               <p className="adm-pricing-hint">Frais fixes ajoutés à chaque course (0 = désactivé).</p>
             </div>
 
+            <div className="adm-pricing-card-title" style={{ marginTop:22 }}>
+              <Timer size={16} strokeWidth={1.75} style={{ color:'#c9a227' }} />
+              Mise à disposition
+            </div>
+
+            <div className="adm-pricing-field">
+              <label>Tarif horaire (€/h)</label>
+              <div className="adm-pricing-input-wrap">
+                <input
+                  type="number" min="0" step="0.1"
+                  className="adm-input"
+                  value={pricingForm.hourlyRate}
+                  onChange={e => onFieldChange('hourlyRate', e.target.value)}
+                />
+                <span className="adm-pricing-unit">€/h</span>
+              </div>
+              <p className="adm-pricing-hint">Prix TTC de chaque heure réservée. La TVA applicable est de 20 % (location avec chauffeur), contre 10 % pour un transfert.</p>
+            </div>
+
+            <div className="adm-pricing-field">
+              <label>Durée minimum facturable (h)</label>
+              <div className="adm-pricing-input-wrap">
+                <input
+                  type="number" min="0.5" step="0.5"
+                  className="adm-input"
+                  value={pricingForm.minimumHours}
+                  onChange={e => onFieldChange('minimumHours', e.target.value)}
+                />
+                <span className="adm-pricing-unit">h</span>
+              </div>
+              <p className="adm-pricing-hint">Toute réservation plus courte est facturée à cette durée.</p>
+            </div>
+
+            <div className="adm-pricing-field">
+              <label>Kilomètres inclus par heure (km/h)</label>
+              <div className="adm-pricing-input-wrap">
+                <input
+                  type="number" min="0" step="1"
+                  className="adm-input"
+                  value={pricingForm.includedKmPerHour}
+                  onChange={e => onFieldChange('includedKmPerHour', e.target.value)}
+                />
+                <span className="adm-pricing-unit">km</span>
+              </div>
+              <p className="adm-pricing-hint">Au-delà de ce forfait, les kilomètres sont facturés au prix par kilomètre ci-dessus (0 = aucun kilomètre inclus).</p>
+            </div>
+
             <button
               className="adm-btn-primary"
               disabled={pricingSaving}
@@ -130,6 +177,43 @@ export default function PricingSection({ pricing, pricingForm, pricingLoading, p
             <div style={{ marginTop:16, padding:'10px 14px', background:'rgba(38,114,83,0.06)', borderRadius:8, border:'1px solid rgba(38,114,83,0.15)', fontSize:'0.78rem', color:'rgba(255,255,255,0.45)', lineHeight:1.6 }}>
               <strong style={{ color:'rgba(255,255,255,0.65)' }}>Formule :</strong><br/>
               Prix = max(minimum, frais_base + distance × prix_km)
+            </div>
+
+            <div className="adm-pricing-card-title" style={{ marginTop:22 }}>
+              <Timer size={16} strokeWidth={1.75} style={{ color:'#c9a227' }} />
+              Mise à disposition
+            </div>
+            <table className="adm-table" style={{ marginTop:0 }}>
+              <thead>
+                <tr>
+                  <th>Durée</th>
+                  <th style={{ textAlign:'right' }}>Km inclus</th>
+                  <th style={{ textAlign:'right' }}>Prix estimé</th>
+                </tr>
+              </thead>
+              <tbody>
+                {[2, 3, 4, 6, 8, 12].map(h => {
+                  const rate    = parseFloat(pricingForm.hourlyRate) || 0;
+                  const minH    = parseFloat(pricingForm.minimumHours) || 0;
+                  const kmPerH  = parseFloat(pricingForm.includedKmPerHour) || 0;
+                  // Même règle que le serveur : la durée facturée est relevée
+                  // au plancher, et le forfait kilométrique la suit.
+                  const billable = Math.max(minH, h);
+                  const price    = Math.round(billable * rate * 100) / 100;
+                  return (
+                    <tr key={h}>
+                      <td style={{ color:'rgba(255,255,255,0.65)', fontWeight:500 }}>{h} h</td>
+                      <td style={{ textAlign:'right', color:'rgba(255,255,255,0.45)' }}>{billable * kmPerH} km</td>
+                      <td style={{ textAlign:'right', color:'#c9a227', fontWeight:700 }}>{fmt(price)} €</td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+            <div style={{ marginTop:16, padding:'10px 14px', background:'rgba(201,162,39,0.06)', borderRadius:8, border:'1px solid rgba(201,162,39,0.15)', fontSize:'0.78rem', color:'rgba(255,255,255,0.45)', lineHeight:1.6 }}>
+              <strong style={{ color:'rgba(255,255,255,0.65)' }}>Formule :</strong><br/>
+              Prix = max(durée_min, durée) × tarif_horaire<br/>
+              + (km_parcourus − km_inclus) × prix_km, relevé après la course
             </div>
           </div>
 

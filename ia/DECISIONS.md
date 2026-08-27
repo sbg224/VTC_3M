@@ -198,3 +198,37 @@ Un déploiement serverless Vercel ne peut pas atteindre une base auto-hébergée
 
 **Statut**
 Validée
+
+---
+
+## ADR-003
+
+**Date**
+2026-08-26 18:45
+
+**Auteur**
+Développeur
+
+**Contexte**
+ADR-002 retenait un déploiement de l'application sur Vercel, frontend et backend confondus. L'application est un serveur Express long-running : sessions JWT en cookie, cron horaire de purge des tokens révoqués, connexions Sequelize persistantes, génération de PDF sur disque. Ce modèle s'accommode mal du découpage en fonctions serverless éphémères de Vercel.
+
+**Décision**
+Compléter ADR-002 en séparant les deux hébergements : le backend Express est déployé sur Render (service long-running, blueprint `render.yaml`), le frontend Vite reste sur Vercel (`frontend/vercel.json`). Le navigateur ne voit qu'une seule origine grâce à une réécriture `/api/*` de Vercel vers Render. La base PostgreSQL managée Supabase retenue par ADR-002 est conservée.
+
+**Justification**
+Un processus long-running conserve son cron, son pool de connexions et son système de fichiers entre deux requêtes, ce qu'une fonction serverless ne garantit pas. La réécriture côté Vercel évite le CORS inter-origines et permet au cookie de session `vtc_session` de rester `SameSite` sans assouplissement.
+
+**Alternatives étudiées**
+
+- Tout sur Vercel (ADR-002) : écartée, incompatible avec le cron et les connexions persistantes du backend.
+- Tout sur Render (frontend compris) : écartée, Vercel offre un meilleur CDN et une meilleure intégration au build Vite.
+- Backend sur Vercel avec cron externe et stockage objet : écartée, complexité disproportionnée pour le gain.
+
+**Conséquences**
+
+- `FRONTEND_URL`/CORS et les variables `COMPANY_*` doivent être renseignées dans l'environnement Render, pas seulement dans `.env.example`.
+- Le disque de Render étant éphémère au redéploiement, les PDF écrits dans `backend/pdfs/` ne survivent pas — sans impact fonctionnel aujourd'hui, les documents étant envoyés en pièce jointe et régénérés à la demande, mais à surveiller.
+- ADR-002 reste valide pour la partie base de données (Supabase, pooler transaction, `DB_SSL=true`).
+
+**Statut**
+Validée

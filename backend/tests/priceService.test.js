@@ -38,7 +38,9 @@ describe('priceService', () => {
 
   test('updatePricingCache met à jour les valeurs prises en compte par calculatePrice', () => {
     updatePricingCache({ pricePerKm: 5, minimumPrice: 15, baseFee: 2 });
-    expect(getPricingValues()).toEqual({ PRICE_PER_KM: 5, MINIMUM_PRICE: 15, BASE_FEE: 2 });
+    // toMatchObject plutôt que toEqual : le cache porte aussi les paramètres de
+    // mise à disposition, qui ne concernent pas ce test.
+    expect(getPricingValues()).toMatchObject({ PRICE_PER_KM: 5, MINIMUM_PRICE: 15, BASE_FEE: 2 });
     // 2€ base + 10 km * 5€/km = 52€
     expect(calculatePrice(10)).toBe(52);
   });
@@ -55,7 +57,7 @@ describe('priceService', () => {
     // valeur invalide suffisait à rendre tous les prix NaN.
     for (const invalid of [NaN, Infinity, -Infinity, 'abc', null, undefined, {}]) {
       updatePricingCache({ pricePerKm: invalid, minimumPrice: invalid, baseFee: invalid });
-      expect(getPricingValues()).toEqual({ PRICE_PER_KM: 3, MINIMUM_PRICE: 12, BASE_FEE: 4 });
+      expect(getPricingValues()).toMatchObject({ PRICE_PER_KM: 3, MINIMUM_PRICE: 12, BASE_FEE: 4 });
     }
   });
 

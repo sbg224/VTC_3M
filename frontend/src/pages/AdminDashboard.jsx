@@ -65,7 +65,10 @@ export default function AdminDashboard() {
 
   // Tarification
   const [pricing, setPricing]           = useState(null);
-  const [pricingForm, setPricingForm]   = useState({ pricePerKm: '', minimumPrice: '', baseFee: '' });
+  const [pricingForm, setPricingForm]   = useState({
+    pricePerKm: '', minimumPrice: '', baseFee: '',
+    hourlyRate: '', minimumHours: '', includedKmPerHour: '',
+  });
   const [pricingLoading, setPricingLoading] = useState(false);
   const [pricingSaving, setPricingSaving]   = useState(false);
   const [pricingMsg, setPricingMsg]     = useState({ text: '', ok: true });
@@ -193,9 +196,12 @@ export default function AdminDashboard() {
       const { data } = await adminAPI.getPricing();
       setPricing(data);
       setPricingForm({
-        pricePerKm:   String(data.pricePerKm),
-        minimumPrice: String(data.minimumPrice),
-        baseFee:      String(data.baseFee),
+        pricePerKm:        String(data.pricePerKm),
+        minimumPrice:      String(data.minimumPrice),
+        baseFee:           String(data.baseFee),
+        hourlyRate:        String(data.hourlyRate),
+        minimumHours:      String(data.minimumHours),
+        includedKmPerHour: String(data.includedKmPerHour),
       });
     } catch (err) {
       if (import.meta.env.DEV) console.error('[Pricing]', err);
@@ -208,10 +214,15 @@ export default function AdminDashboard() {
     setPricingSaving(true);
     setPricingMsg({ text: '', ok: true });
     try {
+      // Les six champs sont envoyés ensemble : le serveur fait un upsert de la
+      // ligne complète, un champ omis y écrirait NaN.
       await adminAPI.updatePricing({
-        pricePerKm:   parseFloat(pricingForm.pricePerKm),
-        minimumPrice: parseFloat(pricingForm.minimumPrice),
-        baseFee:      parseFloat(pricingForm.baseFee),
+        pricePerKm:        parseFloat(pricingForm.pricePerKm),
+        minimumPrice:      parseFloat(pricingForm.minimumPrice),
+        baseFee:           parseFloat(pricingForm.baseFee),
+        hourlyRate:        parseFloat(pricingForm.hourlyRate),
+        minimumHours:      parseFloat(pricingForm.minimumHours),
+        includedKmPerHour: parseFloat(pricingForm.includedKmPerHour),
       });
       setPricingMsg({ text: 'Tarification mise à jour avec succès.', ok: true });
       loadPricing();

@@ -82,12 +82,18 @@ TWILIO_AUTH_TOKEN=xxxxxxxx
 TWILIO_FROM_NUMBER=+33xxxxxxxx
 ADMIN_PHONE=+33xxxxxxxx
 
-# Entreprise (apparaît dans les PDFs)
-COMPANY_NAME=VTC 3M
-COMPANY_ADDRESS=123 Rue exemple, 75001 Paris
-COMPANY_PHONE=+33 6 XX XX XX XX
-COMPANY_EMAIL=contact@vtc3m.fr
-COMPANY_SIRET=XXX XXX XXX XXXXX
+# Entreprise (apparaît dans les PDFs et les emails)
+# COMPANY_NAME = nom commercial ; COMPANY_LEGAL_NAME = raison sociale
+COMPANY_NAME=3M Drive
+COMPANY_LEGAL_NAME=AHADI Services
+COMPANY_LEGAL_FORM=SAS à associé unique au capital de 500,00 €
+COMPANY_RCS=108 767 393 R.C.S. Toulouse
+COMPANY_APE=4932Z
+COMPANY_SIRET=108 767 393 00011
+COMPANY_TVA_INTRACOM=FR11 108767393
+COMPANY_ADDRESS=1 rue Virginia Woolf, 31200 Toulouse, France
+COMPANY_PHONE=+33 6 66 60 41 33
+COMPANY_EMAIL=ahadi.service31@gmail.com
 ```
 
 ### Configuration Gmail

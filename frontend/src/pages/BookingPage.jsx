@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
 import { Link, useParams } from 'react-router-dom';
+import LegalLink from '../components/legal/LegalLink';
 import {
   Calculator, Loader2, AlertTriangle, MapPin, Clock, Euro, Car,
   CheckCircle, ClipboardList, User, Lock, Star, Shield,
@@ -497,9 +498,9 @@ export default function BookingPage() {
               <label htmlFor="gdprConsent">
                 J'accepte que mes données personnelles soient utilisées pour le traitement de ma réservation,
                 conformément à la{' '}
-                <Link to="/politique-rgpd" style={{ color: 'var(--color-accent)' }}>
+                <LegalLink documentKey="politique-rgpd" style={{ color: 'var(--color-accent)' }}>
                   politique de confidentialité
-                </Link>.
+                </LegalLink>.
                 Ces données ne seront pas partagées avec des tiers. <strong>*</strong>
               </label>
             </div>
@@ -516,9 +517,9 @@ export default function BookingPage() {
               />
               <label htmlFor="termsAccepted">
                 J'ai lu et j'accepte les{' '}
-                <Link to="/cgu" style={{ color: 'var(--color-accent)' }}>
+                <LegalLink documentKey="cgu" style={{ color: 'var(--color-accent)' }}>
                   conditions générales d'utilisation
-                </Link>. <strong>*</strong>
+                </LegalLink>. <strong>*</strong>
               </label>
             </div>
             {errors.termsAccepted && (

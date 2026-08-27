@@ -53,6 +53,12 @@ router.put(
     body('pricePerKm').isFloat({ min: 0 }).withMessage('pricePerKm doit être un nombre >= 0.'),
     body('minimumPrice').isFloat({ min: 0 }).withMessage('minimumPrice doit être un nombre >= 0.'),
     body('baseFee').isFloat({ min: 0 }).withMessage('baseFee doit être un nombre >= 0.'),
+    // Mise à disposition. Ces champs sont exigés au même titre que les autres :
+    // updatePricing fait un upsert de la ligne complète, et un champ absent y
+    // écrirait NaN plutôt que de conserver la valeur en place.
+    body('hourlyRate').isFloat({ gt: 0 }).withMessage('hourlyRate doit être un nombre > 0.'),
+    body('minimumHours').isFloat({ gt: 0 }).withMessage('minimumHours doit être un nombre > 0.'),
+    body('includedKmPerHour').isFloat({ min: 0 }).withMessage('includedKmPerHour doit être un nombre >= 0.'),
   ],
   handleValidation,
   adminCtrl.updatePricing,

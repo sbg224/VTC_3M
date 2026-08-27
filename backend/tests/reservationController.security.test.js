@@ -143,7 +143,7 @@ describe('création sécurisée d’une réservation', () => {
     expect(Reservation.createUnique).not.toHaveBeenCalled();
   });
 
-  test('une mise à disposition reste sans distance ni prix client', async () => {
+  test('une mise à disposition est tarifée à l\'heure, sans appel à l\'itinéraire', async () => {
     const response = createResponse();
     await controller.createReservation(createPublicRequest({
       serviceType: 'mise_a_disposition',
@@ -151,12 +151,46 @@ describe('création sécurisée d’une réservation', () => {
       arrivalAddress: '',
     }), response);
 
+    // Aucune destination : ni géocodage ni itinéraire, donc aucune distance.
     expect(calculateTrip).not.toHaveBeenCalled();
     expect(Reservation.createUnique).toHaveBeenCalledWith(expect.objectContaining({
-      arrivalAddress: 'Mise à disposition – 2h',
+      serviceType: 'mise_a_disposition',
+      serviceDurationHours: 2,
+      // Le mode n'est plus encodé dans l'adresse d'arrivée.
+      arrivalAddress: '',
       distance: null,
-      estimatedPrice: null,
+      // 2 h x 28,772 €/h = 57,544 -> 57,54 € (part horaire seule ; le
+      // supplément kilométrique est calculé à la validation de la course).
+      estimatedPrice: 57.54,
     }));
+  });
+
+  test('une mise à disposition sous la durée plancher est facturée au minimum', async () => {
+    const response = createResponse();
+    await controller.createReservation(createPublicRequest({
+      serviceType: 'mise_a_disposition',
+      serviceDuration: '1h',
+      arrivalAddress: '',
+    }), response);
+
+    expect(Reservation.createUnique).toHaveBeenCalledWith(expect.objectContaining({
+      // 1 h réservée, 2 h facturées : la règle est appliquée côté serveur,
+      // l'interface ne proposant plus cette durée.
+      serviceDurationHours: 2,
+      estimatedPrice: 57.54,
+    }));
+  });
+
+  test('une durée de mise à disposition invalide est refusée', async () => {
+    const response = createResponse();
+    await controller.createReservation(createPublicRequest({
+      serviceType: 'mise_a_disposition',
+      serviceDuration: 'abc',
+      arrivalAddress: '',
+    }), response);
+
+    expect(response.statusCode).toBe(400);
+    expect(Reservation.createUnique).not.toHaveBeenCalled();
   });
 });
 

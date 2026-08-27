@@ -255,6 +255,20 @@ Si une donnée sensible est détectée, l’agent n’effectue aucun commit, ale
 
 ⸻
 
+AES-R015 — Le plan validé délimite le périmètre de l’implémentation
+
+Objectif
+
+Garantir que le développeur puisse s’opposer à toute décision de comportement, y compris mineure.
+
+Règle
+
+L’agent n’ajoute aucun comportement absent du plan validé, quelle qu’en soit la portée apparente. Une amélioration jugée évidente en cours d’implémentation est soumise avant application, jamais documentée après coup.
+
+Lorsqu’un écart au plan s’avère nécessaire, il figure explicitement dans le compte rendu de fin de tâche, distinctement des modifications prévues.
+
+⸻
+
 3. Application
 
 Ces règles s’appliquent à tous les agents utilisés dans le cadre de l’AI Engineering System.

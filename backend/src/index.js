@@ -276,11 +276,17 @@ async function start() {
       logger.info('[PRICING] Config tarifaire initialisée avec les valeurs par défaut.');
     } else {
       updatePricingCache({
-        pricePerKm:   pricingConfig.pricePerKm,
-        minimumPrice: pricingConfig.minimumPrice,
-        baseFee:      pricingConfig.baseFee,
+        pricePerKm:        pricingConfig.pricePerKm,
+        minimumPrice:      pricingConfig.minimumPrice,
+        baseFee:           pricingConfig.baseFee,
+        hourlyRate:        pricingConfig.hourlyRate,
+        minimumHours:      pricingConfig.minimumHours,
+        includedKmPerHour: pricingConfig.includedKmPerHour,
       });
-      logger.info(`[PRICING] Tarification chargée : ${pricingConfig.pricePerKm}€/km, min ${pricingConfig.minimumPrice}€, base ${pricingConfig.baseFee}€`);
+      logger.info(
+        `[PRICING] Transfert : ${pricingConfig.pricePerKm}€/km, min ${pricingConfig.minimumPrice}€, base ${pricingConfig.baseFee}€`
+        + ` — Mise à disposition : ${pricingConfig.hourlyRate}€/h, min ${pricingConfig.minimumHours}h, ${pricingConfig.includedKmPerHour}km inclus/h`
+      );
     }
 
     // ── Cron : nettoyage des tokens révoqués expirés (toutes les heures) ────────
@@ -298,7 +304,7 @@ async function start() {
     }, 60 * 60 * 1000); // toutes les heures
 
     app.listen(PORT, () => {
-      logger.info(`[SERVER] VTC 3M démarré sur le port ${PORT} – mode ${process.env.NODE_ENV || 'development'}`);
+      logger.info(`[SERVER] 3M Drive démarré sur le port ${PORT} – mode ${process.env.NODE_ENV || 'development'}`);
     });
   } catch (err) {
     logger.error(`[SERVER] Impossible de démarrer : ${err.message}`);
