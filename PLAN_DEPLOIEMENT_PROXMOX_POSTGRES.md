@@ -1,3 +1,5 @@
+> ⚠️ Document obsolète — ce plan a été abandonné, voir ADR-003. La production utilise Supabase (PostgreSQL managé) + Render + Vercel.
+
 # Plan de déploiement recommandé — VTC_3M
 
 ## Décision retenue

@@ -59,7 +59,8 @@ Développement actif, en phase de pré-production. Le backlog de dette technique
 3. Fonctionnalités principales
 
 * Vitrine entreprise (accueil, services, témoignages, contact)
-* Réservation en ligne (formulaire client, notification email/SMS, génération PDF)
+* Réservation en ligne, en deux modes tarifés : **transfert** d'un point à un autre, au kilomètre, avec calcul d'itinéraire ; **mise à disposition** à l'heure, avec forfait kilométrique inclus et supplément au-delà. Notification email/SMS et génération de PDF dans les deux cas.
+* Facturation : numérotation légale en série continue (`AH-2026-000001`), ventilation HT/TVA au taux propre à chaque mode, facture PDF envoyée au client à la validation de la course.
 * Authentification sécurisée (JWT en cookie httpOnly, bcrypt)
 * Tableau de bord chauffeur (réservations, statistiques, validation de course, facturation PDF)
 * Tableau de bord administrateur (gestion des chauffeurs, statistiques globales, tarification)
@@ -78,6 +79,8 @@ Techniques
 
 * Monorepo sans outillage de workspace partagé : `backend/` et `frontend/` sont deux applications Node indépendantes (installation et lancement séparés).
 * En développement, SQLite reste le défaut et `DATABASE_URL` sélectionne PostgreSQL. La production exige PostgreSQL et les tests exigent une `DATABASE_URL_TEST` locale sûre ou SQLite en mémoire. Le runner interne versionné (`db/runMigrations.js` + `db/migrations/`) est l'unique autorité de schéma ; `sequelize.sync()` n'est plus utilisé.
+* La base PostgreSQL de production est **opérationnelle sur Supabase** et à jour des migrations (voir ADR-002). Une conséquence pratique : `src/models/index.js` charge `dotenv` à son import et rétablit `DATABASE_URL` depuis `backend/.env`. Tout script de test de migration qui passe par ce module atteint donc la base réelle, y compris en tentant de la rediriger vers SQLite — un rejeu à blanc doit construire sa propre instance Sequelize sans importer `src/models`.
+* Le vérificateur strict de schéma (`verifyExistingSchema`) est calibré pour PostgreSQL et produit de nombreux faux positifs sous SQLite (ENUM lus en TEXT, index de clé primaire, clés étrangères). Il ne s'exécute que sur le chemin « base non baselinée » et ne bloque donc pas le démarrage courant. Deux faux positifs subsistent aussi sous PostgreSQL : `describeTable` renvoie `NUMERIC` sans précision, incompatible avec `DECIMAL(10,2)` attendu, et un défaut entier valant zéro est normalisé en booléen.
 * Dépendance à un serveur public de démonstration OSRM pour le calcul d'itinéraire — dette technique connue (voir Évolution).
 
 Réglementaires
@@ -103,7 +106,10 @@ Non trouvé / à confirmer
 * Les PDF de réservation/facture ne sont jamais accessibles publiquement : uniquement par le chauffeur propriétaire, authentifié.
 * Les identifiants du compte administrateur par défaut (documentés publiquement dans le README) sont bloqués en production tant que des valeurs réelles n'ont pas été définies.
 * Les pages publiques par chauffeur (`/book/:slug`, `/contact/:slug`) sont volontairement désindexées, leur contenu étant quasiment dupliqué d'un chauffeur à l'autre.
-* La société est **assujettie à la TVA** au taux réduit de **10 %** applicable au transport de voyageurs (art. 279 b quater du CGI) — elle n'est pas en franchise en base. Le prix convenu avec le client est un prix **TTC** : la facture en extrait la base HT (`TTC ÷ 1,10`) au lieu d'ajouter la taxe par-dessus, afin que le total facturé reste le montant accepté à la réservation. N° de TVA intracommunautaire : `FR11 108767393`.
+* La société est **assujettie à la TVA** — elle n'est pas en franchise en base. Le taux dépend de la nature réelle de la prestation, pas de l'activité : un **transfert** est un contrat de transport de voyageurs, au taux réduit de **10 %** (art. 279 b quater du CGI) ; une **mise à disposition**, facturée à l'heure et sans trajet prédéfini, est assimilée à une location de véhicule avec chauffeur et relève du taux normal de **20 %** (art. 278 du CGI). N° de TVA intracommunautaire : `FR11 108767393`.
+* Le prix convenu avec le client est un prix **TTC** : la facture en extrait la base HT (`TTC ÷ (1 + taux)`) au lieu d'ajouter la taxe par-dessus, afin que le total facturé reste le montant accepté à la réservation.
+* Mise à disposition : **2 heures minimum facturables** — toute réservation plus courte est facturée à cette durée — et **25 kilomètres inclus par heure facturée**. Au-delà du forfait, les kilomètres sont facturés au tarif kilométrique du mode transfert. Le supplément n'est calculable qu'après la course, faute de destination connue à la réservation : le chauffeur relève le kilométrage à la validation. Ces trois paramètres sont pilotables depuis l'administration.
+* Les factures portent une série chronologique **continue et sans rupture** (art. 242 nonies A du CGI), distincte des numéros de réservation. Le numéro n'est attribué qu'à la facturation : une course annulée n'en consomme aucun.
 
 ⸻
 
@@ -125,11 +131,15 @@ Court terme
 * Décision produit en attente : afficher publiquement tous les chauffeurs inscrits dès qu'il n'y en a qu'un ou deux.
 * Décision en attente : conserver ou retirer la section « Une expérience premium » (équipements véhicule) de l'accueil.
 * Rédaction de la documentation finale / passage README, prévue en dernière étape.
+* Report assumé : `Reservation.arrivalAddress` reste `NOT NULL` et reçoit une chaîne vide en mise à disposition, faute de destination. `NULL` exprimerait plus justement cette absence, mais l'assouplir suppose un `changeColumn` — opération non additive, qui recrée la table sous SQLite. À reprendre lors du prochain chantier de schéma plutôt qu'isolément.
+* Dette de test connue : le parcours de réservation en mise à disposition (choix du mode, durée, estimation affichée, envoi) n'a **aucun test end-to-end** — `cypress/e2e/reservation.cy.js` ne couvre que le transfert. Le backend est couvert unitairement (tarification horaire, supplément kilométrique, ventilation TVA, numérotation), mais pas le parcours client complet. À traiter dans une tâche dédiée aux tests.
 
 Moyen terme
 
-* Migration de SQLite vers PostgreSQL auto-hébergé sur VM Proxmox (décision déjà prise, non encore mise en œuvre — voir `PLAN_DEPLOIEMENT_PROXMOX_POSTGRES.md`).
-* Auto-hébergement d'OSRM une fois l'hébergement de production en place.
+* Auto-hébergement d'OSRM une fois l'hébergement de production stabilisé — le calcul d'itinéraire repose encore sur le serveur public de démonstration.
+* Numérotation de facture : le compteur est en place et testé, mais aucune facture réelle n'a encore été émise. Contrôler la continuité de la série après les premières courses facturées.
+
+**Déjà réalisé** (conservé ici pour éviter que ces points ne soient relancés) : la migration vers PostgreSQL est **faite**, sur Supabase managé et non sur VM Proxmox — ADR-001 prévoyait Proxmox, ADR-002 l'a remplacé par Supabase, ADR-003 a séparé les hébergements entre Render (backend) et Vercel (frontend). Le document `PLAN_DEPLOIEMENT_PROXMOX_POSTGRES.md` décrit une infrastructure abandonnée et **ne doit plus servir de référence**.
 
 Long terme
 
