@@ -108,3 +108,39 @@ Les apprentissages peuvent également provenir de :
 * améliorations réalisées.
 
 Ils peuvent conduire à des évolutions des standards, du workflow ou de l’architecture lorsque cela est justifié.
+
+⸻
+
+7. Apprentissages
+
+AES-L001 — Cypress échoue depuis une session d’agent lancée dans VS Code
+
+Date
+
+2026-08-27 11:46
+
+Contexte
+
+Lors du chantier des modales légales, l’exécution de `npx cypress run` et `npx cypress verify` depuis la session d’agent a échoué, alors que la suite Cypress du projet est fonctionnelle.
+
+Observation
+
+Deux symptômes apparemment distincts : `bad option: --smoke-test` pour `verify`, et `Cannot find module '.../Cypress.app/Contents/MacOS/Contents/Resources/app/index.js'` — un chemin doublé — pour `run`.
+
+Le binaire a d’abord été soupçonné d’être corrompu. L’examen l’a démenti : Mach-O arm64 valide lié à `Electron Framework`, signature vérifiée par `codesign -v --deep --strict`, et `Contents/Resources/app/index.js` bien présent. La chaîne « bad option » est absente du binaire : le message venait de Node, pas de Cypress.
+
+La cause réelle est la variable `ELECTRON_RUN_AS_NODE=1`, absente de tout fichier de profil mais héritée de la chaîne de processus `Code` → `Code Helper (Plugin)` → `claude` → shell. VS Code la pose pour réutiliser son propre Electron comme runtime Node. Cypress étant une application Electron, son binaire démarre alors en Node simple : Node rejette les options Electron, et résout l’entrée de l’application relativement au répertoire courant.
+
+Enseignement
+
+Un outil peut être parfaitement installé et échouer à cause d’une variable d’environnement héritée, invisible dans les fichiers de configuration du projet comme dans ceux du shell. Un message d’erreur évoquant un fichier introuvable ne prouve pas que le fichier manque : ici il était présent, seul le chemin calculé était faux.
+
+Recommandation
+
+Avant de conclure à une installation corrompue et de relancer un téléchargement lourd, vérifier trois choses : que le fichier incriminé existe réellement, que le message d’erreur provient bien du binaire mis en cause (`strings`), et que l’environnement hérité ne contient pas de variable interférente (`env`, puis la chaîne des processus parents).
+
+Pour ce projet, les scripts `cy:open`, `cy:run` et `test:e2e` de `frontend/package.json` sont préfixés par `env -u ELECTRON_RUN_AS_NODE`. Le contournement vaut pour tout outil Electron lancé depuis une session d’agent.
+
+Références
+
+Aucune décision ni audit associé.
