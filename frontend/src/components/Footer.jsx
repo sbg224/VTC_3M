@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom';
 import { MapPin, Mail } from 'lucide-react';
 import WhatsAppIcon from './WhatsAppIcon';
+import LegalLink from './legal/LegalLink';
 import {
   CONTACT_EMAIL,
   WHATSAPP_URL,
@@ -57,9 +58,9 @@ export default function Footer() {
         <div className="footer-bottom">
           <span>© {year} 3M Drive – Toulouse. Tous droits réservés.</span>
           <span className="footer-legal-links">
-            <Link to="/mentions-legales">Mentions légales</Link>
-            <Link to="/cgu">CGU</Link>
-            <Link to="/politique-rgpd">Politique de confidentialité</Link>
+            <LegalLink documentKey="mentions-legales" />
+            <LegalLink documentKey="cgu" />
+            <LegalLink documentKey="politique-rgpd" />
           </span>
         </div>
       </div>

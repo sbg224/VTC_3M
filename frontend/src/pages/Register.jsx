@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import LegalLink from '../components/legal/LegalLink';
 import {
   Car, AlertCircle, Loader2, UserPlus, Eye, EyeOff,
   CheckCircle, Clock, Zap, Shield,
@@ -368,9 +369,9 @@ export default function Register() {
               />
               <label htmlFor="registerGdprConsent">
                 J'accepte la{' '}
-                <Link to="/politique-rgpd" style={{ color: 'var(--color-accent)' }}>
+                <LegalLink documentKey="politique-rgpd" style={{ color: 'var(--color-accent)' }}>
                   politique de confidentialité
-                </Link>{' '}
+                </LegalLink>{' '}
                 et le traitement de mes données. <strong>*</strong>
               </label>
             </div>
@@ -387,9 +388,9 @@ export default function Register() {
               />
               <label htmlFor="registerTermsAccepted">
                 J'ai lu et j'accepte les{' '}
-                <Link to="/cgu" style={{ color: 'var(--color-accent)' }}>
+                <LegalLink documentKey="cgu" style={{ color: 'var(--color-accent)' }}>
                   conditions générales d'utilisation
-                </Link>. <strong>*</strong>
+                </LegalLink>. <strong>*</strong>
               </label>
             </div>
             {errors.termsAccepted && (

@@ -2,6 +2,7 @@ import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-route
 import { useEffect, lazy, Suspense } from 'react';
 import Navbar from './components/Navbar';
 import Footer from './components/Footer';
+import LegalModalProvider from './components/legal/LegalModalProvider';
 import Home from './pages/Home';
 import { AuthProvider, useAuth } from './services/auth';
 
@@ -66,13 +67,19 @@ function DriverRoute({ children }) {
   return children;
 }
 
+// LegalModalProvider enveloppe toutes les pages publiques : les liens légaux
+// (footer, cases de consentement) ouvrent une modale au lieu de faire quitter
+// la page. Les routes /mentions-legales, /cgu et /politique-rgpd restent des
+// pages à part entière (LCEN art. 6-III, indexation, partage de lien direct).
 function AppLayout({ children }) {
   return (
-    <div className="app-layout">
-      <Navbar />
-      <main className="main-content">{children}</main>
-      <Footer />
-    </div>
+    <LegalModalProvider>
+      <div className="app-layout">
+        <Navbar />
+        <main className="main-content">{children}</main>
+        <Footer />
+      </div>
+    </LegalModalProvider>
   );
 }
 
