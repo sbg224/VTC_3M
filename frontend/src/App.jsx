@@ -6,12 +6,6 @@ import LegalModalProvider from './components/legal/LegalModalProvider';
 import Home from './pages/Home';
 import { AuthProvider, useAuth } from './services/auth';
 
-// Purement décoratif (curseur personnalisé), sans rien de critique au premier
-// rendu (voir CursorEffect.jsx) : chargé en différé pour ne pas forcer gsap
-// dans le bundle initial de TOUTES les pages (login, dashboard, admin…) qui
-// n'en ont pas besoin.
-const CursorEffect = lazy(() => import('./animations/CursorEffect'));
-
 const Reservation = lazy(() => import('./pages/Reservation'));
 const BookingPage = lazy(() => import('./pages/BookingPage'));
 const ContactCard = lazy(() => import('./pages/ContactCard'));
@@ -87,9 +81,6 @@ export default function App() {
   return (
     <AuthProvider>
       <BrowserRouter>
-        <Suspense fallback={null}>
-          <CursorEffect />
-        </Suspense>
         <ScrollToTop />
         <Suspense fallback={<RouteFallback />}>
           <Routes>
