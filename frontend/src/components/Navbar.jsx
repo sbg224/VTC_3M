@@ -1,22 +1,14 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Home, CalendarDays, User, LayoutDashboard, Send, LogOut, Sun, Moon, Menu, X } from 'lucide-react';
+import { Home, CalendarDays, User, LayoutDashboard, Send, LogOut, Menu, X } from 'lucide-react';
 import { useAuth } from '../services/auth';
 
+// Le sélecteur de thème a été retiré des pages publiques : il ne repeignait que
+// 2 propriétés visibles sur 14 faute de tokens redéfinis par thème. Un mode
+// sombre réellement fonctionnel est prévu pour le tableau de bord uniquement
+// (voir ia/CONTEXT.md §7).
 export default function Navbar() {
-  // ── Gestion du thème clair / sombre ────────────────────────────────────────
-  const [theme, setTheme] = useState(() => {
-    return localStorage.getItem('vtc_theme') || 'dark';
-  });
-
-  useEffect(() => {
-    document.documentElement.setAttribute('data-theme', theme);
-    localStorage.setItem('vtc_theme', theme);
-  }, [theme]);
-
-  const toggleTheme = () => setTheme(t => t === 'dark' ? 'light' : 'dark');
-
   const { isAuthenticated, logout } = useAuth();
   const navigate = useNavigate();
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -29,7 +21,7 @@ export default function Navbar() {
 
   const closeMobile = () => setMobileOpen(false);
 
-  const navItemClass = ({ isActive }) => `bottom-nav-item${isActive ? ' active' : ''}`;
+  const navItemClass = ({ isActive }) => `site-header-link${isActive ? ' active' : ''}`;
   const mobileItemClass = ({ isActive }) => `mobile-nav-link${isActive ? ' active' : ''}`;
 
   // Chaque icône s'anime indépendamment à l'ouverture (delay manuel croissant).
@@ -53,7 +45,7 @@ export default function Navbar() {
               d'app) où c'est lui qui est optimal. Variante claire/sombre
               selon le thème pour rester lisible sur la barre translucide. */}
           <img
-            src={theme === 'dark' ? '/images/nav-logo-dark.webp' : '/images/nav-logo-light.webp'}
+            src="/images/nav-logo-dark.webp"
             alt="3M Drive"
             className="mobile-top-bar-wordmark"
           />
@@ -128,76 +120,40 @@ export default function Navbar() {
                   </motion.div>
                 </>
               )}
-              <motion.button
-                {...mobileItemMotion(4)}
-                className="mobile-nav-link"
-                onClick={toggleTheme}
-                aria-label={theme === 'dark' ? 'Passer en mode clair' : 'Passer en mode sombre'}
-                title={theme === 'dark' ? 'Mode clair' : 'Mode sombre'}
-              >
-                {theme === 'dark' ? <Sun size={18} strokeWidth={1.75} /> : <Moon size={18} strokeWidth={1.75} />}
-              </motion.button>
             </motion.nav>
           </>
         )}
       </AnimatePresence>
 
-      {/* ── Pill flottante — desktop uniquement ────────────────────────────────── */}
-      <nav className="bottom-nav" aria-label="Navigation principale">
-        <NavLink to="/" end className={navItemClass} onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}>
-          <Home size={18} strokeWidth={1.75} />
-          <span className="bottom-nav-label">Accueil</span>
-        </NavLink>
+      {/* ── En-tête desktop ──────────────────────────────────────────────────── */}
+      <header className="site-header">
+        <div className="container site-header-inner">
+          <NavLink to="/" end className="site-header-logo" aria-label="3M Drive — accueil">
+            <img src="/images/nav-logo-dark.webp" alt="3M Drive" className="site-header-wordmark" />
+          </NavLink>
 
-        <NavLink to="/reservation" className={navItemClass}>
-          <CalendarDays size={18} strokeWidth={1.75} />
-          <span className="bottom-nav-label">Réservation</span>
-        </NavLink>
+          <nav className="site-header-nav" aria-label="Navigation principale">
+            <NavLink to="/" end className={navItemClass}>Accueil</NavLink>
+            <NavLink to="/reservation" className={navItemClass}>Réservation</NavLink>
 
-        {isAuthenticated ? (
-          <>
-            <NavLink to="/dashboard" className={navItemClass}>
-              <LayoutDashboard size={18} strokeWidth={1.75} />
-              <span className="bottom-nav-label">Tableau de bord</span>
-            </NavLink>
-            <motion.button
-              onClick={handleLogout}
-              className="bottom-nav-item logout"
-              whileTap={{ scale: 0.94 }}
-              aria-label="Déconnexion"
-              title="Déconnexion"
-            >
-              <LogOut size={18} strokeWidth={1.75} />
-            </motion.button>
-          </>
-        ) : (
-          <>
-            <NavLink to="/login" className={navItemClass}>
-              <User size={18} strokeWidth={1.75} />
-              <span className="bottom-nav-label">Espace chauffeur</span>
-            </NavLink>
-            <NavLink to="/reservation" className="bottom-nav-item cta">
-              <Send size={16} strokeWidth={1.75} />
-              <span className="bottom-nav-label">Réserver</span>
-            </NavLink>
-          </>
-        )}
-
-        <div className="bottom-nav-divider" />
-
-        <motion.button
-          className="bottom-nav-icon-btn"
-          onClick={toggleTheme}
-          aria-label={theme === 'dark' ? 'Passer en mode clair' : 'Passer en mode sombre'}
-          whileTap={{ scale: 0.9 }}
-          title={theme === 'dark' ? 'Mode clair' : 'Mode sombre'}
-        >
-          {theme === 'dark'
-            ? <Sun size={17} strokeWidth={1.75} />
-            : <Moon size={17} strokeWidth={1.75} />
-          }
-        </motion.button>
-      </nav>
+            {isAuthenticated ? (
+              <>
+                <NavLink to="/dashboard" className={navItemClass}>Tableau de bord</NavLink>
+                <button type="button" className="site-header-link" onClick={handleLogout}>
+                  <LogOut size={15} strokeWidth={1.75} /> Déconnexion
+                </button>
+              </>
+            ) : (
+              <>
+                <NavLink to="/login" className={navItemClass}>Espace chauffeur</NavLink>
+                <NavLink to="/reservation" className="site-header-cta">
+                  <Send size={14} strokeWidth={1.75} /> Réserver
+                </NavLink>
+              </>
+            )}
+          </nav>
+        </div>
+      </header>
     </>
   );
 }

@@ -1,5 +1,5 @@
 /* ── Google Fonts ───────────────────────────────────────────────────────────── */
-@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;1,9..40,400&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Archivo:wght@500;600&family=Outfit:wght@400;500;600;700;800&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;1,9..40,400&display=swap');
 
 /* ═══════════════════════════════════════════════════════════════════════════
    3M Drive – Design System AHADI
@@ -5584,4 +5584,215 @@ textarea.form-control { resize: vertical; min-height: 88px; }
   margin: 0;
   padding-left: 12px;
   border-left: 3px solid rgba(38, 114, 83, 0.4);
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   ACCUEIL — refonte 2026
+   Portée strictement limitée au sous-arbre `.hm` : les tokens ci-dessous sont
+   préfixés `--hm-` et n'affectent aucune autre page. Direction validée :
+   fond clair dominant, sombre réservé au héros et à la clôture ; Archivo en
+   titre (600 max) ; un seul accent, le vert AHADI, réservé aux actions.
+   ═══════════════════════════════════════════════════════════════════════════ */
+.hm {
+  --hm-ink:       #101418;
+  --hm-ink-muted: #5A6470;
+  --hm-paper:     #FFFFFF;
+  --hm-paper-alt: #EEF0F1;
+  --hm-line:      #D9DDE1;
+  --hm-ahadi:     #267253;
+  --hm-ahadi-dark:#1A4A35;
+  --hm-h: 'Archivo', 'Helvetica Neue', Arial, sans-serif;
+  background: var(--hm-paper);
+  color: var(--hm-ink);
+}
+.hm h1, .hm h2, .hm h3 {
+  font-family: var(--hm-h);
+  font-weight: 600;
+  letter-spacing: -0.012em;
+  line-height: 1.14;
+  text-wrap: balance;
+}
+
+/* ── Rythme commun ───────────────────────────────────────────────────────── */
+.hm-sec { padding: 88px 0; border-top: 1px solid var(--hm-line); background: var(--hm-paper); }
+.hm-sec--alt { background: var(--hm-paper-alt); }
+.hm-sec-head { margin-bottom: 44px; max-width: 62ch; }
+.hm-eyebrow {
+  font-size: 0.7rem; font-weight: 500; letter-spacing: 0.14em;
+  text-transform: uppercase; color: var(--hm-ink-muted); margin-bottom: 12px;
+}
+.hm-eyebrow--dark { color: rgba(255,255,255,0.55); }
+.hm-title { font-size: clamp(1.6rem, 3vw, 2.15rem); color: var(--hm-ink); }
+.hm-title--dark { color: #fff; }
+.hm-lede { color: var(--hm-ink-muted); max-width: 56ch; margin-top: 10px; line-height: 1.6; }
+
+/* ── Boutons ─────────────────────────────────────────────────────────────── */
+.hm-btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+  font-family: var(--font-body); font-weight: 500; font-size: 0.9rem;
+  padding: 12px 22px; border-radius: 4px; border: 1px solid transparent;
+  background: var(--hm-ahadi); color: #fff; text-decoration: none; cursor: pointer;
+  transition: background var(--transition);
+}
+.hm-btn:hover { background: var(--hm-ahadi-dark); }
+.hm-btn--ghost { background: transparent; border-color: rgba(255,255,255,0.28); color: #fff; }
+.hm-btn--ghost:hover { background: rgba(255,255,255,0.08); }
+.hm :focus-visible { outline: 2px solid var(--hm-ahadi); outline-offset: 3px; }
+
+/* ── Héros ───────────────────────────────────────────────────────────────── */
+.hm-hero { position: relative; background: var(--hm-ink); color: #fff; overflow: hidden; }
+.hm-hero-bg { position: absolute; inset: 0; z-index: 0; }
+.hm-hero-img { width: 100%; height: 100%; object-fit: cover; object-position: 58% 60%; }
+.hm-hero-veil {
+  position: absolute; inset: 0;
+  background:
+    linear-gradient(96deg, rgba(16,20,24,0.92) 0%, rgba(16,20,24,0.74) 42%, rgba(16,20,24,0.18) 78%),
+    linear-gradient(0deg, rgba(16,20,24,0.55), transparent 45%);
+}
+.hm-hero-inner {
+  position: relative; z-index: 1;
+  display: grid; grid-template-columns: 1fr 400px; gap: 64px; align-items: center;
+  padding: 96px 0 100px;
+}
+.hm-hero-title { font-size: clamp(2.1rem, 4.4vw, 3.15rem); color: #fff; max-width: 13ch; }
+.hm-hero-sub { margin-top: 20px; color: rgba(255,255,255,0.74); max-width: 44ch; font-size: 1.02rem; line-height: 1.6; }
+.hm-hero-meta {
+  margin-top: 30px; display: flex; gap: 22px; align-items: center; flex-wrap: wrap;
+  font-size: 0.9rem; color: rgba(255,255,255,0.62);
+}
+.hm-hero-phone {
+  display: inline-flex; align-items: center; gap: 7px; color: #fff; text-decoration: none;
+  border-bottom: 1px solid rgba(255,255,255,0.3); padding-bottom: 2px;
+}
+.hm-hero-phone:hover { border-bottom-color: #fff; }
+.hm-rule { width: 1px; height: 15px; background: rgba(255,255,255,0.22); }
+
+/* ── Destinations ────────────────────────────────────────────────────────── */
+.hm-dests { display: grid; grid-template-columns: 1fr 1fr; gap: 28px; }
+.hm-dest { display: flex; }
+.hm-dest-btn {
+  display: flex; flex-direction: column; width: 100%; text-align: left;
+  background: var(--hm-paper); border: 1px solid var(--hm-line); border-radius: 6px;
+  overflow: hidden; cursor: pointer; padding: 0; font: inherit; color: inherit;
+  transition: border-color var(--transition);
+}
+.hm-dest-btn:hover { border-color: #B9C1C7; }
+.hm-dest-photo { width: 100%; aspect-ratio: 3 / 2; object-fit: cover; border-bottom: 1px solid var(--hm-line); }
+.hm-dest-placeholder {
+  aspect-ratio: 3 / 2; display: flex; flex-direction: column; align-items: center;
+  justify-content: center; gap: 10px; border-bottom: 1px solid var(--hm-line);
+  color: #8C97A0; font-size: 0.7rem; letter-spacing: 0.14em; text-transform: uppercase;
+  background: repeating-linear-gradient(135deg, #E4E8EA 0 10px, #EEF1F2 10px 20px);
+}
+.hm-dest-body { display: flex; flex-direction: column; gap: 7px; padding: 20px 22px 22px; flex: 1; }
+.hm-dest-title { font-family: var(--hm-h); font-weight: 600; font-size: 1.05rem; }
+.hm-dest-desc { font-size: 0.9rem; color: var(--hm-ink-muted); line-height: 1.55; }
+.hm-dest-foot { margin-top: auto; padding-top: 16px; border-top: 1px solid var(--hm-line); }
+.hm-dest-go { display: inline-flex; align-items: center; gap: 6px; font-size: 0.83rem; font-weight: 500; color: var(--hm-ahadi); }
+
+/* ── Étapes ──────────────────────────────────────────────────────────────── */
+.hm-steps {
+  list-style: none; margin: 0; padding: 0;
+  display: grid; grid-template-columns: repeat(3, 1fr); gap: 1px;
+  background: var(--hm-line); border: 1px solid var(--hm-line); border-radius: 6px; overflow: hidden;
+}
+.hm-step { background: var(--hm-paper); padding: 30px 26px; display: flex; flex-direction: column; gap: 9px; }
+.hm-step-n { font-family: var(--hm-h); font-size: 0.74rem; font-weight: 600; letter-spacing: 0.12em; color: var(--hm-ahadi); }
+.hm-step-title { font-size: 1.05rem; }
+.hm-step-desc { font-size: 0.9rem; color: var(--hm-ink-muted); line-height: 1.55; }
+
+/* ── Chauffeur & berline ─────────────────────────────────────────────────── */
+.hm-two { display: grid; grid-template-columns: 1.05fr 1fr; gap: 28px; align-items: start; }
+.hm-card { background: var(--hm-paper); border: 1px solid var(--hm-line); border-radius: 6px; padding: 30px; }
+.hm-who { display: flex; gap: 16px; align-items: center; margin-bottom: 18px; }
+.hm-avatar {
+  width: 52px; height: 52px; border-radius: 50%; background: var(--hm-ink); color: #fff;
+  display: flex; align-items: center; justify-content: center; flex: none;
+  font-family: var(--hm-h); font-weight: 600; font-size: 0.9rem; letter-spacing: 0.04em;
+}
+.hm-card-title { font-size: 1.05rem; }
+.hm-card-meta { font-size: 0.83rem; color: var(--hm-ink-muted); margin-top: 3px; }
+.hm-card-text { font-size: 0.93rem; color: var(--hm-ink-muted); line-height: 1.6; }
+.hm-chips { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 20px; }
+.hm-chip {
+  display: inline-flex; align-items: center; gap: 6px; font-size: 0.76rem; padding: 6px 12px;
+  border: 1px solid var(--hm-line); border-radius: 3px; color: var(--hm-ink-muted); background: var(--hm-paper-alt);
+}
+.hm-specs { list-style: none; margin: 20px 0 0; padding: 0; display: grid; grid-template-columns: 1fr 1fr; }
+.hm-specs li {
+  display: flex; align-items: center; gap: 8px; font-size: 0.88rem;
+  color: var(--hm-ink-muted); padding: 11px 0; border-top: 1px solid var(--hm-line);
+}
+
+/* ── Clôture / contact ───────────────────────────────────────────────────── */
+.hm-foot { background: var(--hm-ink); color: #fff; padding: 84px 0; }
+.hm-foot-grid { display: grid; grid-template-columns: 1.2fr 1fr; gap: 56px; align-items: start; }
+.hm-ways {
+  display: flex; flex-direction: column; gap: 1px; margin-top: 28px;
+  background: rgba(255,255,255,0.13); border: 1px solid rgba(255,255,255,0.13);
+  border-radius: 6px; overflow: hidden;
+}
+.hm-way {
+  background: var(--hm-ink); padding: 16px 20px; display: flex; justify-content: space-between;
+  align-items: center; gap: 20px; font-size: 0.92rem;
+}
+.hm-way > span:first-child {
+  display: inline-flex; align-items: center; gap: 8px; color: rgba(255,255,255,0.58);
+  font-size: 0.78rem; letter-spacing: 0.1em; text-transform: uppercase;
+}
+.hm-way a { color: #fff; text-decoration: none; border-bottom: 1px solid rgba(255,255,255,0.25); }
+.hm-way a:hover { border-bottom-color: #fff; }
+.hm-way-plain { color: rgba(255,255,255,0.82); }
+.hm-foot-cta {
+  border: 1px solid rgba(255,255,255,0.16); border-radius: 6px; padding: 28px;
+  background: rgba(255,255,255,0.03); display: flex; flex-direction: column; align-items: flex-start; gap: 12px;
+}
+.hm-foot-cta p { color: rgba(255,255,255,0.66); font-size: 0.92rem; margin-bottom: 8px; }
+
+@media (max-width: 940px) {
+  .hm-hero-inner { grid-template-columns: 1fr; gap: 40px; padding: 56px 0 68px; }
+  .hm-dests, .hm-two, .hm-foot-grid { grid-template-columns: 1fr; }
+  .hm-steps { grid-template-columns: 1fr; }
+  .hm-sec { padding: 64px 0; }
+  .hm-foot { padding: 64px 0; }
+  .hm-specs { grid-template-columns: 1fr; }
+}
+
+/* ── En-tête de site — remplace la pill flottante ────────────────────────────
+   Fond encre constant : il se fond dans le héros de l'accueil (même valeur)
+   et reste lisible sur les pages claires. Masqué <=768px, où la barre mobile
+   existante prend le relais. */
+.site-header {
+  position: sticky; top: 0; z-index: 1000;
+  background: #101418;
+  border-bottom: 1px solid rgba(255,255,255,0.10);
+}
+.site-header-inner {
+  display: flex; align-items: center; justify-content: space-between;
+  gap: 32px; padding-top: 14px; padding-bottom: 14px;
+}
+.site-header-logo { display: inline-flex; align-items: center; }
+.site-header-wordmark { height: 26px; width: auto; object-fit: contain; display: block; }
+.site-header-nav { display: flex; align-items: center; gap: 8px; }
+.site-header-link {
+  display: inline-flex; align-items: center; gap: 7px;
+  padding: 8px 14px; border-radius: 4px; border: none; background: none;
+  font-family: var(--font-body); font-size: 0.88rem; font-weight: 500;
+  color: rgba(255,255,255,0.72); text-decoration: none; cursor: pointer;
+  transition: color var(--transition), background var(--transition);
+}
+.site-header-link:hover { color: #fff; background: rgba(255,255,255,0.07); }
+.site-header-link.active { color: #fff; }
+.site-header-cta {
+  display: inline-flex; align-items: center; gap: 7px; margin-left: 8px;
+  padding: 9px 18px; border-radius: 4px;
+  background: var(--color-accent); color: #fff; text-decoration: none;
+  font-family: var(--font-body); font-size: 0.88rem; font-weight: 500;
+  transition: background var(--transition);
+}
+.site-header-cta:hover { background: var(--color-accent-dark); }
+.site-header :focus-visible { outline: 2px solid var(--color-accent-light); outline-offset: 2px; }
+
+@media (max-width: 768px) {
+  .site-header { display: none; }
 }

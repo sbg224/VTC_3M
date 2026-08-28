@@ -1,17 +1,14 @@
 import { useState, useRef, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import {
-  Users, Clock, ShieldCheck, EyeOff, Receipt, Smartphone,
-  Armchair, Wind, VolumeX, Droplets, Zap, Sparkles, Star,
+  Clock, ShieldCheck, Armchair, Wind, VolumeX, Droplets, Zap, Sparkles,
   Plane, Train, Building2, Landmark,
   Phone, MapPin, Car, Calculator,
-  Loader2, AlertTriangle, Euro, ArrowRight, ChevronDown, Check,
+  Loader2, AlertTriangle, Euro, ArrowRight, Check,
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { gsap, ScrollTrigger } from '../animations/gsap';
-import { simulateAPI, publicStatsAPI, driverPublicAPI } from '../services/api';
+import { simulateAPI, driverPublicAPI } from '../services/api';
 import Seo from '../components/Seo';
-import FeatureSteps from '../components/FeatureSteps';
 import WhatsAppIcon from '../components/WhatsAppIcon';
 import {
   CONTACT_EMAIL,
@@ -22,45 +19,60 @@ import {
   WHATSAPP_ARIA_LABEL,
 } from '../utils/contact';
 
-// ── Données ───────────────────────────────────────────────────────────────────
-
-const features = [
-  { Icon: Users,       title: 'Service Personnalisé',    desc: 'Un chauffeur dédié, toujours le même. Une relation directe, sans intermédiaire.', image: '/images/passenger.webp' },
-  { Icon: Clock,       title: 'Ponctualité Garantie',    desc: 'Suivi du trafic en temps réel. Présent à l\'heure, à chaque course, sans exception.', image: '/images/car-hero.webp' },
-  { Icon: ShieldCheck, title: 'Sécurité & Sérénité',     desc: 'Chauffeur VTC agréé, véhicule assuré et entretenu. Vous êtes entre de bonnes mains.', image: '/images/car-door.webp' },
-  { Icon: EyeOff,      title: 'Discrétion Absolue',      desc: 'Confidentialité totale. Idéal pour vos déplacements professionnels ou personnels.', image: '/images/airport.webp' },
-  { Icon: Receipt,     title: 'Facturation Automatique', desc: 'Facture PDF envoyée immédiatement après la course. Parfait pour les notes de frais.', image: '/images/passenger.webp' },
-  { Icon: Smartphone,  title: 'Réservation Simple',      desc: 'Réservez en ligne en moins d\'une minute, de jour comme de nuit.', image: '/images/car-hero.webp' },
-];
-
-// Stats par défaut pendant le chargement
-const DEFAULT_STATS = [
-  { key: 'totalCompleted', suffix: '+',      label: 'Courses effectuées' },
-  { key: 'uniqueClients',  suffix: '+',      label: 'Clients accompagnés' },
-  { key: 'yearsActive',    suffix: ' an(s)', label: 'D\'expérience VTC' },
-  { key: 'availability',   suffix: '',       label: 'Disponible pour vous' },
+// Les quatre trajets les plus demandés. `photo` reste à null tant que la photo
+// réelle n'a pas été fournie : la carte affiche alors un emplacement neutre
+// explicite plutôt qu'un visuel générique. Priorité de remplacement : Blagnac
+// et Matabiau d'abord (les deux premières cartes lues), puis le déplacement
+// professionnel.
+//
+// `price` n'est volontairement pas renseigné ici : aucun tarif ne doit être
+// écrit en dur dans le JSX. Les montants viendront de PricingConfig via une
+// route publique dédiée, pour suivre automatiquement toute modification de
+// pricePerKm ou hourlyRate faite en administration.
+const destinations = [
+  {
+    key: 'blagnac',
+    Icon: Plane,
+    title: 'Aéroport Toulouse-Blagnac',
+    desc: 'Suivi des vols en temps réel, prise en charge en salle d\'arrivée.',
+    photo: null, // ancienne image générée : /images/Aereport.webp
+  },
+  {
+    key: 'matabiau',
+    Icon: Train,
+    title: 'Gare Matabiau',
+    desc: 'Dépose et prise en charge directement sur le parvis.',
+    photo: null, // ancienne image générée : /images/gare-2.webp
+  },
+  {
+    key: 'pro',
+    Icon: Building2,
+    title: 'Déplacements professionnels',
+    desc: 'Mise à disposition à l\'heure, 25 km inclus par heure, 2 h minimum.',
+    photo: null, // ancienne image générée : /images/professionnel.webp
+  },
+  {
+    key: 'evenement',
+    Icon: Landmark,
+    title: 'Sorties & événements',
+    desc: 'Restaurants, spectacles, mariages. Aller-retour avec attente sur place.',
+    photo: null, // ancienne image générée : /images/evenement.webp
+  },
 ];
 
 const vehicleHighlights = [
-  { Icon: Armchair, label: 'Sièges cuir premium' },
+  { Icon: Armchair, label: 'Sièges cuir' },
   { Icon: Wind,     label: 'Climatisation 4 zones' },
   { Icon: VolumeX,  label: 'Habitacle silencieux' },
   { Icon: Droplets, label: 'Eau fraîche à bord' },
-  { Icon: Zap,      label: 'Chargeurs USB & sans fil' },
-  { Icon: Sparkles, label: 'Véhicule nettoyé chaque jour' },
+  { Icon: Zap,      label: 'Recharge sans fil' },
+  { Icon: Sparkles, label: 'Nettoyé chaque jour' },
 ];
 
-const destinations = [
-  { Icon: Plane,     title: 'Aéroport Toulouse-Blagnac', desc: 'Transfert avec suivi des vols en temps réel. Prise en charge à l\'arrivée.', image: '/images/Aereport.webp' },
-  { Icon: Train,     title: 'Gare Matabiau',              desc: 'Dépose et prise en charge directe sur le parvis, sans stress.', image: '/images/gare-2.webp' },
-  { Icon: Building2, title: 'Déplacements professionnels', desc: 'Réunions, séminaires, événements d\'entreprise sur Toulouse et sa région.', image: '/images/professionnel.webp' },
-  { Icon: Landmark,  title: 'Sorties & événements',       desc: 'Restaurants, spectacles, mariages — arrivez en style et repartez l\'esprit léger.', image: '/images/evenement.webp' },
-];
-
-const testimonials = [
-  { text: 'Chauffeur très professionnel, ponctuel et discret. Le véhicule est impeccable. Je le sollicite systématiquement pour mes déplacements pro à Toulouse.', author: 'Sophie M.', role: 'Directrice commerciale – Toulouse' },
-  { text: 'Réservation simple, suivi parfait du vol à Blagnac. Un vrai service premium à prix juste. Je recommande sans hésiter !', author: 'Thomas K.', role: 'Chef de projet – Haute-Garonne' },
-  { text: 'La facture arrivait par email avant même que je rentre chez moi. Pratique, rapide et très agréable. Merci !', author: 'Marie-Claire D.', role: 'Consultante – Toulouse' },
+const HOWTO = [
+  { n: 'Étape 1', title: 'Vous simulez',    desc: 'Départ, arrivée, date. Le prix s\'affiche immédiatement, tout compris.' },
+  { n: 'Étape 2', title: 'Vous confirmez',  desc: 'Coordonnées, validation. La confirmation arrive par email et SMS.' },
+  { n: 'Étape 3', title: 'On vous conduit', desc: 'Le chauffeur vous attend à l\'heure. La facture suit par email.' },
 ];
 
 const DURATIONS = ['1h','2h','3h','4h','5h','6h','8h','10h','12h'];
@@ -260,65 +272,8 @@ const JSON_LD_LOCAL_BUSINESS = JSON.stringify({
   ],
 });
 
-// ── Carrousel chauffeurs : 3 cartes visibles, rotation automatique ────────────
-function DriverCarousel({ drivers }) {
-  const [offset, setOffset] = useState(0);
-  const visibleCount = Math.min(3, drivers.length);
-
-  useEffect(() => {
-    if (drivers.length <= 3) return;
-    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
-    const id = setInterval(() => setOffset((o) => (o + 1) % drivers.length), 1800);
-    return () => clearInterval(id);
-  }, [drivers.length]);
-
-  const slots = Array.from({ length: visibleCount }, (_, i) => drivers[(offset + i) % drivers.length]);
-
-  return (
-    <div className="driver-carousel">
-      <AnimatePresence mode="popLayout" initial={false}>
-        {slots.map((d) => {
-          const displayName = d.businessName || d.name;
-          const initials = displayName.split(' ').map((w) => w[0]).slice(0, 2).join('').toUpperCase();
-          return (
-            <motion.div
-              className="driver-card"
-              key={d.id}
-              layout
-              initial={{ opacity: 0, y: 12 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -12 }}
-              transition={{ duration: 0.35 }}
-            >
-              <div className="driver-avatar-wrap">
-                <div className="driver-avatar">{initials}</div>
-                <span className="driver-verified-seal" title="Chauffeur vérifié"><Check size={11} strokeWidth={3} /></span>
-              </div>
-              <div className="driver-info">
-                <div className="driver-badge">Chauffeur VTC Agréé · Toulouse (31)</div>
-                <h3>{displayName}</h3>
-                {d.rating != null && (
-                  <p style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-                    <Star size={13} strokeWidth={1.5} style={{ color: 'var(--color-accent)' }} />
-                    {d.rating.toFixed(1)}/5 · {d.reviewCount} avis client{d.reviewCount > 1 ? 's' : ''}
-                  </p>
-                )}
-                <p>Chauffeur privé indépendant basé à Toulouse, engagé à offrir un déplacement confortable, ponctuel et discret.</p>
-                <div className="driver-badges">
-                  <span><ShieldCheck size={13} strokeWidth={1.5} style={{ display: 'inline', marginRight: 4 }} /> Carte VTC officielle</span>
-                  <span><ShieldCheck size={13} strokeWidth={1.5} style={{ display: 'inline', marginRight: 4 }} /> Assurance pro</span>
-                </div>
-              </div>
-            </motion.div>
-          );
-        })}
-      </AnimatePresence>
-    </div>
-  );
-}
-
 // ── Page principale ───────────────────────────────────────────────────────────
-// Scroll doux vers le simulateur hero
+// Défilement doux vers le simulateur du héros.
 function scrollToSimulator(e) {
   if (e) e.preventDefault();
   const el = document.getElementById('hero-simulator');
@@ -326,175 +281,22 @@ function scrollToSimulator(e) {
 }
 
 export default function Home() {
-  const pageRef   = useRef(null);
-  const [liveStats, setLiveStats] = useState(null); // null = chargement
-  const [drivers,   setDrivers]   = useState([]);
+  const [drivers, setDrivers] = useState([]);
 
-  // ── Chargement stats publiques depuis la DB ──────────────────────────────────
-  useEffect(() => {
-    publicStatsAPI.get()
-      .then(({ data }) => setLiveStats(data))
-      .catch(() => {
-        // Fallback si l'API échoue : valeurs neutres non-mensongères
-        setLiveStats({ totalCompleted: null, uniqueClients: null, yearsActive: null, availability: '24/7' });
-      });
-  }, []);
-
-  // ── Chargement des vrais chauffeurs actifs depuis la DB ──────────────────────
   useEffect(() => {
     driverPublicAPI.getPublicList()
       .then(({ data }) => setDrivers(data.drivers || []))
       .catch(() => setDrivers([]));
   }, []);
 
-  // Construit le tableau affiché depuis les stats live
-  const displayStats = DEFAULT_STATS.map(s => {
-    if (!liveStats) return { number: '—', label: s.label };
-    const val = liveStats[s.key];
-    if (val === null || val === undefined) return { number: '—', label: s.label };
-    if (s.key === 'availability') return { number: val, label: s.label };
-    if (s.key === 'yearsActive')  return { number: val === 0 ? '< 1 an' : `${val}${s.suffix}`, label: s.label };
-    return { number: `${val}${s.suffix}`, label: s.label };
-  });
-
-  useEffect(() => {
-    const page = pageRef.current;
-    if (!page) return;
-    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
-
-    const ctx = gsap.context(() => {
-      const heroLeft = page.querySelector('.hero-left-content');
-      if (heroLeft) {
-        gsap.from(heroLeft.children, { y: 28, opacity: 0, stagger: 0.1, duration: 0.65, ease: 'power3.out', delay: 0.1 });
-      }
-
-      page.querySelectorAll('.section').forEach((section) => {
-        const title = section.querySelector('.section-title');
-        if (title) gsap.from(title, { y: 28, opacity: 0, duration: 0.6, scrollTrigger: { trigger: title, start: 'top 88%', once: true } });
-        const sub = section.querySelector('.section-subtitle');
-        if (sub) gsap.from(sub, { y: 16, opacity: 0, duration: 0.5, delay: 0.08, scrollTrigger: { trigger: sub, start: 'top 88%', once: true } });
-        const cards = section.querySelectorAll('.testimonial-card,.howto-step,.driver-card,.vehicle-card');
-        if (cards.length) gsap.from(cards, { y: 20, opacity: 0, stagger: 0.08, duration: 0.55, ease: 'power3.out', clearProps: 'transform,opacity', scrollTrigger: { trigger: section, start: 'top 80%', once: true } });
-      });
-
-      // Destinations — galerie dispersée type "Shadway" : plusieurs photos visibles
-      // simultanément à des tailles/positions différentes, celle du premier plan
-      // nette et centrée, les autres décalées en coin et floutées. Chaque carte
-      // parcourt en boucle ce cycle (loin → premier plan → loin) au fil du scroll.
-      const destWrap = page.querySelector('.destinations-grid-wrap');
-      const destCards = destWrap ? Array.from(destWrap.querySelectorAll('.destination-card--photo')) : [];
-      if (destWrap && destCards.length > 1) {
-        const stack = destWrap.querySelector('.destinations-stack');
-        stack.classList.add('destinations-stack--pinned');
-
-        const n = destCards.length;
-        gsap.set(destCards, { xPercent: -50, yPercent: -50, transformOrigin: '50% 50%' });
-
-        // wrapRect n'est mesuré (getBoundingClientRect, un reflow) qu'au
-        // (re)calage de ScrollTrigger, jamais à chaque frame de scroll — le
-        // lire dans render() forçait un reflow synchrone à chaque tick de
-        // scrub, coûteux et source de saccades/écran blanc pendant le défilement.
-        let wrapRect = destWrap.getBoundingClientRect();
-
-        const render = (progress) => {
-          destCards.forEach((card, i) => {
-            const phase = (((i / n) + progress) % 1 + 1) % 1;
-            const nearness = 1 - Math.abs(phase - 0.5) * 2; // 0 = loin, 1 = premier plan
-            const eased = nearness * nearness * (3 - 2 * nearness); // smoothstep — pilote la taille/position
-            // Le fondu ne s'applique que tout près de l'entrée/sortie (comme
-            // dans la galerie de référence) : le reste du temps, y compris en
-            // position secondaire décalée, la photo reste nette et opaque.
-            // (Le flou gaussien par frame a été retiré : `filter: blur()`
-            // recalculé en continu pendant le scroll force un repaint complet
-            // de chaque carte à chaque tick — coûteux avec plusieurs cartes en
-            // même temps, cause de saccades/écran blanc pendant le défilement.)
-            const edge = Math.min(nearness / 0.2, 1);
-            const edgeEased = edge * edge * (3 - 2 * edge);
-            // Traversée continue : entre depuis la droite, passe au centre (premier
-            // plan) à mi-cycle, ressort par la gauche — jamais deux cartes du même
-            // côté en même temps. Léger biais vers le bas pour dégager le titre.
-            const baseX = phase <= 0.5 ? (0.5 - phase) * 2 : -(phase - 0.5) * 2;
-            gsap.set(card, {
-              x: baseX * 0.55 * wrapRect.width * (1 - eased),
-              y: 0.5 * wrapRect.height * (1 - eased),
-              scale: 0.5 + eased * 0.5,
-              opacity: edgeEased,
-              zIndex: Math.round(eased * 100),
-            });
-            const content = card.querySelector('.destination-card-content');
-            if (content) gsap.set(content, { opacity: eased > 0.72 ? (eased - 0.72) / 0.28 : 0 });
-          });
-        };
-        render(0);
-
-        const segment = 480;
-        ScrollTrigger.create({
-          trigger: destWrap,
-          start: 'top top+=80',
-          end: `+=${segment * n}`,
-          scrub: 0.5,
-          pin: true,
-          onRefresh: () => { wrapRect = destWrap.getBoundingClientRect(); },
-          onUpdate: (self) => render(self.progress),
-        });
-      }
-
-      // Compteurs animés — sur les valeurs numériques uniquement
-      page.querySelectorAll('.stat-number').forEach((el) => {
-        const raw = el.textContent.trim();
-        const match = raw.match(/^(\d+)/);
-        if (!match) return; // skip '—', '24/7', '< 1 an', etc.
-        const end = parseFloat(match[1]);
-        const suffix = raw.slice(match[1].length);
-        const obj = { val: 0 };
-        gsap.to(obj, {
-          val: end, duration: 1.6, ease: 'power2.out',
-          scrollTrigger: { trigger: el, start: 'top 82%', once: true },
-          onUpdate() { el.textContent = Math.round(obj.val) + suffix; },
-          onComplete() { el.textContent = raw; },
-        });
-      });
-    }, page);
-
-    ScrollTrigger.refresh();
-
-    // Les grandes photos (destinations, hero…) se chargent après ce premier
-    // refresh : tant que ScrollTrigger ne recalcule pas une fois la mise en
-    // page définitive connue, ses positions de pin restent basées sur une
-    // page plus courte et le bloc épinglé se déclenche trop tôt, recouvrant
-    // les sections précédentes (observé sur mobile). On reprogramme un
-    // refresh dès que chaque image a fini de charger.
-    const images = Array.from(page.querySelectorAll('img'));
-    const pending = images.filter((img) => !img.complete);
-    let refreshTimeout;
-    const scheduleRefresh = () => {
-      clearTimeout(refreshTimeout);
-      refreshTimeout = setTimeout(() => ScrollTrigger.refresh(), 60);
-    };
-    pending.forEach((img) => {
-      img.addEventListener('load', scheduleRefresh);
-      img.addEventListener('error', scheduleRefresh);
-    });
-    window.addEventListener('load', scheduleRefresh);
-    // Les polices web chargées après ce premier refresh peuvent aussi décaler
-    // la hauteur du texte (donc la position du bloc épinglé) sans qu'aucun
-    // événement de chargement d'image ne le signale — recaler une dernière
-    // fois une fois les polices prêtes.
-    if (document.fonts?.ready) document.fonts.ready.then(scheduleRefresh);
-
-    return () => {
-      clearTimeout(refreshTimeout);
-      pending.forEach((img) => {
-        img.removeEventListener('load', scheduleRefresh);
-        img.removeEventListener('error', scheduleRefresh);
-      });
-      window.removeEventListener('load', scheduleRefresh);
-      ctx.revert();
-    };
-  }, []);
+  const driver = drivers[0] || null;
+  const driverName = driver ? (driver.businessName || driver.name) : null;
+  const initials = driverName
+    ? driverName.split(' ').map((w) => w[0]).slice(0, 2).join('').toUpperCase()
+    : null;
 
   return (
-    <div ref={pageRef}>
+    <div className="hm">
       <Seo
         title="3M Drive, Chauffeur VTC Premium à Toulouse"
         description="Chauffeur VTC privé à Toulouse, transferts aéroport Blagnac, gare Matabiau, déplacements professionnels et service premium 24h/24 en Haute-Garonne."
@@ -502,298 +304,191 @@ export default function Home() {
       />
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON_LD_LOCAL_BUSINESS }} />
 
-      {/* ── HERO PLEIN ÉCRAN ──────────────────────────────────────────────────── */}
-      <section className="hero-full">
-        <div className="hero-full-bg">
+      {/* ── HÉROS ──────────────────────────────────────────────────────────── */}
+      <section className="hm-hero">
+        <div className="hm-hero-bg">
           <picture>
             <source media="(max-width: 768px)" srcSet="/images/car-hero-toulouse-mobile.webp" />
-            <img src="/images/car-hero-toulouse.webp" alt="Berline 3M Drive au bord de la Garonne à Toulouse, coucher de soleil" className="hero-full-img" fetchpriority="high" />
+            <img
+              src="/images/car-hero-toulouse.webp"
+              alt="Berline 3M Drive au bord de la Garonne à Toulouse, coucher de soleil"
+              className="hm-hero-img"
+              fetchpriority="high"
+            />
           </picture>
-          <div className="hero-full-overlay" />
+          <div className="hm-hero-veil" />
         </div>
 
-        <div className="container hero-full-inner">
-          {/* Gauche : branding */}
-          <div className="hero-left-content">
-            <div className="hero-badge">
-              <Star size={11} strokeWidth={2} />
-              <span>VTC Premium – Toulouse &amp; Haute-Garonne (31)</span>
-            </div>
-
-            <p className="hero-greeting">Bonjour 👋</p>
-            <h1 className="hero-title-new">
-              Votre chauffeur<br />
-              <span className="gold-accent">privé à Toulouse</span>
-            </h1>
-
-            <p className="hero-desc-new">
-              Transport privé haut de gamme, ponctuel et discret.
-              Calculez votre prix en temps réel, réservez en 60 secondes.
+        <div className="container hm-hero-inner">
+          <div className="hm-hero-copy">
+            <h1 className="hm-hero-title">Votre chauffeur privé à Toulouse</h1>
+            <p className="hm-hero-sub">
+              Transferts aéroport, gare et déplacements professionnels.
+              Prix annoncé avant le départ, jamais après.
             </p>
-
-
-
-            <a href={`tel:${CONTACT_PHONE_E164}`} className="hero-phone-link">
-              <Phone size={15} strokeWidth={1.5} /> {CONTACT_PHONE_DISPLAY}
-            </a>
+            <div className="hm-hero-meta">
+              <a href={`tel:${CONTACT_PHONE_E164}`} className="hm-hero-phone">
+                <Phone size={14} strokeWidth={1.5} /> {CONTACT_PHONE_DISPLAY}
+              </a>
+              <span className="hm-rule" />
+              <span>Disponible 7j/7, 24h/24</span>
+              <span className="hm-rule" />
+              <span>Haute-Garonne (31)</span>
+            </div>
           </div>
 
-          {/* Droite : formulaire */}
-          <div id="hero-simulator" className="hero-right-content">
+          <div id="hero-simulator" className="hm-hero-panel">
             <HeroBookingForm />
           </div>
         </div>
-
-        <div className="hero-scroll-hint">
-          <ChevronDown size={18} strokeWidth={1.5} />
-        </div>
       </section>
 
-      {/* ── STATS ─────────────────────────────────────────────────────────────── */}
-      <section className="section stats-section">
+      {/* ── DESTINATIONS ───────────────────────────────────────────────────── */}
+      <section className="hm-sec">
         <div className="container">
-          <div className="stats-grid">
-            {displayStats.map((s, i) => (
-              <div key={i} style={{ textAlign: 'center' }}>
-                <span className="stat-number">{s.number}</span>
-                <p className="stat-label">{s.label}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
+          <header className="hm-sec-head">
+            <p className="hm-eyebrow">Destinations</p>
+            <h2 className="hm-title">Les trajets que l&apos;on nous demande le plus</h2>
+            <p className="hm-lede">
+              Toulouse et toute la Haute-Garonne. Chaque trajet se charge dans le simulateur.
+            </p>
+          </header>
 
-      {/* ── VOTRE CHAUFFEUR / VÉHICULE ────────────────────────────────────────── */}
-      <section className="section" style={{ background: '#F7F5F0' }}>
-        <div className="container">
-          <p className="section-label" style={{ textAlign: 'center', display: 'block' }}>Notre service</p>
-          <h2 className="section-title" style={{ textAlign: 'center' }}>
-            Votre chauffeur &amp; <span className="gold-accent">votre véhicule</span>
-          </h2>
-          <p className="section-subtitle" style={{ textAlign: 'center', margin: '0 auto var(--space-12)' }}>
-            Un service individuel, une relation de confiance directe
-          </p>
-          <div className="driver-vehicle-grid">
-            {drivers.length > 0 && <DriverCarousel drivers={drivers} />}
-            <div className="vehicle-card">
-              <div className="vehicle-icon-block">
-                <img src="/images/car-door.webp" alt="Portière berline premium VTC 3M Drive" className="vehicle-photo" width="600" height="180" loading="lazy" />
-              </div>
-              <h3>Berline premium</h3>
-              <p style={{ color: 'rgba(255,255,255,0.6)', marginBottom: '24px', fontSize: '0.92rem' }}>Jusqu'à 4 passagers · Confort &amp; luxe à bord</p>
-              <div className="vehicle-highlights">
-                {vehicleHighlights.map((h, i) => (
-                  <div key={i} className="vehicle-highlight-item">
-                    <span className="vehicle-highlight-icon"><h.Icon size={16} strokeWidth={1.5} /></span>
-                    <span>{h.label}</span>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* ── POURQUOI NOUS ─────────────────────────────────────────────────────── */}
-      <section className="section features">
-        <div className="container">
-          <p className="section-label" style={{ textAlign: 'center', display: 'block' }}>Pourquoi nous</p>
-          <h2 className="section-title" style={{ textAlign: 'center' }}>
-            Pourquoi choisir <span className="gold-accent">3M Drive</span> ?
-          </h2>
-          <p className="section-subtitle" style={{ textAlign: 'center', margin: '0 auto var(--space-12)' }}>
-            Un chauffeur privé qui fait vraiment la différence
-          </p>
-          <FeatureSteps features={features} />
-        </div>
-      </section>
-
-      {/* ── DESTINATIONS ──────────────────────────────────────────────────────── */}
-      <section className="section" style={{ background: '#F7F5F0' }}>
-        <div className="container">
-          <p className="section-label" style={{ textAlign: 'center', display: 'block' }}>Où nous intervenons</p>
-          <h2 className="section-title" style={{ textAlign: 'center' }}>Vos <span className="gold-accent">destinations</span></h2>
-          <p className="section-subtitle" style={{ textAlign: 'center', margin: '0 auto var(--space-12)' }}>Toulouse et toute la Haute-Garonne (31)</p>
-          <div className="destinations-grid-wrap">
-            <div className="destinations-stack">
-              {destinations.map((d, i) => (
-                <div
-                  key={i}
-                  className="destination-card destination-card--photo"
+          <div className="hm-dests">
+            {destinations.map((d) => (
+              <article key={d.key} className="hm-dest">
+                <button
+                  type="button"
+                  className="hm-dest-btn"
                   onClick={scrollToSimulator}
-                  role="button"
-                  tabIndex={0}
-                  onKeyDown={(e) => e.key === 'Enter' && scrollToSimulator(e)}
+                  aria-label={`Estimer un trajet : ${d.title}`}
                 >
-                  <img src={d.image} alt={d.title} className="destination-card-photo-img" loading="lazy" />
-                  <div className="destination-card-scrim" />
-                  <div className="destination-card-content">
-                    <div className="destination-icon"><d.Icon size={20} strokeWidth={1.5} /></div>
-                    <h3>{d.title}</h3>
-                    <p>{d.desc}</p>
-                    <div className="destination-cta">Estimer ce trajet <ArrowRight size={13} strokeWidth={2} /></div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-          <div className="section-cta">
-            <button onClick={scrollToSimulator} className="btn btn-primary btn-lg" style={{ display: 'inline-flex', alignItems: 'center', gap: '8px' }}>
-              <Calculator size={16} strokeWidth={1.5} /> Simuler le prix de ma course
-            </button>
+                  {d.photo ? (
+                    <img src={d.photo} alt={d.title} className="hm-dest-photo" loading="lazy" />
+                  ) : (
+                    <span className="hm-dest-placeholder">
+                      <d.Icon size={22} strokeWidth={1.5} />
+                      <span>Photo à venir</span>
+                    </span>
+                  )}
+                  <span className="hm-dest-body">
+                    <span className="hm-dest-title">{d.title}</span>
+                    <span className="hm-dest-desc">{d.desc}</span>
+                    <span className="hm-dest-foot">
+                      <span className="hm-dest-go">Estimer <ArrowRight size={14} strokeWidth={2} /></span>
+                    </span>
+                  </span>
+                </button>
+              </article>
+            ))}
           </div>
         </div>
       </section>
 
-      {/* ── EXPÉRIENCE À BORD — bento premium ────────────────────────────────── */}
-      <section className="section exp-section">
+      {/* ── COMMENT ÇA MARCHE ──────────────────────────────────────────────── */}
+      <section className="hm-sec hm-sec--alt">
         <div className="container">
-          <p className="section-label exp-label">À bord</p>
-          <h2 className="section-title exp-title">Une expérience <span className="gold-accent">premium</span></h2>
-          <p className="section-subtitle exp-subtitle">Du confort à bord à l'accueil personnalisé</p>
+          <header className="hm-sec-head">
+            <p className="hm-eyebrow">Comment ça marche</p>
+            <h2 className="hm-title">Trois étapes, une minute</h2>
+          </header>
+          <ol className="hm-steps">
+            {HOWTO.map((s) => (
+              <li key={s.n} className="hm-step">
+                <span className="hm-step-n">{s.n}</span>
+                <h3 className="hm-step-title">{s.title}</h3>
+                <p className="hm-step-desc">{s.desc}</p>
+              </li>
+            ))}
+          </ol>
+        </div>
+      </section>
 
-          <div className="exp-bento">
+      {/* ── LE CHAUFFEUR & LA BERLINE ──────────────────────────────────────── */}
+      <section className="hm-sec">
+        <div className="container">
+          <header className="hm-sec-head">
+            <p className="hm-eyebrow">Le service</p>
+            <h2 className="hm-title">Un chauffeur, une berline</h2>
+            <p className="hm-lede">
+              Pas de plateforme, pas d&apos;intermédiaire. Vous savez qui vient vous chercher.
+            </p>
+          </header>
 
-            {/* ── Grande image principale avec stats flottantes ── */}
-            <div className="exp-card exp-card--main">
-              <img src="/images/passenger.webp" alt="Passager en berline premium – VTC Toulouse" className="exp-img" loading="lazy" />
-              <div className="exp-overlay" />
-              <div className="exp-main-content">
-                <div className="exp-floating-tag">
-                  <Star size={11} strokeWidth={2} /> Service 5 étoiles
+          <div className="hm-two">
+            {driver && (
+              <div className="hm-card">
+                <div className="hm-who">
+                  <span className="hm-avatar">{initials}</span>
+                  <span>
+                    <h3 className="hm-card-title">{driverName}</h3>
+                    <p className="hm-card-meta">Chauffeur VTC agréé · Toulouse (31)</p>
+                  </span>
                 </div>
-                <div className="exp-mini-stats">
-                  <div className="exp-mini-stat">
-                    <span>24/7</span><small>disponible</small>
-                  </div>
+                <p className="hm-card-text">
+                  Chauffeur privé indépendant basé à Toulouse, engagé à offrir un déplacement
+                  confortable, ponctuel et discret.
+                </p>
+                <div className="hm-chips">
+                  <span className="hm-chip"><Check size={12} strokeWidth={2.5} /> Carte VTC officielle</span>
+                  <span className="hm-chip"><Check size={12} strokeWidth={2.5} /> Assurance professionnelle</span>
                 </div>
               </div>
-            </div>
+            )}
 
-            {/* ── Image secondaire aéroport ── */}
-            <div className="exp-card exp-card--secondary">
-              <img src="/images/Aereport.webp" alt="Accueil personnalisé aéroport Toulouse-Blagnac" className="exp-img" loading="lazy" />
-              <div className="exp-overlay exp-overlay--strong" />
-              <div className="exp-secondary-label">
-                <Plane size={13} strokeWidth={1.75} /> Toulouse-Blagnac
-              </div>
-            </div>
-
-            {/* ── Highlights véhicule + CTA ── */}
-            <div className="exp-card exp-card--highlights">
-              <h3 className="exp-highlights-title">
-                <Car size={16} strokeWidth={1.5} /> À bord de votre berline
-              </h3>
-              <div className="exp-highlights-grid">
-                {vehicleHighlights.map((h, i) => (
-                  <div key={i} className="exp-highlight-item">
-                    <span className="exp-highlight-icon"><h.Icon size={14} strokeWidth={1.5} /></span>
-                    <span>{h.label}</span>
-                  </div>
+            <div className="hm-card">
+              <h3 className="hm-card-title">Berline premium</h3>
+              <p className="hm-card-meta">Jusqu&apos;à 4 passagers · 3 bagages</p>
+              <ul className="hm-specs">
+                {vehicleHighlights.map((h) => (
+                  <li key={h.label}>
+                    <h.Icon size={15} strokeWidth={1.5} /> {h.label}
+                  </li>
                 ))}
-              </div>
-              <Link to="/reservation" className="exp-reserve-btn">
-                Réserver maintenant <ArrowRight size={14} strokeWidth={2} />
-              </Link>
-              <p className="exp-reserve-note">
-                <ShieldCheck size={11} strokeWidth={1.5} /> Tarif fixe · Aucun supplément · Confirmation immédiate
-              </p>
+              </ul>
             </div>
-
           </div>
         </div>
       </section>
 
-      {/* ── COMMENT ÇA MARCHE ─────────────────────────────────────────────────── */}
-      <section className="section">
+      {/* ── CONTACT ────────────────────────────────────────────────────────── */}
+      <section className="hm-foot" id="contact">
         <div className="container">
-          <p className="section-label" style={{ textAlign: 'center', display: 'block' }}>Simple &amp; rapide</p>
-          <h2 className="section-title" style={{ textAlign: 'center' }}>Comment ça <span className="gold-accent">fonctionne</span> ?</h2>
-          <p className="section-subtitle" style={{ textAlign: 'center', margin: '0 auto var(--space-12)' }}>Réservez votre course en 3 étapes simples</p>
-          <div className="howto-grid">
-            {[
-              { step: '01', Icon: Calculator, title: 'Calculez le prix',         desc: 'Entrez vos adresses sur la page d\'accueil pour obtenir un tarif instantané et transparent.' },
-              { step: '02', Icon: Receipt,    title: 'Confirmez la réservation',  desc: 'Renseignez vos coordonnées, date et heure. Votre bon de réservation arrive par email.' },
-              { step: '03', Icon: Car,        title: 'Profitez du trajet',        desc: 'Votre chauffeur est ponctuel. La facture vous est envoyée automatiquement à l\'arrivée.' },
-            ].map((item, i) => (
-              <div key={i} className="howto-step">
-                <div className="howto-icon-wrap">
-                  <span className="howto-icon"><item.Icon size={22} strokeWidth={1.5} /></span>
-                  <div className="howto-step-number">{item.step}</div>
-                </div>
-                <h3>{item.title}</h3>
-                <p>{item.desc}</p>
-              </div>
-            ))}
-          </div>
-          <div className="section-cta">
-            <Link to="/reservation" className="btn btn-primary btn-lg" style={{ display: 'inline-flex', alignItems: 'center', gap: '8px' }}>
-              <Car size={16} strokeWidth={1.5} /> Réserver ma course maintenant
-            </Link>
-          </div>
-        </div>
-      </section>
-
-      {/* ── TÉMOIGNAGES ───────────────────────────────────────────────────────── */}
-      <section className="section" style={{ background: '#F7F5F0' }}>
-        <div className="container">
-          <p className="section-label" style={{ textAlign: 'center', display: 'block' }}>Avis clients</p>
-          <h2 className="section-title" style={{ textAlign: 'center' }}>Ils nous font <span className="gold-accent">confiance</span></h2>
-          <p className="section-subtitle" style={{ textAlign: 'center', margin: '0 auto var(--space-12)' }}>Clients satisfaits à Toulouse et en Haute-Garonne</p>
-          <div className="testimonials-grid">
-            {testimonials.map((t, i) => (
-              <div key={i} className="testimonial-card">
-                <div className="testimonial-stars">★★★★★</div>
-                <p className="testimonial-text">"{t.text}"</p>
-                <div>
-                  <div className="testimonial-author">{t.author}</div>
-                  <div style={{ fontSize: '0.85rem', color: 'var(--color-gray)' }}>{t.role}</div>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* ── CONTACT ───────────────────────────────────────────────────────────── */}
-      <section className="section" id="contact">
-        <div className="container">
-          <p className="section-label" style={{ textAlign: 'center', display: 'block' }}>Disponible 24h/24</p>
-          <h2 className="section-title" style={{ textAlign: 'center' }}><span className="gold-accent">Contactez</span>-nous</h2>
-          <p className="section-subtitle" style={{ textAlign: 'center', margin: '0 auto var(--space-12)' }}>Disponible 7j/7 pour tous vos déplacements à Toulouse</p>
-          <div className="contact-grid">
+          <div className="hm-foot-grid">
             <div>
-              {[
-                { Icon: MapPin, title: 'Zone d\'intervention',  info: 'Toulouse & Haute-Garonne (31)',  sub: 'Longues distances sur demande' },
-                { Icon: Clock,  title: 'Horaires',              info: '24h/24 – 7j/7',                  sub: 'Jours fériés inclus' },
-              ].map((item, i) => (
-                <div key={i} className="contact-info-item">
-                  <div className="contact-icon"><item.Icon size={18} strokeWidth={1.5} /></div>
-                  <div>
-                    <h3>{item.title}</h3>
-                    <p style={{ color: 'var(--color-primary)', fontWeight: '600' }}>{item.info}</p>
-                    <p>{item.sub}</p>
-                  </div>
+              <p className="hm-eyebrow hm-eyebrow--dark">Contact</p>
+              <h2 className="hm-title hm-title--dark">Une question, un trajet particulier ?</h2>
+              <div className="hm-ways">
+                <div className="hm-way">
+                  <span><Phone size={13} strokeWidth={1.5} /> Téléphone</span>
+                  <a href={`tel:${CONTACT_PHONE_E164}`}>{CONTACT_PHONE_DISPLAY}</a>
                 </div>
-              ))}
+                <div className="hm-way">
+                  <span><WhatsAppIcon size={13} /> WhatsApp</span>
+                  <a href={WHATSAPP_URL} target="_blank" rel="noopener noreferrer" aria-label={WHATSAPP_ARIA_LABEL}>
+                    {WHATSAPP_LABEL}
+                  </a>
+                </div>
+                <div className="hm-way">
+                  <span><MapPin size={13} strokeWidth={1.5} /> Email</span>
+                  <a href={`mailto:${CONTACT_EMAIL}`}>{CONTACT_EMAIL}</a>
+                </div>
+                <div className="hm-way">
+                  <span><Clock size={13} strokeWidth={1.5} /> Zone</span>
+                  <span className="hm-way-plain">Toulouse et Haute-Garonne (31)</span>
+                </div>
+              </div>
             </div>
-            <div className="contact-cta-card">
-              <img src="/images/logo-3m-new.svg" alt="3M Drive" style={{ width: 72, height: 72, margin: '0 auto 20px', display: 'block' }} />
-              <h3 style={{ fontFamily: 'var(--font-heading)', fontSize: '1.8rem', color: 'var(--color-accent)', marginBottom: '16px' }}>Prêt à partir ?</h3>
-              <p style={{ color: 'rgba(255,255,255,0.7)', marginBottom: '32px', fontSize: '0.95rem' }}>
-                Calculez le prix de votre trajet directement sur la page d'accueil et réservez en quelques secondes.
-              </p>
-              <Link to="/reservation" className="btn btn-primary">Simuler &amp; Réserver</Link>
-              <a
-                href={WHATSAPP_URL}
-                target="_blank"
-                rel="noopener noreferrer"
-                aria-label={WHATSAPP_ARIA_LABEL}
-                className="btn btn-outline"
-                style={{ marginTop: '12px', display: 'inline-flex', alignItems: 'center', gap: '8px' }}
-              >
-                <WhatsAppIcon size={16} /> {WHATSAPP_LABEL}
-              </a>
+
+            <div className="hm-foot-cta">
+              <h3 className="hm-card-title hm-title--dark">Prêt à réserver ?</h3>
+              <p>Obtenez votre prix en moins d&apos;une minute, sans créer de compte.</p>
+              <button type="button" className="hm-btn" onClick={scrollToSimulator}>
+                <Calculator size={15} strokeWidth={1.5} /> Calculer mon prix
+              </button>
+              <Link to="/reservation" className="hm-btn hm-btn--ghost">
+                <Car size={15} strokeWidth={1.5} /> Réserver maintenant
+              </Link>
             </div>
           </div>
         </div>

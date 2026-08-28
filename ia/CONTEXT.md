@@ -136,6 +136,8 @@ Court terme
 
 Moyen terme
 
+* Mode sombre fonctionnel sur le tableau de bord chauffeur et admin — chantier dédié, retiré des pages publiques lors de la refonte de l'accueil. Diagnostic déjà établi, à ne pas refaire : la bascule pose bien `data-theme` sur `<html>` et le persiste (amorçage sans clignotement dans `index.html`), mais **aucun token n'est redéfini par thème** — les 14 règles `[data-theme]` rapiècent des composants isolés (barre flottante, panneau mobile, `.features`) au lieu de basculer la palette. Mesuré : 3 propriétés sur 14 changent, dont 2 visibles. S'y ajoutent **578 valeurs de couleur écrites en dur hors du bloc de tokens** dans `global.css` (257 distinctes), et aucune prise en charge de `prefers-color-scheme`. Le chantier consiste d'abord à ramener ces couleurs dans le système de tokens, ensuite seulement à définir les deux palettes.
+
 * Auto-hébergement d'OSRM une fois l'hébergement de production stabilisé — le calcul d'itinéraire repose encore sur le serveur public de démonstration.
 * Numérotation de facture : le compteur est en place et testé, mais aucune facture réelle n'a encore été émise. Contrôler la continuité de la série après les premières courses facturées.
 
